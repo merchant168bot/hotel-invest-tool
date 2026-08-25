@@ -175,6 +175,12 @@ td{color:#334155}
 .inline-row .field.err>input,.inline-row .field.err>select{border-color:#dc2626}
 .tier-label{font-size:12px;font-weight:700;color:#475569;margin:14px 0 4px;padding-bottom:4px;border-bottom:1px dashed #e2e8f0}
 .tier-label:first-of-type{margin-top:2px}
+.kpi-grid{display:flex;flex-wrap:wrap;gap:0 18px}
+.kpi-col{flex:1 1 280px;min-width:280px}
+.report-copy-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;justify-content:flex-end}
+.report-copy-bar button{background:#0ea5e9;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.report-copy-bar button:hover{background:#0284c7}
+.report-copy-tip{font-size:12px;color:#94a3b8}
 .proc-toggle{font-size:12px;color:#2563eb;cursor:pointer;user-select:none;margin:12px 0 4px;display:inline-block}
 .proc-body{display:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:2px 12px;margin-top:6px}
 .proc-body.open{display:block}
@@ -1452,6 +1458,7 @@ if(attr === ""){
 }
 // ===== 模块⑤ 落地方案（简化版） =====
 var plan = "";
+var hasP0 = false, hasP1 = false;
 var planTitle = "";
 
 function fmt0(n){ return n !== undefined && !isNaN(n) ? n.toFixed(0) : "0"; }
@@ -1471,28 +1478,33 @@ var dailyBudget = Math.round(dailySpend);
 
 if(capExceeded && profit < 0){
   planTitle = "容量严重不足 → 立即缩小预算或暂停投放";
+  hasP0 = true;
   plan += '<div class="plan-summary"><b>📌 结论：</b>空房容量仅 <b>'+capacity+' 间夜</b>，但推广间夜原测算为 '+rawNights+' 间夜，容量严重不足。当前投放已亏损 ¥'+fmt0(Math.abs(profit))+'，继续投放将加剧亏损。<b>强烈建议立即缩小预算或暂停投放。</b></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">立即缩小预算至容量可消化范围</div><div class="plan-action"><b>→ 动作：</b>将总预算缩减至空房容量的50%以内（建议 ≤ ¥'+fmt0(Math.floor(capacity * marginPerRoom * 0.5))+'），或延长投放周期至'+Math.max(14, Math.ceil(days * rawNights / capacity))+'天</div><div class="plan-check"><b>→ 验收：</b>推广间夜 ≤ 空房容量的80%（即 ≤ '+Math.floor(capacity*0.8)+' 间夜）</div></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">评估是否暂停投放</div><div class="plan-action"><b>→ 动作：</b>若入住率已≥85%且房价正常，优先通过提价而非推广增收；若入住率<60%，先排查自然流量问题</div><div class="plan-check"><b>→ 验收：</b>3天内决定是否恢复投放或长期暂停</div></div>';
 } else if(adr < floorPrice){
 
   planTitle = "定价灾难 → 立即修复定价";
+  hasP0 = true;
   plan += '<div class="plan-summary"><b>📌 结论：</b>当前房价¥'+adr+' <b>低于底价线¥'+fmt1(floorPrice)+'</b>，每卖1间亏¥'+fmt1(floorPrice-adr)+'。推广是加速失血，<b>48小时内修复定价，修复前禁止投流</b>。</div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">立即上调房价至底价线以上</div><div class="plan-action"><b>→ 动作：</b>全渠道后台统一上调房价至 ≥ ¥'+fmt0(Math.ceil(floorPrice*1.1))+'，关闭自动促销</div><div class="plan-check"><b>→ 验收：</b>连续2天无低于底价线成交</div></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">排查并关闭所有低价渠道</div><div class="plan-action"><b>→ 动作：</b>检查协议价、团购价、钟点房，低于底价线的立即改价或下架</div><div class="plan-check"><b>→ 验收：</b>昨日订单中成交房价低于¥'+fmt0(floorPrice)+'的订单 = 0单</div></div>';
 } else if(profit < 0){
   planTitle = "投放亏损 → 修复参数再投";
+  hasP0 = true; hasP1 = true;
   plan += '<div class="plan-summary"><b>📌 结论：</b>当前投放亏损¥'+fmt0(Math.abs(profit))+'（投放回报 '+fmt2(roi)+'）。房价没问题，<b>问题是流量效率太低</b>。</div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">按归因分析逐项排查</div><div class="plan-action"><b>→ 动作：</b>根据上方模块④的归因结果，优先处理红色归因项，逐项修复CPC/转化率/定价问题</div><div class="plan-check"><b>→ 验收：</b>修复后重新测算，投放回报 > 0</div></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">修复后小额复测</div><div class="plan-action"><b>→ 动作：</b>仅保留'+bestPlat.name+'，预算¥'+fmt0(Math.min(budget*0.5,5000))+'，周期7天</div><div class="plan-check"><b>→ 验收：</b>7天平均投放回报 > 0.3 → 恢复全部；0-0.3 → 再测7天；< 0 → 长期暂停</div></div>';
 } else if(occ >= 80){
   planTitle = "高入住率 → 提价保利润";
+  hasP0 = true; hasP1 = true;
   plan += '<div class="plan-summary"><b>📌 结论：</b>入住率已达<b>'+occ+'%</b>，每晚空房仅约'+nightlyEmpty+'间。策略从"填房"转向<b>"提价增效"</b>。</div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">第一次提价 +5%</div><div class="plan-action"><b>→ 动作：</b>各平台统一上调5%至 ¥'+fmt0(Math.ceil(adr*1.05))+'，同步上调会员价、协议价</div><div class="plan-check"><b>→ 验收：</b>3天后入住率跌幅 ≤ 10% → 第二次提价；跌幅 > 10% → 回调</div></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">锁定预算，聚焦高回报平台</div><div class="plan-action"><b>→ 动作：</b>日预算上限 = ¥'+fmt0(dailyBudget)+'，关闭自动扩量'+ (platRois.length > 1 ? '，暂停'+worstPlat.name+'，仅保留'+bestPlat.name : '') +'</div><div class="plan-check"><b>→ 验收：</b>每日09:00检查实际消耗 ≤ 日预算上限</div></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-green">🟢 P2 观察</div><div class="plan-title">老客复购替代新客推广</div><div class="plan-action"><b>→ 动作：</b>给过去30天入住客人发微信专属价，店内放直订优惠卡片</div><div class="plan-check"><b>→ 验收：</b>直订订单占比提升至 ≥ 15%</div></div>';
 } else {
   planTitle = "投放盈利 → 分阶段放大";
+  hasP1 = true;
   plan += '<div class="plan-summary"><b>📌 结论：</b>投放盈利，投放回报='+fmt2(roi)+'，单房毛利¥'+fmt1(marginPerRoom)+'，推广成本¥'+fmt1(costPerRoom)+'。<b>模式跑通，分阶段放大。</b></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-green">🟢 P2 观察</div><div class="plan-title">启动投放，设置硬上限</div><div class="plan-action"><b>→ 动作：</b>日预算上限¥'+fmt0(dailyBudget)+'，点击成本上限¥'+fmt1(cpcMax)+'，推广时段10:00-22:00</div><div class="plan-check"><b>→ 验收：</b>关闭"自动扩量"，改为手动控制</div></div>';
   plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">每日09:00监控3个指标</div><div class="plan-action"><b>→ 动作：</b>1️⃣ 点击成本 > ¥'+fmt1(cpcMax)+' → 15:00前下调出价15%<br>2️⃣ 转化率 < '+fmt1(dispRate*0.8)+'% → 检查详情页/价格/评价<br>3️⃣ 间夜 = 0 → 排查房态/价格/平台限流</div><div class="plan-check"><b>→ 验收：</b>点击成本稳定在¥'+fmt1(cpcMax)+'以内</div></div>';
@@ -1505,7 +1517,7 @@ if(capExceeded && profit < 0){
 }
 
 plan += '<div class="plan-card"><div class="plan-tag tag-green">🟢 时间节奏</div>';
-plan += '<div class="plan-action"><b>今天：</b>根据上方归因结果，执行P0紧急项<br><b>3天内：</b>完成P1重要项，每日09:00监控数据<br><b>持续监控：</b>投放回报、点击成本、转化率、入住率、底价线</div>';
+plan += '<div class="plan-action"><b>今天：</b>'+(hasP0?'根据上方归因结果，执行P0紧急项（上方🔴卡片）':'按上方归因结果优先处理红色项')+'<br><b>3天内：</b>'+(hasP1?'完成P1重要项，每日09:00监控数据':'按节奏完成剩余计划项')+'<br><b>持续监控：</b>投放回报、点击成本、转化率、入住率、底价线</div>';
 plan += '</div>';
 
 plan += '<div class="plan-redline"><b>🛑 总体验收标准（任一触发立即停投）：</b><br>';
@@ -1527,15 +1539,22 @@ warnings.forEach(function(w){ html += "<li>"+w+"</li>"; });
 html += '</ul></div>';
 }
 
+// 报告顶部：复制整份报告
+html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制整份报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div>';
+
 // 模块① 核心指标（分层展示，公式隐藏）
 html += '<div class="sec">';
 html += '<div class="sec-title">① 核心指标</div>';
+html += '<div class="kpi-grid">';
+html += '<div class="kpi-col">';
 html += '<div class="tier-label">核心结论</div>';
 html += '<div class="item"><span class="k">投放周期</span><span class="v">'+days+' 天</span></div>';
 html += '<div class="item"><span class="k">总投入'+(capExceeded?'（预计实际消耗）':'')+'</span><span class="v">¥'+budget.toLocaleString()+'</span></div>';
 html += '<div class="item"><span class="k">推广间夜</span><span class="v">'+roomNights+' 间夜</span></div>';
 html += '<div class="item"><span class="k">投放净利润</span><span class="v big '+(profit>=0?"green":"red")+'">'+(profit>=0?"¥":"-¥")+Math.abs(profit).toFixed(0)+'</span></div>';
 html += '<div class="item"><span class="k">投放ROI</span><span class="v big '+(roi>0?"green":roi<0?"red":"orange")+'">'+roi.toFixed(2)+(roi>0?"（赚）":roi<0?"（亏）":"（平）")+'</span></div>';
+html += '</div>';
+html += '<div class="kpi-col">';
 html += '<div class="tier-label">收入与成本构成</div>';
 html += '<div class="item"><span class="k">客人实付收入</span><span class="v">¥'+revenue.toFixed(0)+'</span></div>';
 html += '<div class="item"><span class="k">平台佣金（'+commission.toFixed(1)+'%）</span><span class="v">-¥'+commFee.toFixed(0)+'</span></div>';
@@ -1546,6 +1565,8 @@ html += '<div class="item"><span class="k">税费（税率'+taxRate+'%，含税�
 html += '<div class="item"><span class="k">税费</span><span class="v orange">未计入（建议在高级参数填写实际税率）</span></div>';
 }
 html += '<div class="item"><span class="k">最终净利润</span><span class="v big '+(profit>=0?"green":"red")+'">'+(profit>=0?"¥":"-¥")+Math.abs(profit).toFixed(0)+'</span></div>';
+html += '</div>';
+html += '</div>';
 html += '<span class="proc-toggle" onclick="toggleProc(this)">展开过程数据 ▼</span>';
 html += '<div class="proc-body">';
 html += '<div class="item"><span class="k">点击量</span><span class="v">'+clicks.toLocaleString()+' 次</span></div>';
@@ -1601,6 +1622,9 @@ html += '<div id="decisionBox">'+decHtml+'</div>';
 // ===== 敏感度分析表格 =====
 html += '<div class="sec">';
 html += '<div class="sec-title">②-1 敏感度分析（CPC / 转化率 ±20% 对利润的影响）</div>';
+html += '<div class="hint" style="margin-bottom:8px">💡 大白话：模拟"广告变贵 / 客人变少"时赚赔会怎么变，提前心里有数。</div>';
+html += '<span class="proc-toggle" onclick="toggleProc(this)">查看分析表格 ▼</span>';
+html += '<div class="proc-body">';
 html += '<table><tr><th>场景</th><th>CPC</th><th>转化率</th><th>点击量</th><th>订单</th><th>间夜</th><th>净利润</th><th>ROI</th><th>结论</th></tr>';
 
 var sensScenarios = [
@@ -1645,6 +1669,7 @@ sensScenarios.forEach(function(s){
 
 html += '</table>';
 html += '<div class="hint" style="margin-top:8px">敏感度分析仅作参考：CPC与转化率联动变化时，实际效果可能非线性。建议以小额试投验证。</div>';
+html += '</div>';
 html += '</div>';
 
 html += '</div>';
@@ -2154,7 +2179,7 @@ summary: summary
 if(list.length > MAX_HISTORY) list = list.slice(0, MAX_HISTORY);
 setHistory(list);
 closeModal("modalSave");
-showToast("方案「" + name + "」已保存");
+showToast("方案「" + name + "」已保存到本机浏览器，点「📜 历史」可查看");
 }
 
 // 历史方案
@@ -2238,6 +2263,15 @@ function encodeScheme(){
 function decodeScheme(code){
   var json = decodeURIComponent(atob(code.trim()));
   return JSON.parse(json);
+}
+function copyReportText(){
+  var el = document.getElementById("result");
+  if(!el || !el.innerHTML || el.innerHTML.indexOf("① 核心指标") < 0){
+    showToast("请先执行测算生成报告");
+    return;
+  }
+  var text = (el.innerText || el.textContent).replace(/📋\s*复制整份报告/g, "").replace(/^\s+|\s+$/g, "");
+  copyTextToClipboard(text);
 }
 function copyTextToClipboard(text, onOk){
   function ok(){ showToast("已复制，可粘贴到微信文件传输助手或直接发给需要的人"); }
