@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>酒店投流损益-智能系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;padding:16px;font-size:14px;color:#333}
+.box{max-width:640px;margin:0 auto;background:transparent;padding:0}
+h2{font-size:20px;margin-bottom:12px;color:#1a1a1a;border-left:4px solid #2563eb;padding-left:12px}
+.sub{color:#666;font-size:13px;margin-bottom:20px;line-height:1.6}
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(15,23,42,0.07);border:1px solid #edf0f4;padding:20px;margin-bottom:16px}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;color:#1e293b}
+.req-badge{font-size:11px;color:#2563eb;background:#eff6ff;border:1px solid #dbeafe;border-radius:20px;padding:3px 10px;font-weight:600;white-space:nowrap}
+.row{margin-bottom:16px}
+.row:last-child{margin-bottom:0}
+.row label{display:block;margin-bottom:6px;font-size:14px;color:#333;font-weight:600}
+.row input,.row select{width:100%;padding:14px;border:1px solid #e2e7eb;border-radius:12px;font-size:16px;background:#fff}
+.row input:focus,.row select:focus{outline:none;border-color:#2563eb;background:#fff}
+.row input::placeholder{color:#c3c9d2;font-size:14px}
+.unit{float:right;color:#999;font-weight:normal}
+.hint{font-size:11px;color:#999;margin-top:4px;font-weight:normal}
+.auto{color:#9aa3b0 !important;font-style:italic}
+.inline-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.inline-row .field{flex:1;min-width:140px}
+.inline-row label{display:block;margin-bottom:6px;font-size:14px;color:#333;font-weight:600}
+.inline-row input,.inline-row select{width:100%;padding:14px;border:1px solid #e2e7eb;border-radius:12px;font-size:16px;background:#fff}
+.inline-row input:focus,.inline-row select:focus{outline:none;border-color:#2563eb;background:#fff}
+.inline-row input::placeholder{color:#c3c9d2;font-size:14px}
+.inline-row .unit{float:right;color:#999;font-weight:normal}
+.inline-row .hint{font-size:11px;color:#999;margin-top:4px;font-weight:normal}
+.adv-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#64748b;cursor:pointer;padding-top:12px;border-top:1px dashed #e5e7eb;user-select:none}
+.adv-toggle:hover{color:#2563eb}
+.adv-toggle .arrow{font-size:10px}
+.adv-panel{display:none;padding-top:16px}
+.adv-panel.open{display:block}
+.adv-panel .row{margin-bottom:12px}
+.adv-panel .row:last-child{margin-bottom:0}
+.adv-panel .row label{font-size:12px;font-weight:400;color:#64748b;margin-bottom:4px}
+.adv-panel .row input,.adv-panel .row select{padding:9px;font-size:13px;border-radius:8px;background:#fafafa}
+.adv-panel .row input::placeholder{font-size:12px}
+.adv-panel .hint{font-size:10px}
+.adv-panel .inline-row{margin-bottom:12px}
+.adv-panel .inline-row label{font-size:12px;font-weight:400;color:#64748b;margin-bottom:4px}
+.adv-panel .inline-row input,.adv-panel .inline-row select{padding:9px;font-size:13px;border-radius:8px;background:#fafafa}
+.adv-panel .inline-row .hint{font-size:10px}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.btn-group button{flex:1;min-width:90px;padding:12px 8px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:linear-gradient(135deg,#fff 0%,#f1f5f9 100%);color:#334155;box-shadow:0 2px 6px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);transition:all .2s;white-space:nowrap}
+.btn-group button:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.btn-group button:active{transform:translateY(0)}
+.btn-group button.danger{background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);color:#dc2626}
+.btn-group button.danger:hover{box-shadow:0 4px 12px rgba(220,38,38,0.12)}
+#btn{width:100%;padding:16px;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:bold;margin:8px 0 12px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.3);transition:all .2s}
+#btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.4)}
+#btn:active{transform:translateY(0)}
+#btn:disabled{background:#cbd5e1;color:#f8fafc;box-shadow:none;cursor:not-allowed}
+#result{display:none}
+.sec{margin-bottom:20px;background:#f8fafc;border-radius:12px;padding:16px}
+.sec-title{font-weight:bold;color:#1e293b;margin-bottom:12px;font-size:15px;display:flex;align-items:center;gap:6px}
+.sec input{width:100%;padding:10px;border:1px solid #e2e7eb;border-radius:8px;font-size:14px;background:#fff}
+.sec input:focus{outline:none;border-color:#2563eb}
+.sec .inline-row{margin-bottom:10px}
+.sec .inline-row label{display:block;font-size:12px;color:#64748b;font-weight:400;margin-bottom:4px}
+.item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e2e8f0;font-size:13px}
+.item:last-child{border-bottom:none}
+.item .k{color:#64748b}
+.item .v{color:#0f172a;font-weight:600}
+.v.green{color:#059669}
+.v.red{color:#dc2626}
+.v.orange{color:#d97706}
+.v.blue{color:#2563eb}
+.big{font-size:18px}
+.lights{display:flex;gap:8px;margin:12px 0}
+.light{flex:1;padding:12px 4px;border-radius:10px;text-align:center;font-size:12px;line-height:1.5}
+.light.g{background:#d1fae5;color:#065f46}
+.light.y{background:#fef3c7;color:#92400e}
+.light.r{background:#fee2e2;color:#991b1b}
+.light.b{background:#dbeafe;color:#1e40af}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+th,td{border:1px solid #e2e8f0;padding:8px;text-align:center}
+th{background:#f1f5f9;font-weight:600;color:#475569}
+td{color:#334155}
+.tip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;margin:12px 0;font-size:13px;line-height:1.8;color:#1e40af}
+.tip b{color:#1e3a8a}
+.danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.danger b{color:#7f1d1d}
+.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.actions{background:#f0fdf4;border-radius:10px;padding:14px;font-size:13px;line-height:2}
+.actions li{margin:6px 0;list-style:none;padding-left:20px;position:relative}
+.actions li:before{content:"▸";position:absolute;left:0;color:#059669;font-weight:bold}
+.brand-footer{text-align:center;padding:20px 0 8px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;margin-top:20px}
+.brand-footer a{color:#2563eb;text-decoration:none}
+.privacy-note{text-align:center;font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6}
+.brand-setting{margin-top:12px}
+.brand-setting label{display:block;margin-bottom:6px;font-size:12px;color:#64748b;font-weight:400}
+.brand-setting input{width:100%;padding:9px;font-size:13px;border:1px solid #e2e7eb;border-radius:8px;background:#fff}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;z-index:1000;padding:16px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow:auto;position:relative}
+.modal h3{font-size:16px;margin-bottom:16px;color:#1e293b}
+.modal-close{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;border:none;background:#f1f5f9;color:#64748b;font-size:16px;cursor:pointer;line-height:28px;text-align:center}
+.modal-close:hover{background:#e2e8f0}
+.modal-input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:10px;font-size:15px;margin-bottom:12px}
+.modal-input:focus{outline:none;border-color:#2563eb}
+.modal-btn{padding:10px 20px;border-radius:8px;border:none;font-size:14px;cursor:pointer;margin-right:8px}
+.modal-btn.primary{background:#2563eb;color:#fff}
+.modal-btn.secondary{background:#f1f5f9;color:#475569}
+.history-list{max-height:300px;overflow:auto}
+.history-item{padding:12px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.history-item:hover{background:#f8fafc;border-color:#2563eb}
+.history-item .h-name{font-weight:600;color:#1e293b;font-size:14px}
+.history-item .h-meta{color:#64748b;font-size:12px;margin-top:4px}
+.history-item .h-actions{margin-top:8px;display:flex;gap:8px}
+.history-item .h-actions button{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;color:#475569}
+.history-item .h-actions button:hover{background:#f1f5f9}
+.history-item .h-actions button.del{color:#dc2626;border-color:#fecaca}
+.history-item .h-actions button.del:hover{background:#fef2f2}
+.history-empty{text-align:center;color:#94a3b8;padding:20px;font-size:13px}
+.file-input-wrapper{position:relative;overflow:hidden;display:inline-block}
+.file-input-wrapper input[type=file]{position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.file-input-btn{padding:10px 20px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#475569;font-size:14px;cursor:pointer;display:inline-block}
+.file-input-btn:hover{background:#e2e8f0}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);background:#1e293b;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:2000;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.goal-inputs{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #e2e8f0}
+.goal-inputs .row:last-child{margin-bottom:0}
+.path-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin:10px 0;font-size:13px;color:#166534;line-height:1.8}
+.path-box b{color:#14532d}
+.reverse-highlight{background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:1px solid #bfdbfe;border-radius:12px;padding:16px;margin:12px 0}
+.reverse-highlight .item{border-bottom-color:#bfdbfe}
+.reverse-highlight .item:last-child{border-bottom:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:6px}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-yellow{background:#fef3c7;color:#92400e}
+.field-error{display:block;font-size:12px;color:#dc2626;margin-top:6px;font-weight:600}
+.row.err>input,.row.err>select{border-color:#dc2626}
+.inline-row .field.err>input,.inline-row .field.err>select{border-color:#dc2626}
+.tier-label{font-size:12px;font-weight:700;color:#475569;margin:14px 0 4px;padding-bottom:4px;border-bottom:1px dashed #e2e8f0}
+.tier-label:first-of-type{margin-top:2px}
+.add-note{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin:10px 0;font-size:13px;line-height:1.8;color:#166534}
+.add-note b{color:#14532d}
+.print-brand{display:none}
+.platform-block{position:relative;border:1px dashed #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fafafa}
+.platform-block .del-platform{position:absolute;top:8px;right:8px;font-size:12px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:2px 8px;cursor:pointer}
+.platform-block .del-platform:hover{background:#fee2e2}
+#addPlatformBtn{width:100%;padding:10px;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:10px;color:#475569;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px}
+#addPlatformBtn:hover{background:#e2e8f0;border-color:#94a3b8}
+.big-cards{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+.big-card{flex:1;min-width:120px;background:#fff;border-radius:12px;padding:16px;text-align:center;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.big-card .label{font-size:12px;color:#64748b;margin-bottom:4px}
+.big-card .num{font-size:22px;font-weight:700;color:#2563eb}
+.big-card .num.green{color:#059669}
+.big-card .num.red{color:#dc2626}
+.big-card .num.orange{color:#d97706}
+.review-inputs{background:#fff;border-radius:12px;padding:16px;margin:12px 0;border:1px solid #e2e8f0}
+.review-btns{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
+.review-btns button{flex:1;min-width:120px;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,0.2)}
+.review-btns button.secondary{background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%);color:#334155}
+@media print {
+body{background:#fff;padding:0}
+.box{max-width:100%;box-shadow:none;padding:16px}
+.card{box-shadow:none;border:1px solid #e2e8f0;break-inside:avoid;margin-bottom:12px}
+#btn,.btn-group,.brand-footer,.privacy-note,.brand-setting,.modal-overlay,.toast{display:none !important}
+#result{display:block !important}
+.sec{break-inside:avoid;margin-bottom:12px}
+h2{border-left:4px solid #2563eb}
+.print-brand{display:block;text-align:center;font-size:11px;color:#94a3b8;padding:8px 0;border-bottom:1px solid #e2e8f0;margin-bottom:16px}
+}
+
+/* 紧凑布局辅助样式 */
+.compact-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.compact-row .field {
+  flex: 1;
+  min-width: 140px;
+}
+.compact-row label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+.compact-row input,
+.compact-row select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #e2e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  background: #fff;
+}
+.compact-row input:focus,
+.compact-row select:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+}
+.compact-row input::placeholder {
+  color: #c3c9d2;
+  font-size: 14px;
+}
+.compact-row .unit {
+  float: right;
+  color: #999;
+  font-weight: normal;
+}
+.compact-row .hint {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+  font-weight: normal;
+}
+
+/* 平台卡片紧凑样式 */
+.platform-block .compact-row {
+  margin-bottom: 12px;
+}
+.platform-block .compact-row:last-child {
+  margin-bottom: 0;
+}
+
+/* goal-inputs紧凑样式 */
+.goal-inputs .compact-row {
+  margin-bottom: 12px;
+}
+.goal-inputs .compact-row:last-child {
+  margin-bottom: 0;
+}
+
+/* adv-panel内紧凑样式 */
+.adv-panel .compact-row {
+  margin-bottom: 12px;
+}
+.adv-panel .compact-row label {
+  font-size: 12px;
+  font-weight: 400;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.adv-panel .compact-row input,
+.adv-panel .compact-row select {
+  padding: 9px;
+  font-size: 13px;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.adv-panel .compact-row .hint {
+  font-size: 10px;
+}
+
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="box">
+<div class="print-brand" id="printBrand"></div>
+<h2>酒店投流目标测算-智能系统 <span style="font-size:14px;color:#dc2626;font-weight:800;background:#fee2e2;padding:2px 8px;border-radius:4px">v3.3 一键复制版 · 2026-08-24 21:22</span></h2>
+<div class="sub" id="subText">基于目标导向的收益管理模型，输入经营目标与现状数据，智能拆解所需投放预算、流量效率阈值及分阶段执行方案。</div>
+<div class="card" id="baseData">
+<div class="card-head"><div class="card-title">① 酒店基础信息</div><span class="req-badge">3 项必填</span></div>
+<div class="row">
+<label>酒店业态 <span style="color:red;">*</span> <span class="unit">必选</span></label>
+<select id="type">
+<option value="eco">经济型/快捷</option>
+<option value="biz" selected>商务</option>
+<option value="mid">中端酒店</option>
+<option value="boutique">精品</option>
+<option value="star">星级</option>
+<option value="bnb">民宿/客栈</option>
+<option value="resort">度假/景区酒店</option>
+</select>
+<div class="hint">切换业态会自动更新变动成本与CPC基准值，最终以您填写的数据为准</div>
+<span class="field-error" id="errType" style="display:none"></span>
+</div>
+<div class="compact-row">
+<div class="field">
+<label>客房总数 <span style="color:red;">*</span> <span class="unit">间 · 必填</span></label>
+<input type="number" id="rooms" placeholder="例如：80">
+<span class="field-error" id="errRooms" style="display:none"></span>
+</div>
+<div class="field">
+<label>平均房价 <span style="color:red;">*</span> <span class="unit">元/间夜 · 必填</span></label>
+<input type="number" id="adr" placeholder="例如：300">
+<div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
+<span class="field-error" id="errAdr" style="display:none"></span>
+</div>
+</div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
+<div class="adv-panel" id="advBase">
+<div class="compact-row">
+<div class="field" id="cityTierField">
+<label>城市层级 <span class="unit">必选</span></label>
+<select id="cityTier">
+<option value="">— 请选择 —</option>
+<option value="tier1">一线城市</option>
+<option value="newTier1">新一线城市</option>
+<option value="tier2">二线城市</option>
+<option value="tier3">三线城市</option>
+<option value="tier4">四线及以下</option>
+</select>
+<div class="hint">影响CPC基准系数</div>
+<span class="field-error" id="errCityTier" style="display:none"></span>
+</div>
+<div class="field">
+<label>地理位置 <span class="unit">选填</span></label>
+<select id="location">
+<option value="">— 请选择 —</option>
+<option value="scenic">景区</option>
+<option value="biz_district">商圈</option>
+<option value="traffic">交通枢纽（车站/机场）</option>
+<option value="biz">商务区/写字楼</option>
+<option value="edu">大学城</option>
+<option value="res">居民/社区</option>
+</select>
+<div class="hint">参与CPC联动计算</div>
+</div>
+<div class="field">
+<label>单房变动成本 <span class="unit">元/间夜</span></label>
+<input type="number" id="varCost" class="auto" value="55" placeholder="例如：55">
+<div class="hint">清洁+布草+洗漱易耗品+水电（客房专属部分），已按业态自动匹配</div>
+</div>
+</div>
+<div class="compact-row">
+<div class="field">
+<label>纳税人类型 <span class="unit">必选</span></label>
+<select id="taxType">
+<option value="general" selected>一般纳税人（6%）</option>
+<option value="small">小规模纳税人（3%）</option>
+<option value="small1">小规模纳税人（1%）</option>
+</select>
+<div class="hint">选择后自动填充税率，可手动修改</div>
+</div>
+<div class="field">
+<label>综合税费率 <span class="unit">%</span></label>
+<input type="number" id="taxRate" class="auto" value="6" step="0.1">
+<div class="hint">住宿服务增值税及附加。按含税房价折算扣除（税费=收入×税率÷(1+税率)），佣金仍按含税收入口径计算</div>
+</div>
+</div>
+<div class="row">
+<label>时段/节假日 <span class="unit">必选</span></label>
+<select id="seasonHoliday">
+<option value="">— 请选择 —</option>
+<option value="normal">平日</option>
+<option value="weekend">周末</option>
+<option value="small">小长假（中秋/清明/端午）</option>
+<option value="big">大长假（春节/国庆）</option>
+<option value="yearEnd">年末跨年</option>
+</select>
+<div class="hint">影响CPC与转化率基准，与收益测算口径一致</div>
+</div>
+<div class="row">
+<label>当前平均入住率 <span class="unit">%</span></label>
+<input type="number" id="occ" class="auto" value="60" step="0.1">
+<div class="hint">用于测算空房消化空间与提入住率场景</div>
+</div>
+</div>
+</div>
+<div class="card" id="reverseOnly">
+<div class="card-head"><div class="card-title">② 经营目标</div><span class="req-badge">2 项必填</span></div>
+<div class="row">
+<label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
+<select id="revGoal" onchange="onRevGoalChange()">
+<option value="newGuest">拉新客 — 冲间夜量</option>
+<option value="revenue">冲营收</option>
+<option value="occupancy">提入住率</option>
+<option value="repurchase">提复购</option>
+</select>
+<div class="hint">选择你要达成的经营目标，系统将反向推导所需预算</div>
+</div>
+<div class="goal-inputs" id="revGoalInputs"></div>
+<div id="platformsContainer">
+<div class="row" style="margin-bottom:20px">
+<label>投放周期 <span style="color:red;">*</span> <span class="unit">天 · 必填</span></label>
+<input type="number" id="revAdPeriod" class="auto" value="30" placeholder="30">
+<div class="hint">本次预算计划投放的天数，用于空房容量校验与日均消耗统计（默认30天）</div>
+<span class="field-error" id="errRevAdPeriod" style="display:none"></span>
+</div>
+<div class="platform-block" data-index="0">
+<div class="del-platform" onclick="removePlatform(0)" style="display:none">删除</div>
+<div class="compact-row">
+<div class="field">
+<label>平台选择 <span style="color:red;">*</span> <span class="unit">必选</span></label>
+<select id="revPlatform" onchange="onPlatformChange(0)">
+<option value="meituan">美团</option>
+<option value="xiecheng" selected>携程</option>
+<option value="tongcheng">同程</option>
+<option value="qunaer">去哪儿</option>
+<option value="feizhu">飞猪</option>
+<option value="douyin">抖音本地</option>
+</select>
+<div class="hint">以酒店实际签约佣金为准</div>
+<span class="field-error" id="errRevPlatform" style="display:none"></span>
+</div>
+<div class="field">
+<label>预算上限（选填）<span class="unit">元</span></label>
+<input type="number" id="budgetLimit_0" placeholder="例如：5000" oninput="updateTotalBudget()">
+<div class="hint">该平台投放预算上限</div>
+</div>
+</div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advPlatform_0')"><span>▼ 高级参数（CPC / 转化率 / 佣金率 / 平台其他扣费 / 履约率）</span><span class="arrow">▼</span></div>
+<div class="adv-panel" id="advPlatform_0">
+<div class="compact-row">
+<div class="field">
+<label>当前CPC（元/点击）</label>
+<input type="number" id="revCpc_0" class="auto" value="3" step="0.1">
+<div class="hint">推广通后台当前平均点击成本</div>
+</div>
+<div class="field">
+<label>佣金率（%）</label>
+<input type="number" id="commission_0" class="auto" value="15" placeholder="例如：15" step="0.1">
+<div class="hint">已按平台自动匹配，可按合同修改</div>
+</div>
+</div>
+<div class="compact-row">
+<div class="field">
+<label>当前下单转化率（%）</label>
+<input type="number" id="revOrderRate_0" class="auto" value="3" step="0.1">
+<div class="hint">酒店行业通常2%-5%，默认3%</div>
+</div>
+<div class="field">
+<label>当前下单入住率（%）</label>
+<input type="number" id="revCheckinRate_0" class="auto" value="85" step="0.1">
+<div class="hint">订单确认入住率，扣除No-show和取消</div>
+</div>
+</div>
+<div class="row">
+<label>平台其他扣费（元）</label>
+<input type="number" id="otherFee_0" class="auto" value="0" placeholder="例如：0">
+<div class="hint">无则填0，有则按实际填写</div>
+</div>
+</div>
+</div>
+<div id="extraPlatforms"></div>
+</div>
+<button type="button" id="addPlatformBtn" onclick="addPlatform()">+ 添加平台</button>
+<div id="totalBudgetDisplay" style="font-size:14px;font-weight:600;color:#1e293b;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;display:none">
+当前总预算上限：<span id="totalBudgetValue" style="color:#2563eb;font-size:16px">¥0</span>，系统将反推CPC和转化率需优化到什么程度才能达成目标
+</div>
+<div id="totalBudgetEmpty" style="font-size:14px;color:#64748b;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+当前总预算上限：未设置
+</div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advGlobal')"><span>▼ 全局高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
+<div class="adv-panel" id="advGlobal">
+<div style="font-size:12px;color:#94a3b8;padding:8px 0">全局参数暂未启用，平台级参数已覆盖核心计算需求。</div>
+</div>
+
+</div>
+<button id="btn">生成决策报告</button>
+<div class="btn-group">
+<button id="btnClear">🔄 重置表单</button>
+<button id="btnSave">💾 保存方案</button>
+<button id="btnCopy">📋 一键复制</button>
+<button id="btnHistory">📜 历史</button>
+<button id="btnPrint">🖨️ 导出报表</button>
+<button id="btnImport">📥 导入</button>
+<button id="btnClearStorage" class="danger">🗑️ 清空数据</button>
+</div>
+<div class="brand-setting">
+<label>报表署名（选填，导出报表页眉显示）</label>
+<input type="text" id="brandName" placeholder="请填写真实主体名称，不填则默认显示「酒店收益管理服务商」">
+<div class="hint">若报表用于对外分享或获客，请务必填写真实主体名称</div>
+</div>
+<div id="result"></div>
+<div class="brand-footer">
+由 <span id="brandFooterName">酒店收益管理服务商</span> 提供技术支持 &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.3
+</div>
+<div class="privacy-note">🔒 隐私说明：本工具所有数据仅保存在您本机浏览器（localStorage），不会上传任何服务器</div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalSave">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalSave')">×</button>
+<h3>保存当前方案</h3>
+<input type="text" class="modal-input" id="saveName" placeholder="请输入方案名称，如：国庆大促方案">
+<div>
+<button class="modal-btn primary" onclick="confirmSave()">保存</button>
+<button class="modal-btn secondary" onclick="closeModal('modalSave')">取消</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="modalHistory">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalHistory')">×</button>
+<h3>历史方案 <span id="historyCount" style="font-size:12px;color:#64748b;font-weight:normal"></span></h3>
+<div class="history-list" id="historyList"></div>
+</div>
+</div>
+<div class="modal-overlay" id="modalCopy">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalCopy')">×</button>
+<h3>一键复制 / 恢复数据</h3>
+<p style="font-size:13px;color:#64748b;margin-bottom:10px">用于换手机、换浏览器或发给自己留档。第①步复制代码，换设备后粘贴到第②步即可恢复当前表单。</p>
+<div style="font-size:13px;font-weight:600;margin-bottom:6px">① 复制当前表单数据</div>
+<textarea id="copyText" readonly rows="3" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;font-size:11px;word-break:break-all;box-sizing:border-box;height:auto;min-height:70px;background:#f8fafc"></textarea>
+<div style="margin:10px 0">
+<button class="modal-btn primary" onclick="copyScheme()">📋 复制代码</button>
+<button class="modal-btn secondary" onclick="copyCurrentUrl()">🔗 复制当前网址</button>
+</div>
+<div style="font-size:13px;font-weight:600;margin-bottom:6px">② 粘贴恢复（换设备时用）</div>
+<textarea id="pasteText" rows="3" placeholder="在此粘贴第①步复制的代码，点恢复数据" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;font-size:11px;word-break:break-all;box-sizing:border-box;height:auto;min-height:70px"></textarea>
+<div style="margin:10px 0">
+<button class="modal-btn primary" onclick="pasteScheme()">恢复数据</button>
+</div>
+<p style="font-size:12px;color:#64748b;margin:4px 0 0">提示：复制当前网址也能恢复（网址自带数据），但代码方式更通用、更短。</p>
+</div>
+</div>
+<div class="modal-overlay" id="modalImport">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalImport')">×</button>
+<h3>导入本地数据</h3>
+<p style="font-size:13px;color:#64748b;margin-bottom:12px">请选择由本系统导出的 .json 文件</p>
+<div class="file-input-wrapper">
+<div class="file-input-btn">选择文件</div>
+<input type="file" id="importFile" accept=".json,application/json" onchange="handleImportFile(this)">
+</div>
+<div id="importPreview" style="margin-top:12px;font-size:13px;color:#334155"></div>
+</div>
+</div>
+<script>
+
+var platformMap = {meituan:10, xiecheng:15, tongcheng:12, qunaer:12, feizhu:10, douyin:8};
+var varCostMap = {eco:35, biz:55, mid:70, boutique:70, star:100, bnb:40, resort:80};
+var cpcMap = {eco:2.0, biz:3.0, mid:3.5, boutique:4.0, star:5.0, bnb:2.5, resort:4.5};
+var taxTypeMap = {general:6, small:3, small1:1};
+// CPC联动系数映射（与收益测算口径一致）
+var cityTierMap = {tier1:1.3, newTier1:1.15, tier2:1.0, tier3:0.85, tier4:0.7};
+var locationMap = {scenic:1.15, biz_district:1.0, traffic:1.0, biz:1.1, edu:0.9, res:0.85};
+var seasonCpcMap = {normal:1.0, weekend:1.1, small:1.3, big:1.5, yearEnd:1.2};
+var seasonRateMap = {normal:3.0, weekend:3.5, small:4.5, big:5.0, yearEnd:4.0};
+var STORAGE_KEY = "hotel_profit_target_history_v3";
+var DRAFT_KEY_REV = "hotel_profit_draft_target_v3";
+var MAX_HISTORY = 20;
+var DYN_IDS = ["revTargetNights","revTargetRevenue","revCurrentRevenue","revTargetOccInput","revCurrentRepurchase","revTargetRepurchase","revCustomerPool","revAvgRepurchaseNights","revRecallCost","revAdPeriod"];
+var platformCounter = 0;
+
+function getVal(id){
+var el = document.getElementById(id);
+var v = el ? parseFloat(el.value) : NaN;
+return isNaN(v) ? 0 : v;
+}
+function getStr(id){
+var el = document.getElementById(id);
+return el ? el.value.trim() : "";
+}
+function filled(id){
+var el = document.getElementById(id);
+return el && el.value.trim() !== "";
+}
+function setAuto(id, v){
+var el = document.getElementById(id);
+if(el){ el.value = v; el.classList.add("auto"); }
+}
+function setVal(id, v){
+var el = document.getElementById(id);
+if(el){ el.value = v; el.classList.remove("auto"); }
+}
+// CPC联动辅助（与收益测算口径一致）
+function getCityTierCoeff(){
+  var el = document.getElementById("cityTier");
+  return el && cityTierMap[el.value] !== undefined ? cityTierMap[el.value] : 1.0;
+}
+function getLocationCoeff(){
+  var el = document.getElementById("location");
+  return el && locationMap[el.value] !== undefined ? locationMap[el.value] : 1.0;
+}
+function getSeasonCpcCoeff(){
+  var el = document.getElementById("seasonHoliday");
+  return el && seasonCpcMap[el.value] !== undefined ? seasonCpcMap[el.value] : 1.0;
+}
+function getSeasonRate(){
+  var el = document.getElementById("seasonHoliday");
+  return el && seasonRateMap[el.value] !== undefined ? seasonRateMap[el.value] : 3.0;
+}
+function calcRevCpc(){
+  var t = document.getElementById("type");
+  var base = t && cpcMap[t.value] !== undefined ? cpcMap[t.value] : 3.0;
+  var v = base * getCityTierCoeff() * getLocationCoeff() * getSeasonCpcCoeff();
+  return Math.round(v * 100) / 100;
+}
+function syncAutoParams(){
+  var cpc = calcRevCpc();
+  var rate = getSeasonRate();
+  var list = [0];
+  var container = document.getElementById("extraPlatforms");
+  if(container){
+    container.querySelectorAll(".platform-block").forEach(function(block){
+      var idx = parseInt(block.getAttribute("data-index"));
+      if(!isNaN(idx)) list.push(idx);
+    });
+  }
+  list.forEach(function(idx){
+    var idCpc = idx === 0 ? "revCpc_0" : "revCpc_" + idx;
+    var idOr = idx === 0 ? "revOrderRate_0" : "revOrderRate_" + idx;
+    var cpcEl = document.getElementById(idCpc);
+    if(cpcEl && cpcEl.classList.contains("auto")){ cpcEl.value = cpc.toFixed(2); }
+    var orEl = document.getElementById(idOr);
+    if(orEl && orEl.classList.contains("auto")){ orEl.value = rate.toFixed(1); }
+  });
+}
+function platformLabel(val){
+var m = {meituan:"美团", xiecheng:"携程", tongcheng:"同程", qunaer:"去哪儿", feizhu:"飞猪", douyin:"抖音本地"};
+return m[val] || val;
+}
+function showToast(msg){
+var toast = document.getElementById("toast");
+if(!toast) return;
+toast.textContent = msg;
+toast.classList.add("show");
+setTimeout(function(){ toast.classList.remove("show"); }, 2500);
+}
+function safeStorage(action){
+try{ return action(); }catch(e){ return null; }
+}
+function escapeHtml(text){
+var div = document.createElement("div");
+div.textContent = text;
+return div.innerHTML;
+}
+function escapeFileName(name){
+return name.replace(/[\/*?:"<>|]/g, "_");
+}
+function openModal(id){ var el = document.getElementById(id); if(el) el.classList.add("show"); }
+function closeModal(id){ var el = document.getElementById(id); if(el) el.classList.remove("show"); }
+function toggleAdv(toggleEl, panelId){
+var panel = document.getElementById(panelId);
+if(!panel) return;
+var open = panel.classList.toggle("open");
+var arrow = toggleEl.querySelector(".arrow");
+if(arrow) arrow.textContent = open ? "▲" : "▼";
+}
+
+function updateTotalBudget(){
+var total = 0;
+var p0 = document.getElementById("budgetLimit_0");
+if(p0){ var v = parseFloat(p0.value); if(!isNaN(v)) total += v; }
+var container = document.getElementById("extraPlatforms");
+if(container){
+var blocks = container.querySelectorAll(".platform-block");
+blocks.forEach(function(block){
+var idx = block.getAttribute("data-index");
+var el = document.getElementById("budgetLimit_" + idx);
+if(el){ var v2 = parseFloat(el.value); if(!isNaN(v2)) total += v2; }
+});
+}
+var disp = document.getElementById("totalBudgetDisplay");
+var empty = document.getElementById("totalBudgetEmpty");
+var valSpan = document.getElementById("totalBudgetValue");
+if(total > 0){
+if(disp) disp.style.display = "block";
+if(empty) empty.style.display = "none";
+if(valSpan) valSpan.textContent = "¥" + total.toLocaleString();
+} else {
+if(disp) disp.style.display = "none";
+if(empty) empty.style.display = "block";
+}
+}
+
+function initDefaultValues(){
+var typeEl = document.getElementById("type");
+if(typeEl){
+var t = typeEl.value;
+if(varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
+if(cpcMap[t] !== undefined){
+setAuto("revCpc_0", calcRevCpc());
+}
+}
+var revPlatformEl = document.getElementById("revPlatform");
+if(revPlatformEl){
+var val = platformMap[revPlatformEl.value];
+if(val !== undefined) setAuto("commission_0", val);
+}
+var taxTypeEl = document.getElementById("taxType");
+if(taxTypeEl){
+var taxVal = taxTypeMap[taxTypeEl.value];
+if(taxVal !== undefined) setAuto("taxRate", taxVal);
+}
+}
+
+function onRevGoalChange(){
+var goal = document.getElementById("revGoal").value;
+var container = document.getElementById("revGoalInputs");
+var html = "";
+if(goal === "newGuest"){
+html += '<div class="row">';
+html += '<label>目标新增间夜数 <span style="color:red;">*</span> <span class="unit">间夜 · 必填</span></label><input type="number" id="revTargetNights" placeholder="例如：150"><div class="hint">你计划通过推广新增多少间夜入住</div>';
+html += '<span class="field-error" id="errRevTargetNights" style="display:none"></span>';
+html += '</div>';
+} else if(goal === "revenue"){
+html += '<div class="row">';
+html += '<label>目标营收 <span style="color:red;">*</span> <span class="unit">元 · 必填</span></label><input type="number" id="revTargetRevenue" placeholder="例如：120000"><div class="hint">本月目标营收总额</div>';
+html += '<span class="field-error" id="errRevTargetRevenue" style="display:none"></span>';
+html += '</div>';
+html += '<div class="row"><label>当前营收（选填）<span class="unit">元</span></label><input type="number" id="revCurrentRevenue" placeholder="例如：30000"><div class="hint">若不填，系统将按全部通过推广完成计算（仅供参考）</div></div>';
+} else if(goal === "occupancy"){
+html += '<div class="row">';
+html += '<label>目标入住率 <span style="color:red;">*</span> <span class="unit">% · 必填</span></label><input type="number" id="revTargetOccInput" placeholder="例如：85" step="0.1"><div class="hint">当前入住率采用「① 酒店基础信息」中的"当前平均入住率"（默认60%）</div>';
+html += '<span class="field-error" id="errRevTargetOccInput" style="display:none"></span>';
+html += '</div>';
+} else if(goal === "repurchase"){
+html += '<div class="compact-row">';
+html += '<div class="field"><label>当前复购率 <span style="color:red;">*</span> <span class="unit">%</span></label><input type="number" id="revCurrentRepurchase" placeholder="例如：20" step="0.1"><div class="hint">当前老客复购比例</div></div>';
+html += '<div class="field"><label>目标复购率 <span style="color:red;">*</span> <span class="unit">%</span></label><input type="number" id="revTargetRepurchase" placeholder="例如：30" step="0.1"><div class="hint">目标复购比例</div></div>';
+html += '</div>';
+html += '<div class="compact-row">';
+html += '<div class="field"><label>总客户池 <span style="color:red;">*</span> <span class="unit">人</span></label><input type="number" id="revCustomerPool" placeholder="例如：2000"><div class="hint">历史累计客户数或会员数</div></div>';
+html += '<div class="field"><label>平均复购间夜/人 <span class="unit">间夜</span></label><input type="number" id="revAvgRepurchaseNights" class="auto" placeholder="例如：1" value="1" step="0.1"><div class="hint">每位复购客户平均贡献多少间夜</div></div>';
+html += '</div>';
+html += '<div class="row"><label>单客召回成本（优惠券/短信）<span class="unit">元/人</span></label><input type="number" id="revRecallCost" class="auto" placeholder="例如：15" value="15"><div class="hint">触达一位老客的平均成本（优惠券面额+短信/推送费用）</div></div>';
+}
+container.innerHTML = html;
+updateBtnState();
+}
+
+var missingMsg = "";
+function updateBtnState(){
+var btn = document.getElementById("btn");
+if(!btn) return;
+if(isResultVisible){
+btn.disabled = false;
+btn.textContent = "收起结果 ▲";
+return;
+}
+missingMsg = "";
+if(!filled("rooms") || !filled("adr")){
+missingMsg = "请先填写酒店基础信息（客房总数、平均房价）";
+} else if(goalMissing()){
+missingMsg = "请完成经营目标（目标间夜数/目标营收/目标入住率/复购目标）";
+} else if(!filled("revAdPeriod")){
+missingMsg = "请填写投放周期";
+} else if(!filled("revPlatform")){
+missingMsg = "请选择投放平台";
+}
+btn.disabled = false;
+btn.textContent = "生成决策报告";
+}
+
+function goalMissing(){
+var goalEl = document.getElementById("revGoal");
+if(!goalEl) return false;
+var goal = goalEl.value;
+if(goal === "newGuest") return !filled("revTargetNights");
+if(goal === "revenue") return !filled("revTargetRevenue");
+if(goal === "occupancy") return !filled("revTargetOccInput");
+if(goal === "repurchase") return !filled("revCurrentRepurchase") || !filled("revTargetRepurchase") || !filled("revCustomerPool");
+return false;
+}
+
+function getPlatformsData(){
+var platforms = [];
+var totalBudget = 0;
+var totalCpcWeight = 0;
+var totalOrWeight = 0;
+var totalCirWeight = 0;
+var totalCommissionWeight = 0;
+var totalOtherFee = 0;
+var totalBudgetWeight = 0;
+
+function collectPlatform(idx){
+var sel = document.getElementById(idx === 0 ? "revPlatform" : "revPlatform_" + idx);
+if(!sel || !sel.value) return;
+var budget = getVal(idx === 0 ? "budgetLimit_0" : "budgetLimit_" + idx);
+var cpc = getVal(idx === 0 ? "revCpc_0" : "revCpc_" + idx) || 3;
+var or = getVal(idx === 0 ? "revOrderRate_0" : "revOrderRate_" + idx) || 3;
+var cir = getVal(idx === 0 ? "revCheckinRate_0" : "revCheckinRate_" + idx) || 85;
+var comm = getVal(idx === 0 ? "commission_0" : "commission_" + idx) || 15;
+var fee = getVal(idx === 0 ? "otherFee_0" : "otherFee_" + idx) || 0;
+totalBudget += budget;
+totalOtherFee += fee;
+if(budget > 0){
+totalCpcWeight += cpc * budget;
+totalOrWeight += or * budget;
+totalCirWeight += cir * budget;
+totalCommissionWeight += comm * budget;
+totalBudgetWeight += budget;
+} else {
+totalCpcWeight += cpc;
+totalOrWeight += or;
+totalCirWeight += cir;
+totalCommissionWeight += comm;
+totalBudgetWeight += 1;
+}
+platforms.push({platform: sel.value, budget: budget, cpc: cpc, orderRate: or, checkinRate: cir, commission: comm, otherFee: fee});
+}
+
+collectPlatform(0);
+var container = document.getElementById("extraPlatforms");
+if(container){
+var blocks = container.querySelectorAll(".platform-block");
+blocks.forEach(function(block){
+var idx = parseInt(block.getAttribute("data-index"));
+collectPlatform(idx);
+});
+}
+var avgCpc = totalBudgetWeight > 0 ? totalCpcWeight / totalBudgetWeight : 0;
+var avgOr = totalBudgetWeight > 0 ? totalOrWeight / totalBudgetWeight : 0;
+var avgCir = totalBudgetWeight > 0 ? totalCirWeight / totalBudgetWeight : 0;
+var avgCommission = totalBudgetWeight > 0 ? totalCommissionWeight / totalBudgetWeight : 0;
+return {count: platforms.length, totalBudget: totalBudget, avgCpc: avgCpc, avgOrderRate: avgOr, avgCheckinRate: avgCir, avgCommission: avgCommission, totalOtherFee: totalOtherFee, platforms: platforms};
+}
+
+function onPlatformChange(idx){
+var sel = document.getElementById(idx === 0 ? "revPlatform" : "revPlatform_" + idx);
+if(!sel) return;
+var val = platformMap[sel.value];
+if(val !== undefined){
+var commEl = document.getElementById(idx === 0 ? "commission_0" : "commission_" + idx);
+if(commEl){ commEl.value = val; commEl.classList.add("auto"); }
+}
+checkDuplicatePlatform(sel.value, idx);
+updateTotalBudget();
+saveDraft();
+}
+
+function checkDuplicatePlatform(selectedVal, excludeIdx){
+if(!selectedVal) return;
+var allVals = [];
+var p0 = document.getElementById("revPlatform");
+if(p0) allVals.push({val: p0.value, idx: 0});
+var container = document.getElementById("extraPlatforms");
+if(container){
+var blocks = container.querySelectorAll(".platform-block");
+blocks.forEach(function(block){
+var idx = parseInt(block.getAttribute("data-index"));
+var sel = document.getElementById("revPlatform_" + idx);
+if(sel) allVals.push({val: sel.value, idx: idx});
+});
+}
+var duplicates = allVals.filter(function(item){ return item.val === selectedVal && item.idx !== excludeIdx; });
+if(duplicates.length > 0){
+showToast("该平台已选择");
+var sel = document.getElementById(excludeIdx === 0 ? "revPlatform" : "revPlatform_" + excludeIdx);
+if(sel) sel.value = "";
+}
+}
+function addPlatform(){
+var container = document.getElementById("extraPlatforms");
+if(!container) return;
+var blocks = container.querySelectorAll(".platform-block");
+if(blocks.length >= 5){ showToast("最多添加6个平台"); return; }
+platformCounter++;
+var idx = platformCounter;
+var html = '<div class="platform-block" data-index="' + idx + '">';
+html += '<span class="del-platform" onclick="removePlatform(' + idx + ')">删除</span>';
+html += '<div class="compact-row">';
+html += '<div class="field">';
+html += '<label>平台选择 <span style="color:red;">*</span> <span class="unit">必选</span></label>';
+html += '<select id="revPlatform_' + idx + '" onchange="onPlatformChange(' + idx + ')">';
+html += '<option value="meituan">美团</option><option value="xiecheng" selected>携程</option><option value="tongcheng">同程</option><option value="qunaer">去哪儿</option><option value="feizhu">飞猪</option><option value="douyin">抖音本地</option>';
+html += '</select><div class="hint">以酒店实际签约佣金为准</div></div>';
+html += '<div class="field"><label>预算上限（选填）<span class="unit">元</span></label><input type="number" id="budgetLimit_' + idx + '" placeholder="例如：5000" oninput="updateTotalBudget()"><div class="hint">该平台投放预算上限</div></div>';
+html += '</div>';
+html += '<div class="adv-toggle" onclick="toggleAdv(this,\'advPlatform_' + idx + '\')"><span>▼ 高级参数（CPC / 转化率 / 佣金率 / 平台其他扣费 / 履约率）</span><span class="arrow">▼</span></div>';
+html += '<div class="adv-panel" id="advPlatform_' + idx + '">';
+html += '<div class="compact-row">';
+html += '<div class="field"><label>当前CPC（元/点击）</label><input type="number" id="revCpc_' + idx + '" class="auto" value="3" step="0.1"><div class="hint">推广通后台当前平均点击成本</div></div>';
+html += '<div class="field"><label>佣金率（%）</label><input type="number" id="commission_' + idx + '" class="auto" value="15" placeholder="例如：15" step="0.1"><div class="hint">已按平台自动匹配，可按合同修改</div></div>';
+html += '</div>';
+html += '<div class="compact-row">';
+html += '<div class="field"><label>当前下单转化率（%）</label><input type="number" id="revOrderRate_' + idx + '" class="auto" value="3" step="0.1"><div class="hint">酒店行业通常2%-5%，默认3%</div></div>';
+html += '<div class="field"><label>当前下单入住率（%）</label><input type="number" id="revCheckinRate_' + idx + '" class="auto" value="85" step="0.1"><div class="hint">订单确认入住率，扣除No-show和取消</div></div>';
+html += '</div>';
+html += '<div class="row"><label>平台其他扣费（元）</label><input type="number" id="otherFee_' + idx + '" class="auto" value="0" placeholder="例如：0"><div class="hint">无则填0，有则按实际填写</div></div>';
+html += '</div></div>';
+var div = document.createElement("div");
+div.innerHTML = html;
+container.appendChild(div.firstChild);
+syncAutoParams();
+onPlatformChange(idx);
+updateTotalBudget();
+updateBtnState();
+}
+
+function removePlatform(idx){
+var block = document.querySelector('.platform-block[data-index="' + idx + '"]');
+if(block) block.remove();
+updateTotalBudget();
+updateBtnState();
+}
+
+function makeDisclaimer(){
+var html = '<div class="sec">';
+html += '<div class="sec-title">P7. 免责与数据说明</div>';
+html += '<div style="font-size:12px;color:#64748b;line-height:1.8">';
+html += '1. 数据存储：当前您填写与生成的数据仅保存在本机浏览器本地（localStorage）；如未来启用云端存储功能，我们将在启用前向您明确提示，不会默认上传。<br>';
+html += '2. 报告性质：本报告基于您输入的参数进行模型测算，全部结果为预估值而非经营承诺；文中各类阈值与提示均为模型参考，不构成投资建议。<br>';
+html += '3. 小额试投：推广间夜按"净增量"假设测算，实际增量通常低于账面值；追加或重启投放前，建议先以小额预算试投验证真实效果。<br>';
+html += '4. 责任边界：请以实际经营数据为准，必要时咨询专业收益管理顾问；因使用本报告产生的经营决策后果由使用者自行承担。';
+html += '</div></div>';
+return html;
+}
+
+function generateReview(){
+var actualCost = getVal("actualCost");
+var actualClicks = getVal("actualClicks");
+var actualOrders = getVal("actualOrders");
+var actualNights = getVal("actualNights");
+var c = window._lastCalc;
+if(!c){ alert("请先执行测算生成报告"); return; }
+if(actualCost<=0 || actualClicks<=0 || actualOrders<=0 || actualNights<=0){
+alert("请填写全部实际数据"); return;
+}
+var actualCpc = actualCost / actualClicks;
+var actualOr = actualOrders / actualClicks * 100;
+var actualCir = actualNights / actualOrders * 100;
+
+var rows = [
+{label:"投放预算", est:c.needBudget, act:actualCost},
+{label:"点击量", est:c.needClicks, act:actualClicks},
+{label:"订单量", est:c.needOrders, act:actualOrders},
+{label:"间夜量", est:c.targetNights, act:actualNights},
+{label:"CPC", est:c.cpc, act:actualCpc},
+{label:"转化率", est:c.orderRate, act:actualOr},
+{label:"下单入住率", est:c.checkinRate, act:actualCir}
+];
+
+var html = '<table><tr><th>指标</th><th>模型预估</th><th>实际数据</th><th>偏差</th><th>偏差率</th><th>状态</th></tr>';
+rows.forEach(function(r){
+var diff = r.act - r.est;
+var diffRate = r.est != 0 ? (diff/r.est*100) : 0;
+var status = Math.abs(diffRate) <= 10 ? "🟢 正常" : Math.abs(diffRate) <= 30 ? "🟡 偏差" : "🔴 异常";
+html += '<tr><td>'+r.label+'</td><td>'+(r.est%1===0?r.est.toLocaleString():r.est.toFixed(2))+(r.label.indexOf("率")>=0||r.label==="转化率"?"%":"")+'</td><td>'+(r.act%1===0?r.act.toLocaleString():r.act.toFixed(2))+(r.label.indexOf("率")>=0||r.label==="转化率"?"%":"")+'</td><td>'+(diff>0?"+":"")+(diff%1===0?diff.toLocaleString():diff.toFixed(2))+'</td><td>'+(diffRate>0?"+":"")+diffRate.toFixed(1)+'%</td><td>'+status+'</td></tr>';
+});
+html += '</table>';
+document.getElementById("reviewResult").innerHTML = html;
+}
+
+function calibrateParams(){
+var actualCost = getVal("actualCost");
+var actualClicks = getVal("actualClicks");
+var actualOrders = getVal("actualOrders");
+var actualNights = getVal("actualNights");
+if(actualCost<=0 || actualClicks<=0 || actualOrders<=0 || actualNights<=0){
+alert("请填写全部实际数据"); return;
+}
+var actualCpc = actualCost / actualClicks;
+var actualOr = actualOrders / actualClicks * 100;
+var actualCir = actualNights / actualOrders * 100;
+setVal("revCpc", actualCpc.toFixed(2));
+setVal("revOrderRate", actualOr.toFixed(2));
+setVal("revCheckinRate", actualCir.toFixed(2));
+showToast("参数已校准，请重新生成报告");
+}
+
+function generateReviewRepurchase(){
+var actualCost = getVal("actualRecallCost");
+var actualCustomers = getVal("actualRecallCustomers");
+var actualNights = getVal("actualRepurchaseNights");
+var c = window._lastCalc;
+if(!c || c.mode !== "repurchase"){ alert("请先执行复购目标测算生成报告"); return; }
+if(actualCost<=0 || actualCustomers<=0 || actualNights<=0){ alert("请填写全部实际数据"); return; }
+var actualCostPerCustomer = actualCost / actualCustomers;
+var estCostPerCustomer = c.needCustomers>0 ? (c.needBudget/c.needCustomers) : 0;
+var rows = [
+{label:"召回总成本", est:c.needBudget, act:actualCost, isRate:false},
+{label:"召回人数", est:c.needCustomers, act:actualCustomers, isRate:false},
+{label:"复购间夜", est:c.targetNights, act:actualNights, isRate:false},
+{label:"单客召回成本", est:estCostPerCustomer, act:actualCostPerCustomer, isRate:false}
+];
+var html = '<table><tr><th>指标</th><th>模型预估</th><th>实际数据</th><th>偏差</th><th>偏差率</th><th>状态</th></tr>';
+rows.forEach(function(r){
+var diff = r.act - r.est;
+var diffRate = r.est != 0 ? (diff/r.est*100) : 0;
+var status = Math.abs(diffRate) <= 10 ? "🟢 正常" : Math.abs(diffRate) <= 30 ? "🟡 偏差" : "🔴 异常";
+html += '<tr><td>'+r.label+'</td><td>'+(r.est%1===0?r.est.toLocaleString():r.est.toFixed(2))+'</td><td>'+(r.act%1===0?r.act.toLocaleString():r.act.toFixed(2))+'</td><td>'+(diff>0?"+":"")+(diff%1===0?diff.toLocaleString():diff.toFixed(2))+'</td><td>'+(diffRate>0?"+":"")+diffRate.toFixed(1)+'%</td><td>'+status+'</td></tr>';
+});
+html += '</table>';
+document.getElementById("reviewResult").innerHTML = html;
+}
+
+function calibrateRepurchase(){
+var actualCost = getVal("actualRecallCost");
+var actualCustomers = getVal("actualRecallCustomers");
+var actualNights = getVal("actualRepurchaseNights");
+if(actualCost<=0 || actualCustomers<=0 || actualNights<=0){ alert("请填写全部实际数据"); return; }
+var actualCostPerCustomer = actualCost / actualCustomers;
+setVal("revRecallCost", actualCostPerCustomer.toFixed(2));
+showToast("单客召回成本已校准，请重新生成报告");
+}
+
+function doReverseCalculate(){
+var empty = [];
+var baseRequired = ["rooms","adr","varCost"];
+var baseNames = {rooms:"客房总数",adr:"平均房价",varCost:"单房变动成本"};
+baseRequired.forEach(function(id){
+var el = document.getElementById(id);
+if(!el || el.value.trim() === "") empty.push(baseNames[id]);
+});
+var goal = document.getElementById("revGoal").value;
+var period = getVal("revAdPeriod") || 30;
+var occ = getVal("occ");
+var pData = getPlatformsData();
+var cpc = pData.avgCpc;
+var orderRate = pData.avgOrderRate;
+var checkinRate = pData.avgCheckinRate;
+var commission = pData.avgCommission;
+var otherFee = pData.totalOtherFee;
+var budgetLimit = pData.totalBudget;
+var rooms = getVal("rooms");
+var adr = getVal("adr");
+var varCost = getVal("varCost");
+
+var taxRate = getVal("taxRate");
+var taxOf = function(rev){ return taxRate > 0 ? rev * taxRate / (100 + taxRate) : 0; };
+var marginPerRoom = adr*(1-commission/100) - varCost;
+
+if(cpc <= 0) empty.push("当前CPC");
+if(orderRate <= 0) empty.push("当前下单转化率");
+if(checkinRate <= 0) empty.push("当前下单入住率");
+
+var targetNights = 0;
+var goalTitle = "";
+var goalDesc = "";
+var occIncrease = 0;
+
+if(goal === "newGuest"){
+targetNights = getVal("revTargetNights");
+if(targetNights <= 0) empty.push("目标新增间夜数");
+goalTitle = "拉新客 — 冲间夜量";
+goalDesc = "新增 "+targetNights+" 间夜（"+period+"天内）";
+occIncrease = rooms > 0 ? (targetNights / (rooms * period) * 100) : 0;
+}
+else if(goal === "revenue"){
+var targetRevenue = getVal("revTargetRevenue");
+var currentRevenue = getVal("revCurrentRevenue");
+if(targetRevenue <= 0) empty.push("目标营收");
+if(currentRevenue > 0 && currentRevenue >= targetRevenue){ alert("当前营收已达目标，无需投放"); return false; }
+var gapRevenue = currentRevenue > 0 ? Math.max(0, targetRevenue - currentRevenue) : targetRevenue;
+targetNights = adr > 0 ? Math.ceil(gapRevenue / adr) : 0;
+goalTitle = "冲营收 — 目标拆解";
+goalDesc = "营收目标 ¥"+targetRevenue.toLocaleString()+(currentRevenue>0?"（缺口 ¥"+gapRevenue.toLocaleString()+"）":"")+"，对应需补 "+targetNights+" 间夜";
+occIncrease = rooms > 0 ? (targetNights / (rooms * period) * 100) : 0;
+}
+else if(goal === "occupancy"){
+var targetOcc = getVal("revTargetOccInput");
+var currentOcc = occ;
+if(targetOcc <= 0){
+empty.push("目标入住率");
+} else if(targetOcc <= currentOcc){
+alert("目标入住率必须高于当前入住率（"+currentOcc+"%，可在「① 酒店基础信息 → 高级参数」中修改）");
+return false;
+}
+targetNights = Math.ceil(rooms * ((targetOcc - currentOcc)/100) * period);
+goalTitle = "提入住率 — 目标拆解";
+goalDesc = "入住率从 "+currentOcc+"% 提升至 "+targetOcc+"%（"+period+"天），需新增 "+targetNights+" 间夜";
+occIncrease = targetOcc - currentOcc;
+}
+else if(goal === "repurchase"){
+var currentRepurchase = getVal("revCurrentRepurchase");
+var targetRepurchase = getVal("revTargetRepurchase");
+var customerPool = getVal("revCustomerPool");
+var avgRepurchaseNights = getVal("revAvgRepurchaseNights") || 1;
+var recallCost = getVal("revRecallCost") || 15;
+if(currentRepurchase <= 0) empty.push("当前复购率");
+if(targetRepurchase <= 0) empty.push("目标复购率");
+if(customerPool <= 0) empty.push("总客户池");
+if(empty.length > 0){ alert("请先填写以下必填项：" + empty.join("、")); return false; }
+if(targetRepurchase <= currentRepurchase){ alert("目标复购率必须高于当前复购率"); return false; }
+var newRepurchaseCustomers = Math.floor(customerPool * (targetRepurchase - currentRepurchase)/100);
+targetNights = Math.floor(newRepurchaseCustomers * avgRepurchaseNights);
+var totalRecallCost = newRepurchaseCustomers * recallCost;
+var repurchaseGrossRevenue = targetNights * adr;
+var repurchaseTax = taxOf(repurchaseGrossRevenue);
+var repurchaseRevenue = repurchaseGrossRevenue * (1 - commission/100);
+var repurchaseVarCost = targetNights * varCost;
+var repurchaseProfit = repurchaseRevenue - repurchaseVarCost - totalRecallCost - otherFee - repurchaseTax;
+var repurchaseRoi = totalRecallCost > 0 ? (repurchaseProfit / totalRecallCost) : 0;
+
+var totalEmptyCapacity2 = Math.floor(rooms * (1 - occ/100) * period);
+var html = '<div class="sec">';
+html += '<div class="sec-title">🎯 '+goalTitle+'</div>';
+html += '<div class="path-box"><b>目标：</b>复购率从 '+currentRepurchase+'% 提升至 '+targetRepurchase+'%<br>';
+html += '<b>客户池：</b>'+customerPool.toLocaleString()+' 人 &nbsp;|&nbsp; <b>新增复购人数：</b>'+newRepurchaseCustomers.toLocaleString()+' 人<br>';
+html += '<b>带来间夜：</b>'+targetNights.toLocaleString()+' 间夜（人均 '+avgRepurchaseNights+' 间夜）</div>';
+html += '</div>';
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P1. 目标可行性确认</div>';
+html += '<div class="big-cards">';
+html += '<div class="big-card"><div class="label">目标间夜</div><div class="num">'+targetNights.toLocaleString()+'</div></div>';
+html += '<div class="big-card"><div class="label">新增复购人数</div><div class="num">'+newRepurchaseCustomers.toLocaleString()+'</div></div>';
+html += '<div class="big-card"><div class="label">复购率提升</div><div class="num">'+(targetRepurchase-currentRepurchase).toFixed(1)+'%</div></div>';
+html += '<div class="big-card"><div class="label">客户池覆盖率</div><div class="num">'+(customerPool>0?(newRepurchaseCustomers/customerPool*100).toFixed(1):0)+'%</div></div>';
+html += '</div>';
+html += '<div class="tip"><b>✅ 容量评估：</b>复购带来间夜同样占用房间，'+period+'天空房容量 <b>'+totalEmptyCapacity2.toLocaleString()+'</b> 间夜，目标 '+targetNights.toLocaleString()+' 间夜'+(targetNights>totalEmptyCapacity2?'，<span style="color:#dc2626">已超出空房容量 '+(targetNights-totalEmptyCapacity2).toLocaleString()+' 间夜，可能出现满房或排挤自然客，建议下调复购目标或延长周期</span>':'，空间充裕')+'。</div>';
+html += '</div>';
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P2. 投入与回报</div>';
+html += '<div class="reverse-highlight">';
+html += '<div class="item"><span class="k">召回总成本</span><span class="v">¥'+totalRecallCost.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">单客召回成本</span><span class="v">¥'+recallCost+'</span></div>';
+html += '<div class="item"><span class="k">触达渠道</span><span class="v">'+pData.count+'个（平均佣金率'+pData.avgCommission.toFixed(1)+'%）</span></div>';
+html += '<div class="item"><span class="k">复购带来收入（扣佣后）</span><span class="v">¥'+repurchaseRevenue.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">复购变动成本</span><span class="v">-¥'+repurchaseVarCost.toLocaleString()+'</span></div>';
+if(taxRate > 0){
+html += '<div class="item"><span class="k">税费扣除（税率'+taxRate+'%）</span><span class="v">-¥'+repurchaseTax.toLocaleString()+'</span></div>';
+}
+html += '<div class="item"><span class="k">投放净利润</span><span class="v big '+(repurchaseProfit>=0?"green":"red")+'">'+(repurchaseProfit>=0?"¥":"-¥")+Math.abs(repurchaseProfit).toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">投放净利ROI</span><span class="v big '+(repurchaseRoi>0?"green":repurchaseRoi<0?"red":"orange")+'">'+repurchaseRoi.toFixed(2)+(repurchaseRoi>0?"赚":repurchaseRoi<0?"亏":"平")+'</span></div>';
+html += '<div class="item"><span class="k">单间夜召回成本</span><span class="v">¥'+(targetNights>0?(totalRecallCost/targetNights).toFixed(1):"-")+'</span></div>';
+html += '<div class="item"><span class="k">单房毛利（未扣推广费）</span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
+html += '<div class="item"><span class="k">盈亏红线</span><span class="v '+(targetNights>0 && totalRecallCost/targetNights < marginPerRoom?"green":"red")+'">'+(targetNights>0 && totalRecallCost/targetNights < marginPerRoom?"✅ 单房召回成本 < 单房毛利，可盈利":"⚠️ 单房召回成本 ≥ 单房毛利，将亏损")+'</span></div>';
+html += '</div></div>';
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P3. 执行节奏</div>';
+html += '<table><tr><th>阶段</th><th>时间</th><th>预算</th><th>目标人数</th><th>关键动作</th></tr>';
+html += '<tr><td>测试期</td><td>第1-'+Math.min(7,period)+'天</td><td>¥'+Math.floor(totalRecallCost*0.2).toLocaleString()+'</td><td>'+Math.floor(newRepurchaseCustomers*0.2)+'人</td><td>筛选高价值老客、测试文案</td></tr>';
+html += '<tr><td>放量期</td><td>第'+Math.min(8,period+1)+'-'+Math.min(14,period)+'天</td><td>¥'+Math.floor(totalRecallCost*0.3).toLocaleString()+'</td><td>'+Math.floor(newRepurchaseCustomers*0.3)+'人</td><td>全量触达、优化权益</td></tr>';
+html += '<tr><td>稳定期</td><td>第'+Math.min(15,period+1)+'-'+period+'天</td><td>¥'+Math.floor(totalRecallCost*0.5).toLocaleString()+'</td><td>'+(newRepurchaseCustomers-Math.floor(newRepurchaseCustomers*0.2)-Math.floor(newRepurchaseCustomers*0.3))+'人</td><td>持续监控、二次召回</td></tr>';
+html += '</table>';
+html += '<div style="margin-top:12px;font-size:13px;color:#475569"><b>每日必看监控指标：</b>召回打开率、领券率、实际复购间夜。</div>';
+html += '</div>';
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P4. 风险与止损</div>';
+html += '<div class="lights">';
+html += '<div class="light '+(repurchaseRoi>0?"g":"r")+'">投放净利ROI<br><b>'+repurchaseRoi.toFixed(2)+'</b><br>'+(repurchaseRoi>0?"绿灯":"红灯")+'</div>';
+html += '<div class="light '+(targetNights>0 && totalRecallCost/targetNights < marginPerRoom?"g":"r")+'">单房成本<br><b>¥'+(targetNights>0?(totalRecallCost/targetNights).toFixed(1):"-")+'</b><br>vs 毛利¥'+marginPerRoom.toFixed(1)+'</div>';
+html += '<div class="light '+(newRepurchaseCustomers>0?"g":"r")+'">新增复购<br><b>'+newRepurchaseCustomers+'</b><br>人</div>';
+html += '<div class="light '+(marginPerRoom>0?"g":"r")+'">单房毛利<br><b>¥'+marginPerRoom.toFixed(1)+'</b><br>安全垫</div>';
+html += '</div>';
+
+html += '<div style="margin-top:10px;font-size:13px;color:#475569"><b>敏感性测算（召回成本 / 响应率波动）</b></div>';
+html += '<table><tr><th>情景</th><th>召回总成本</th><th>新增复购人数</th><th>复购间夜</th><th>投放净利ROI</th><th>状态</th></tr>';
+var repCases = [
+{name:"当前数据", costM:1, respM:1},
+{name:"召回成本上涨20%", costM:1.2, respM:1},
+{name:"复购响应率下降20%", costM:1, respM:0.8},
+{name:"成本上涨且响应下降", costM:1.2, respM:0.8}
+];
+repCases.forEach(function(s){
+var sCost = totalRecallCost * s.costM;
+var sCust = Math.floor(newRepurchaseCustomers * s.respM);
+var sNights = sCust * avgRepurchaseNights;
+var sGross = sNights * adr;
+var sRev = sGross * (1 - commission/100);
+var sVar = sNights * varCost;
+var sTax = taxOf(sGross);
+var sProfit = sRev - sVar - sCost - otherFee - sTax;
+var sRoi = sCost>0 ? (sProfit/sCost) : 0;
+var sCostPerRoom = sNights>0 ? sCost/sNights : 0;
+var status = sRoi>0 && sCostPerRoom<marginPerRoom ? "🟢 安全" : sRoi>0 ? "🟡 警戒" : "🔴 亏损";
+html += '<tr><td>'+s.name+'</td><td>¥'+sCost.toLocaleString()+'</td><td>'+sCust.toLocaleString()+'</td><td>'+sNights.toLocaleString()+'</td><td>'+sRoi.toFixed(2)+'</td><td>'+status+'</td></tr>';
+});
+html += '</table>';
+html += '<div class="danger" style="margin-top:10px;padding:12px;border-radius:10px;"><b>🛑 停投红线（任一触发即停）</b><br>• 实际投放投入产出比（ROI） ≤ 0<br>• 实际复购间夜连续3天低于目标的50%<br>• 单房召回成本 > 单房毛利（¥'+marginPerRoom.toFixed(1)+'）</div>';
+html += '</div>';
+
+if(budgetLimit > 0 && totalRecallCost > budgetLimit){
+html += '<div class="sec">';
+html += '<div class="sec-title">P5. 预算不足备选</div>';
+html += '<div class="danger" style="padding:12px;border-radius:10px;"><b>⚠️ 预算上限警告</b><br>召回总成本 ¥'+totalRecallCost.toLocaleString()+' 超出预算上限 ¥'+budgetLimit.toLocaleString()+'。<br>建议：降低单客召回成本（减少优惠券面额、改用低成本触达方式）或下调复购率目标。</div>';
+html += '</div>';
+} else if(budgetLimit > 0){
+html += '<div class="sec">';
+html += '<div class="sec-title">P5. 预算不足备选</div>';
+html += '<div class="tip" style="padding:12px;border-radius:10px;"><b>✅ 预算充足</b><br>召回总成本 ¥'+totalRecallCost.toLocaleString()+'，在预算上限（¥'+budgetLimit.toLocaleString()+'）范围内。</div>';
+html += '</div>';
+} else {
+html += '<div class="sec">';
+html += '<div class="sec-title">P5. 预算不足备选</div>';
+html += '<div class="tip" style="padding:12px;border-radius:10px;">请返回表单填写「预算上限」，系统将在预算不足时自动生成优化路径。</div>';
+html += '</div>';
+}
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P6. 投后复盘（预测 vs 实际）</div>';
+html += '<p style="font-size:12px;color:#64748b;margin-bottom:10px">投放结束后填入实际数据，系统自动对比偏差；点击"校准参数"可将单客召回成本更新为实际值，重新测算会越来越准。</p>';
+html += '<div class="review-inputs"><div class="inline-row">';
+html += '<div class="field"><label>实际召回成本(元)</label><input type="number" id="actualRecallCost" placeholder="0"></div>';
+html += '<div class="field"><label>实际召回人数</label><input type="number" id="actualRecallCustomers" placeholder="0"></div>';
+html += '<div class="field"><label>实际复购间夜</label><input type="number" id="actualRepurchaseNights" placeholder="0"></div>';
+html += '</div></div>';
+html += '<div class="review-btns"><button onclick="generateReviewRepurchase()">生成复盘对比</button><button class="secondary" onclick="calibrateRepurchase()">校准参数</button></div>';
+html += '<div id="reviewResult"></div>';
+html += '</div>';
+
+html += makeDisclaimer();
+
+document.getElementById("result").innerHTML = html;
+document.getElementById("result").style.display = "block";
+document.getElementById("result").scrollIntoView({behavior:"smooth", block:"start"});
+isResultVisible = true;
+updateBtnState();
+window._lastCalc = {
+mode: "repurchase",
+targetNights: targetNights,
+needBudget: totalRecallCost,
+needCustomers: newRepurchaseCustomers,
+dailyBudget: period > 0 ? totalRecallCost / period : 0,
+vNights: targetNights,
+vRevenue: repurchaseRevenue,
+vProfit: repurchaseProfit,
+vRoi: repurchaseRoi,
+vCostPerRoom: targetNights > 0 ? totalRecallCost / targetNights : 0,
+marginPerRoom: marginPerRoom,
+recallCost: recallCost,
+period: period
+};
+return true;
+}
+
+if(empty.length > 0){ alert("请先填写以下必填项：" + empty.join("、")); return false; }
+
+var needOrders = checkinRate>0 ? Math.ceil(targetNights / (checkinRate/100)) : 0;
+var needClicks = orderRate>0 ? Math.ceil(needOrders / (orderRate/100)) : 0;
+var needBudget = needClicks * cpc;
+var dailyBudget = period > 0 ? (needBudget / period) : 0;
+var dailyNights = period > 0 ? (targetNights / period) : 0;
+var dailyEmptyRooms = rooms * (1 - occ/100);
+var totalEmptyCapacity = Math.floor(dailyEmptyRooms * period);
+var capacityEnough = totalEmptyCapacity >= targetNights;
+var vClicks = cpc>0 ? Math.floor(needBudget/cpc) : 0;
+var vOrders = Math.floor(vClicks * (orderRate/100));
+var vNights = Math.floor(vOrders * (checkinRate/100));
+var vRevenue = vNights * adr;
+var vComm = vRevenue * (commission/100);
+var vVar = vNights * varCost;
+var vTax = taxOf(vRevenue);
+var vProfit = vNights * marginPerRoom - needBudget - otherFee - vTax;
+var vRoi = needBudget>0 ? (vProfit/needBudget) : 0;
+var vCostPerRoom = vNights>0 ? (needBudget/vNights) : 0;
+var incomeRoi = needBudget>0 ? (vRevenue/needBudget) : 0;
+var profitPerRoom = vNights>0 ? (vProfit/vNights) : 0;
+
+window._lastCalc = {
+mode: "normal",
+targetNights: targetNights,
+needOrders: needOrders,
+needClicks: needClicks,
+needBudget: needBudget,
+dailyBudget: dailyBudget,
+vNights: vNights,
+vRevenue: vRevenue,
+vProfit: vProfit,
+vRoi: vRoi,
+vCostPerRoom: vCostPerRoom,
+marginPerRoom: marginPerRoom,
+cpc: cpc,
+orderRate: orderRate,
+checkinRate: checkinRate,
+period: period
+};
+
+var html = '';
+
+var targetOccupyRate = totalEmptyCapacity > 0 ? (targetNights / totalEmptyCapacity * 100) : 0;
+html += '<div class="sec">';
+html += '<div class="sec-title">P1. 目标可行性确认</div>';
+html += '<div class="big-cards">';
+html += '<div class="big-card"><div class="label">目标间夜</div><div class="num">'+targetNights.toLocaleString()+'</div></div>';
+html += '<div class="big-card"><div class="label">空房容量</div><div class="num">'+totalEmptyCapacity.toLocaleString()+'</div></div>';
+html += '<div class="big-card"><div class="label">空房消化率</div><div class="num '+(targetOccupyRate>100?"red":targetOccupyRate>80?"orange":"green")+'">'+targetOccupyRate.toFixed(1)+'%</div></div>';
+html += '<div class="big-card"><div class="label">入住率提升</div><div class="num">'+occIncrease.toFixed(1)+'%</div></div>';
+html += '</div>';
+if(!capacityEnough){
+html += '<div class="danger" style="margin-top:10px;padding:12px;border-radius:10px;"><b>🛑 容量不足警告</b><br>即使所有空房都被推广填满，'+period+'天内最多只能消化 '+totalEmptyCapacity+' 间夜，距离目标 '+targetNights+' 间夜还差 '+(targetNights-totalEmptyCapacity)+' 间夜。<br><br>建议：<br>• 延长计算周期<br>• 或同步提升自然流量入住率（优化详情页、价格竞争力）<br>• 或降低目标入住率预期</div>';
+} else {
+html += '<div class="tip" style="margin-top:10px;"><b>✅ 容量充足</b><br>'+period+'天内空房容量 '+totalEmptyCapacity+' 间夜，目标 '+targetNights+' 间夜，空间充裕。日均需消化 '+dailyNights.toFixed(1)+' 间夜，当前日均空房 '+dailyEmptyRooms.toFixed(1)+' 间。</div>';
+html += '<div class="tip" style="margin-top:6px;"><b>模型验证：</b>按反推漏斗（点击→订单→入住）验算，实际可达成 <b>'+vNights.toLocaleString()+'</b> 间夜，与目标差 '+(targetNights-vNights).toLocaleString()+' 间夜（取整损耗）；若需精确达成目标，可将目标间夜上调 1-2 间。</div>';
+}
+html += '</div>';
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P2. 投入与回报</div>';
+html += '<div class="reverse-highlight">';
+html += '<div class="item"><span class="k">投放预算</span><span class="v big blue">¥'+needBudget.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">日均预算（'+period+'天）</span><span class="v">¥'+dailyBudget.toFixed(0)+'</span></div>';
+html += '<div class="item"><span class="k">当前广告点击成本（CPC）</span><span class="v">¥'+cpc+'</span></div>';
+html += '<div class="item"><span class="k">投放平台</span><span class="v">'+pData.count+'个（平均佣金率'+pData.avgCommission.toFixed(1)+'%）</span></div>';
+html += '<div class="item"><span class="k">带来收入（未扣佣）</span><span class="v">¥'+vRevenue.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">投放净利润</span><span class="v big '+(vProfit>=0?"green":"red")+'">'+(vProfit>=0?"¥":"-¥")+Math.abs(vProfit).toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">单房毛利（未扣推广费）</span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
+html += '<div class="item"><span class="k">单房净利润</span><span class="v">¥'+profitPerRoom.toFixed(1)+'</span></div>';
+html += '<div class="item"><span class="k">收入/投入比（营收倍数）</span><span class="v">'+incomeRoi.toFixed(2)+'</span></div>';
+html += '<div class="item"><span class="k">投放净利ROI</span><span class="v big '+(vRoi>0?"green":vRoi<0?"red":"orange")+'">'+vRoi.toFixed(2)+(vRoi>0?"赚":vRoi<0?"亏":"平")+'</span></div>';
+html += '<div class="item"><span class="k">单房推广成本</span><span class="v">¥'+vCostPerRoom.toFixed(1)+'</span></div>';
+html += '<div class="item"><span class="k">盈亏红线</span><span class="v '+(vCostPerRoom < marginPerRoom?"green":"red")+'">'+(vCostPerRoom < marginPerRoom?"✅ 单房推广成本 < 单房毛利，投放可盈利":"⚠️ 单房推广成本 ≥ 单房毛利，投放将亏损")+'</span></div>';
+html += '</div></div>';
+
+var testDays = Math.min(7, period);
+var scaleDays = Math.min(7, Math.max(0, period - 7));
+var stableDays = Math.max(0, period - 14);
+var testBudget = needBudget * 0.2;
+var scaleBudget = needBudget * 0.3;
+var stableBudget = needBudget * 0.5;
+var testNights = Math.floor(targetNights * 0.2);
+var scaleNights = Math.floor(targetNights * 0.3);
+var stableNights = targetNights - testNights - scaleNights;
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P3. 执行节奏</div>';
+html += '<table><tr><th>阶段</th><th>时间</th><th>预算</th><th>目标间夜</th><th>关键动作</th></tr>';
+html += '<tr><td>测试期</td><td>第1-'+testDays+'天</td><td>¥'+Math.floor(testBudget).toLocaleString()+'</td><td>'+testNights+' 间夜</td><td>小额测试、素材优化、出价试探</td></tr>';
+if(scaleDays > 0){
+html += '<tr><td>放量期</td><td>第'+(testDays+1)+'-'+Math.min(testDays+scaleDays,period)+'天</td><td>¥'+Math.floor(scaleBudget).toLocaleString()+'</td><td>'+scaleNights+' 间夜</td><td>加大投入、监控转化、及时调整</td></tr>';
+}
+if(stableDays > 0){
+html += '<tr><td>稳定期</td><td>第'+(testDays+scaleDays+1)+'-'+period+'天</td><td>¥'+Math.floor(stableBudget).toLocaleString()+'</td><td>'+stableNights+' 间夜</td><td>维持投放、动态调价、数据复盘</td></tr>';
+}
+html += '</table>';
+html += '<div style="margin-top:12px;font-size:13px;color:#475569"><b>每日必看监控指标：</b>点击量、订单量、实际入住率。若连续3天实际入住率低于 '+checkinRate+'%，需检查取消政策或房源信息准确性。</div>';
+html += '</div>';
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P4. 风险与止损</div>';
+html += '<table><tr><th>情景</th><th>所需预算</th><th>间夜</th><th>投放净利润</th><th>投放净利ROI</th><th>状态</th></tr>';
+var senCases = [
+{name:"当前数据", cpcM:1, orM:1},
+{name:"广告变贵（点击成本涨20%）", cpcM:1.2, orM:1},
+{name:"客人下单变少（下单比例降20%）", cpcM:1, orM:0.8},
+{name:"广告变贵且客人下单变少", cpcM:1.2, orM:0.8}
+];
+senCases.forEach(function(s){
+var sCpc = cpc * s.cpcM;
+var sOr = orderRate * s.orM;
+var sOrders = Math.ceil(targetNights / (checkinRate/100));
+var sClicks = sOr>0 ? Math.ceil(sOrders / (sOr/100)) : 0;
+var sBudget = sClicks * sCpc;
+var sRealNights = Math.floor(sBudget/sCpc * (sOr/100) * (checkinRate/100));
+var sRev = sRealNights * adr;
+var sProfit = sRealNights * marginPerRoom - sBudget - otherFee - taxOf(sRev);
+var sRoi = sBudget>0 ? (sProfit/sBudget) : 0;
+var sCostPerRoom = sRealNights>0 ? sBudget/sRealNights : 0;
+var status = sRoi > 0 && sCostPerRoom < marginPerRoom ? "🟢 安全" : sRoi > 0 ? "🟡 警戒" : "🔴 亏损";
+html += '<tr><td>'+s.name+'</td><td>¥'+sBudget.toLocaleString()+'</td><td>'+sRealNights+'</td><td>¥'+sProfit.toFixed(0)+'</td><td>'+sRoi.toFixed(2)+'</td><td>'+status+'</td></tr>';
+});
+html += '</table>';
+html += '<div class="danger" style="margin-top:12px;padding:12px;border-radius:10px;"><b>🛑 停投红线（任一触发即停）</b><br>• 实际投放投入产出比（ROI） ≤ 0<br>• 实际间夜连续3天低于目标间夜的50%<br>• 单房推广成本 > 单房毛利（¥'+marginPerRoom.toFixed(1)+'）</div>';
+html += '</div>';
+
+if(budgetLimit > 0 && needBudget > budgetLimit){
+var maxClicks = Math.floor(budgetLimit / cpc);
+var maxOrders = Math.floor(maxClicks * (orderRate/100));
+var maxNights = Math.floor(maxOrders * (checkinRate/100));
+var shortNights = targetNights - maxNights;
+var needOrderRateA = needOrders / (budgetLimit/cpc) * 100;
+var needCpcB = budgetLimit / needClicks;
+var needCpcC = cpc * 0.8;
+var needClicksC = Math.ceil(budgetLimit / needCpcC);
+var needOrderRateC = needOrders / needClicksC * 100;
+var pathAFeasible = needOrderRateA <= 100;
+var pathCFeasible = needOrderRateC <= 100;
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P5. 预算不足备选</div>';
+html += '<div class="danger" style="padding:12px;border-radius:10px;">';
+html += '<b>⚠️ 预算上限警告</b><br>按当前数据，达成目标需要 <b>¥'+needBudget.toLocaleString()+'</b>，超出你的预算上限（¥'+budgetLimit.toLocaleString()+'）<b>¥'+(needBudget-budgetLimit).toLocaleString()+'</b>。<br><br>';
+html += '<b>优化路径（三选一）：</b><br>';
+if(pathAFeasible){
+html += '• <b>路径A（保广告点击成本提下单转化率）：</b>保持CPC=¥'+cpc+'，下单转化率需从 '+orderRate+'% 提升至 <span style="color:#dc2626;font-weight:bold">'+needOrderRateA.toFixed(2)+'%</span>（提升 '+(needOrderRateA-orderRate).toFixed(2)+' 个百分点）<br>';
+} else {
+html += '• <b>路径A（保广告点击成本提下单转化率）：</b>需将转化率提升至 <span style="color:#dc2626;font-weight:bold">'+needOrderRateA.toFixed(0)+'%</span> —— ⚠️ <b>数学上不可行</b>（转化率上限为100%），该预算上限下保广告点击成本无解<br>';
+}
+html += '• <b>路径B（保下单转化率降广告点击成本）：</b>保持下单转化率='+orderRate+'%，CPC需从 ¥'+cpc+' 降至 <span style="color:#dc2626;font-weight:bold">¥'+needCpcB.toFixed(2)+'</span>（降幅 '+((1-needCpcB/cpc)*100).toFixed(0)+'%）'+(needCpcB < 0.5?'（目标CPC极低，实操难度大）':'')+'<br>';
+if(pathCFeasible){
+html += '• <b>路径C（双管齐下）：</b>广告点击成本降至 ¥'+needCpcC.toFixed(2)+'（降20%），下单转化率需提升至 <span style="color:#dc2626;font-weight:bold">'+needOrderRateC.toFixed(2)+'%</span><br><br>';
+} else {
+html += '• <b>路径C（双管齐下）：</b>广告点击成本降至 ¥'+needCpcC.toFixed(2)+'（降20%）后，下单转化率仍需 <span style="color:#dc2626;font-weight:bold">'+needOrderRateC.toFixed(0)+'%</span> —— ⚠️ <b>数学上不可行</b>（转化率上限为100%）<br><br>';
+}
+if(!pathAFeasible && !pathCFeasible){
+html += '<b>结论：路径A与路径C均不可行。</b>仅靠优化CPC和转化率无法在该预算上限内达成目标，建议提高预算上限或下调目标。<br><br>';
+}
+html += '当前预算上限下，最多可获得 <b>'+maxNights+'</b> 间夜，缺口 <b>'+shortNights+'</b> 间夜。';
+html += '</div></div>';
+} else if(budgetLimit > 0){
+html += '<div class="sec">';
+html += '<div class="sec-title">P5. 预算不足备选</div>';
+html += '<div class="tip" style="padding:12px;border-radius:10px;"><b>✅ 预算充足</b><br>达成目标需 <b>¥'+needBudget.toLocaleString()+'</b>，在你的预算上限（¥'+budgetLimit.toLocaleString()+'）范围内，剩余空间 ¥'+(budgetLimit-needBudget).toLocaleString()+'。</div>';
+html += '</div>';
+} else {
+html += '<div class="sec">';
+html += '<div class="sec-title">P5. 预算不足备选</div>';
+html += '<div class="tip" style="padding:12px;border-radius:10px;">请返回表单填写「预算上限」，系统将在预算不足时自动生成3条优化路径（降CPC、提转化率、双管齐下）。</div>';
+html += '</div>';
+}
+
+html += '<div class="sec">';
+html += '<div class="sec-title">P6. 投后复盘（预测 vs 实际）</div>';
+html += '<p style="font-size:12px;color:#64748b;margin-bottom:10px">投放结束后填入实际数据，系统自动对比偏差；点击"校准参数"可把预估值更新为实际值，重新测算会越来越准。</p>';
+html += '<div class="review-inputs"><div class="inline-row">';
+html += '<div class="field"><label>实际消耗(元)</label><input type="number" id="actualCost" placeholder="0"></div>';
+html += '<div class="field"><label>实际点击</label><input type="number" id="actualClicks" placeholder="0"></div>';
+html += '<div class="field"><label>实际订单</label><input type="number" id="actualOrders" placeholder="0"></div>';
+html += '<div class="field"><label>实际间夜</label><input type="number" id="actualNights" placeholder="0"></div>';
+html += '</div></div>';
+html += '<div class="review-btns"><button onclick="generateReview()">生成复盘对比</button><button class="secondary" onclick="calibrateParams()">校准参数</button></div>';
+html += '<div id="reviewResult"></div>';
+html += '</div>';
+
+html += makeDisclaimer();
+
+document.getElementById("result").innerHTML = html;
+document.getElementById("result").style.display = "block";
+document.getElementById("result").scrollIntoView({behavior:"smooth", block:"start"});
+isResultVisible = true;
+updateBtnState();
+return true;
+}
+
+// ==================== 事件绑定 & 存储 ====================
+function getAllFieldIds(){
+return ["type","location","rooms","adr","varCost","taxType","taxRate","occ","brandName","revGoal","revPlatform","revAdPeriod","commission_0","otherFee_0","revCpc_0","revOrderRate_0","revCheckinRate_0","budgetLimit_0"];
+}
+
+function getData(){
+var data = {};
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(el) data[id] = el.value;
+});
+DYN_IDS.forEach(function(id){
+var el = document.getElementById(id);
+if(el) data[id] = el.value;
+});
+var extra = [];
+var container = document.getElementById("extraPlatforms");
+if(container){
+var blocks = container.querySelectorAll(".platform-block");
+blocks.forEach(function(block){
+var idx = block.getAttribute("data-index");
+var sel = document.getElementById("revPlatform_" + idx);
+if(sel){
+extra.push({
+platform: sel.value,
+commission: document.getElementById("commission_" + idx) ? document.getElementById("commission_" + idx).value : "",
+otherFee: document.getElementById("otherFee_" + idx) ? document.getElementById("otherFee_" + idx).value : "",
+cpc: document.getElementById("revCpc_" + idx) ? document.getElementById("revCpc_" + idx).value : "",
+orderRate: document.getElementById("revOrderRate_" + idx) ? document.getElementById("revOrderRate_" + idx).value : "",
+checkinRate: document.getElementById("revCheckinRate_" + idx) ? document.getElementById("revCheckinRate_" + idx).value : "",
+budgetLimit: document.getElementById("budgetLimit_" + idx) ? document.getElementById("budgetLimit_" + idx).value : ""
+});
+}
+});
+}
+data.extraPlatforms = extra;
+return data;
+}
+
+function setData(data){
+if(!data || typeof data !== "object") return;
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(el && data[id] !== undefined && data[id] !== null){
+el.value = data[id];
+}
+});
+onRevGoalChange();
+DYN_IDS.forEach(function(id){
+var el = document.getElementById(id);
+if(el && data[id] !== undefined && data[id] !== null){
+el.value = data[id];
+}
+});
+if(data.extraPlatforms && Array.isArray(data.extraPlatforms)){
+var container = document.getElementById("extraPlatforms");
+if(container) container.innerHTML = "";
+platformCounter = 0;
+data.extraPlatforms.forEach(function(p){
+addPlatform();
+var idx = platformCounter;
+var sel = document.getElementById("revPlatform_" + idx);
+var comm = document.getElementById("commission_" + idx);
+var fee = document.getElementById("otherFee_" + idx);
+var cpc = document.getElementById("revCpc_" + idx);
+var or = document.getElementById("revOrderRate_" + idx);
+var cir = document.getElementById("revCheckinRate_" + idx);
+var bl = document.getElementById("budgetLimit_" + idx);
+if(sel) sel.value = p.platform || "";
+if(comm) comm.value = p.commission || "";
+if(fee) fee.value = p.otherFee || "";
+if(cpc) cpc.value = p.cpc || "";
+if(or) or.value = p.orderRate || "";
+if(cir) cir.value = p.checkinRate || "";
+if(bl) bl.value = p.budgetLimit || "";
+});
+}
+updateBrand();
+updateBtnState();
+}
+
+function saveDraft(){
+var data = getData();
+safeStorage(function(){ localStorage.setItem(DRAFT_KEY_REV, JSON.stringify(data)); });
+}
+
+function loadDraft(){
+var data = safeStorage(function(){ var r=localStorage.getItem(DRAFT_KEY_REV); return r?JSON.parse(r):null; });
+if(data && typeof data === "object" && !Array.isArray(data)){
+setData(data);
+return true;
+}
+return false;
+}
+
+function getHistory(){
+return safeStorage(function(){
+var raw = localStorage.getItem(STORAGE_KEY);
+return raw ? JSON.parse(raw) : [];
+}) || [];
+}
+function setHistory(list){
+safeStorage(function(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); });
+}
+
+function getBrandName(){
+var el = document.getElementById("brandName");
+var v = el ? el.value.trim() : "";
+return v || "酒店收益管理服务商";
+}
+function updateBrand(){
+var n = getBrandName();
+var f = document.getElementById("brandFooterName");
+if(f) f.textContent = n;
+var pb = document.getElementById("printBrand");
+if(pb) pb.textContent = "— 由 " + n + " 提供技术支持 —";
+}
+
+// 反推模式平台佣金联动
+(function(){
+var revPlatformEl = document.getElementById("revPlatform");
+if(revPlatformEl){
+revPlatformEl.addEventListener("change", function(){
+var val = platformMap[this.value];
+if(val !== undefined){
+var commEl = document.getElementById("commission_0");
+if(commEl){ commEl.value = val; commEl.classList.add("auto"); }
+}
+checkDuplicatePlatform(this.value, 0);
+updateTotalBudget();
+saveDraft();
+});
+}
+})();
+
+// 业态联动变动成本与CPC默认值
+(function(){
+var typeEl = document.getElementById("type");
+if(typeEl){
+typeEl.addEventListener("change", function(){
+var t = this.value;
+if(varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
+if(cpcMap[t] !== undefined){
+setAuto("revCpc_0", calcRevCpc());
+}
+syncAutoParams();
+saveDraft();
+});
+}
+})();
+
+// 城市层级/地理位置/时段联动CPC与转化率（与收益测算口径一致）
+(function(){
+["cityTier","location","seasonHoliday"].forEach(function(id){
+var el = document.getElementById(id);
+if(el){
+el.addEventListener("change", function(){
+syncAutoParams();
+saveDraft();
+});
+}
+});
+})();
+
+// 纳税人类型联动
+(function(){
+var taxTypeEl = document.getElementById("taxType");
+if(taxTypeEl){
+taxTypeEl.addEventListener("change", function(){
+var val = taxTypeMap[this.value];
+if(val !== undefined){
+setAuto("taxRate", val);
+}
+saveDraft();
+});
+}
+})();
+
+// 绑定change事件保存草稿
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(el) el.addEventListener("change", saveDraft);
+});
+
+// 输入监听
+var boxEl = document.querySelector(".box");
+if(boxEl){
+boxEl.addEventListener("input", function(e){
+var t = e.target;
+if(t && t.classList && t.classList.contains("auto")) t.classList.remove("auto");
+if(t && t.id){
+var errId = "";
+if(t.id === "type") errId = "errType";
+else if(t.id === "rooms") errId = "errRooms";
+else if(t.id === "adr") errId = "errAdr";
+if(errId){
+var errEl = document.getElementById(errId);
+if(errEl){ errEl.textContent = ""; errEl.style.display = "none"; }
+var wrap = t.closest(".row") || t.closest(".field");
+if(wrap) wrap.classList.remove("err");
+}
+}
+updateBtnState();
+});
+boxEl.addEventListener("change", function(){ updateBtnState(); });
+}
+
+// 报表署名输入
+var brandNameEl = document.getElementById("brandName");
+if(brandNameEl){
+brandNameEl.addEventListener("input", function(){ updateBrand(); });
+}
+
+// 测算按钮
+var btnEl = document.getElementById("btn");
+var resultEl = document.getElementById("result");
+var isResultVisible = false;
+btnEl.addEventListener("click", function(){
+if(isResultVisible){
+resultEl.style.display = "none";
+isResultVisible = false;
+updateBtnState();
+} else {
+if(missingMsg){
+showToast(missingMsg);
+return;
+}
+var ok = doReverseCalculate();
+if(ok){
+// result handled inside doReverseCalculate
+}
+}
+});
+
+// 重置表单
+function resetForm(){
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(!el) return;
+if(el.tagName === "SELECT"){
+if(id === "type") el.value = "biz";
+else if(id === "revPlatform") el.value = "xiecheng";
+else if(id === "taxType") el.value = "general";
+else if(id === "revGoal") el.value = "newGuest";
+else el.selectedIndex = 0;
+} else {
+el.value = "";
+el.classList.remove("auto");
+}
+});
+setAuto("varCost", varCostMap.biz);
+setAuto("commission_0", platformMap.xiecheng);
+setAuto("otherFee_0", 0);
+setAuto("taxRate", 6);
+setAuto("occ", 60);
+setAuto("revCpc_0", cpcMap.biz);
+setAuto("revOrderRate_0", 3);
+setAuto("revCheckinRate_0", 85);
+setAuto("revAdPeriod", 30);
+var extraContainer = document.getElementById("extraPlatforms");
+if(extraContainer) extraContainer.innerHTML = "";
+platformCounter = 0;
+onRevGoalChange();
+updateBrand();
+resultEl.style.display = "none";
+isResultVisible = false;
+updateBtnState();
+}
+
+var btnClear = document.getElementById("btnClear");
+if(btnClear){
+btnClear.addEventListener("click", function(){
+if(!confirm("确定重置表单？所有已填数据将被清空。")) return;
+resetForm();
+safeStorage(function(){ localStorage.removeItem(DRAFT_KEY_REV); });
+["errType","errRooms","errAdr"].forEach(function(id){
+var el = document.getElementById(id);
+if(el){ el.textContent = ""; el.style.display = "none"; }
+});
+showToast("表单已重置");
+});
+}
+
+// 保存方案
+var btnSave = document.getElementById("btnSave");
+if(btnSave){
+btnSave.addEventListener("click", function(){
+var saveName = document.getElementById("saveName");
+if(saveName) saveName.value = "";
+openModal("modalSave");
+setTimeout(function(){ if(saveName) saveName.focus(); }, 100);
+});
+}
+
+function confirmSave(){
+var saveName = document.getElementById("saveName");
+var name = saveName ? saveName.value.trim() : "";
+if(!name){ alert("请输入方案名称"); return; }
+var list = getHistory();
+var data = getData();
+var summary = {mode:"reverse", adr:parseFloat(data.adr)||0, goal:data.revGoal || "newGuest", budget:0};
+list.unshift({
+name: name,
+time: new Date().toLocaleString("zh-CN"),
+data: data,
+summary: summary
+});
+if(list.length > MAX_HISTORY) list = list.slice(0, MAX_HISTORY);
+setHistory(list);
+closeModal("modalSave");
+showToast("方案「" + name + "」已保存");
+}
+
+// 历史方案
+var btnHistory = document.getElementById("btnHistory");
+if(btnHistory){
+btnHistory.addEventListener("click", function(){
+renderHistory();
+openModal("modalHistory");
+});
+}
+
+function renderHistory(){
+var list = getHistory();
+var container = document.getElementById("historyList");
+var countEl = document.getElementById("historyCount");
+if(countEl) countEl.textContent = "（共 " + list.length + " 条）";
+if(!container) return;
+if(list.length===0){
+container.innerHTML = '<div class="history-empty">暂无保存的历史方案<br>点击"保存方案"按钮添加</div>';
+return;
+}
+container.innerHTML = list.map(function(item, idx){
+var s = item.summary || {};
+var modeTag = '<span class="badge badge-blue" style="background:#dbeafe;color:#1e40af">反推</span>';
+var adrStr = s.adr !== undefined ? "ADR ¥" + s.adr : "ADR -";
+var budgetStr = s.budget !== undefined ? "预算 ¥" + s.budget : "预算 -";
+var goalStr = s.goal ? " 目标:" + s.goal : "";
+return '<div class="history-item">' +
+'<div class="h-name">' + escapeHtml(item.name) + " " + modeTag + '</div>' +
+'<div class="h-meta">' + item.time + " &nbsp;|&nbsp; " + adrStr + " &nbsp;|&nbsp; " + budgetStr + goalStr + '</div>' +
+'<div class="h-actions">' +
+'<button onclick="loadHistory(' + idx + ')">回填表单</button>' +
+'<button onclick="exportHistoryItem(' + idx + ')">导出JSON</button>' +
+'<button class="del" onclick="deleteHistory(' + idx + ')">删除</button>' +
+'</div>' +
+'</div>';
+}).join("");
+}
+
+function loadHistory(idx){
+var list = getHistory();
+if(!list[idx]) return;
+if(!confirm("确定用历史方案「" + escapeHtml(list[idx].name) + "」覆盖当前表单？")) return;
+setData(list[idx].data);
+closeModal("modalHistory");
+showToast("已加载方案「" + escapeHtml(list[idx].name) + "」");
+saveDraft();
+}
+
+function deleteHistory(idx){
+if(!confirm("确定删除该历史方案？")) return;
+var list = getHistory();
+list.splice(idx, 1);
+setHistory(list);
+renderHistory();
+showToast("已删除");
+}
+
+function exportHistoryItem(idx){
+var list = getHistory();
+if(!list[idx]) return;
+var blob = new Blob([JSON.stringify(list[idx].data, null, 2)], {type:"application/json"});
+var url = URL.createObjectURL(blob);
+var a = document.createElement("a");
+a.href = url;
+a.download = "酒店投流方案_" + escapeFileName(list[idx].name) + ".json";
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+showToast("已开始下载");
+}
+
+// ========== 一键复制 / 恢复（跨设备备份） ==========
+function encodeScheme(){
+  var data = getData();
+  var json = JSON.stringify(data);
+  return btoa(encodeURIComponent(json));
+}
+function decodeScheme(code){
+  var json = decodeURIComponent(atob(code.trim()));
+  return JSON.parse(json);
+}
+function copyTextToClipboard(text, onOk){
+  function ok(){ showToast("已复制，可粘贴到微信文件传输助手或直接发给需要的人"); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ ok(); if(onOk) onOk(); }, function(){ fallbackCopy(text, ok); });
+  } else {
+    fallbackCopy(text, ok);
+  }
+}
+function fallbackCopy(text, ok){
+  var ta = document.getElementById("copyText");
+  ta.value = text;
+  ta.removeAttribute("readonly");
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, ta.value.length);
+  try{
+    document.execCommand("copy");
+    ta.setAttribute("readonly","readonly");
+    ok();
+  }catch(e){
+    ta.setAttribute("readonly","readonly");
+    showToast("自动复制受限，请长按文本框手动复制");
+  }
+}
+function saveToHash(){
+  try{
+    var data = getData();
+    var json = JSON.stringify(data);
+    var encoded = btoa(encodeURIComponent(json));
+    window.location.hash = "data=" + encoded;
+  }catch(e){}
+}
+var btnCopy = document.getElementById("btnCopy");
+if(btnCopy){
+  btnCopy.addEventListener("click", function(){
+    var code = encodeScheme();
+    var ta = document.getElementById("copyText");
+    ta.value = code;
+    document.getElementById("pasteText").value = "";
+    openModal("modalCopy");
+    setTimeout(function(){ ta.focus(); ta.select(); }, 100);
+  });
+}
+function copyScheme(){
+  var ta = document.getElementById("copyText");
+  var text = ta.value;
+  if(!text){ showToast("没有可复制的数据"); return; }
+  copyTextToClipboard(text);
+}
+function copyCurrentUrl(){
+  saveToHash();
+  var url = window.location.href;
+  copyTextToClipboard(url);
+}
+function pasteScheme(){
+  var code = document.getElementById("pasteText").value.trim();
+  if(!code){ alert("请先粘贴复制的代码"); return; }
+  try{
+    var data = decodeScheme(code);
+    setData(data);
+    closeModal("modalCopy");
+    showToast("已恢复方案数据");
+    saveDraft();
+    var btn = document.getElementById("btn");
+    if(btn){ btn.disabled = false; }
+  }catch(e){
+    alert("数据格式不正确，请确认完整复制了「一键复制」的代码");
+  }
+}
+
+// 导出报表
+var btnPrint = document.getElementById("btnPrint");
+if(btnPrint){
+btnPrint.addEventListener("click", function(){
+if(!resultEl || resultEl.style.display==="none" || resultEl.style.display===""){
+alert("请先执行测算，再导出报表");
+return;
+}
+updateBrand();
+window.print();
+});
+}
+
+// 导入
+var btnImport = document.getElementById("btnImport");
+if(btnImport){
+btnImport.addEventListener("click", function(){
+var preview = document.getElementById("importPreview");
+var fileInput = document.getElementById("importFile");
+if(preview) preview.innerHTML = "";
+if(fileInput) fileInput.value = "";
+openModal("modalImport");
+});
+}
+
+function handleImportFile(input){
+var file = input.files[0];
+if(!file) return;
+var reader = new FileReader();
+reader.onload = function(e){
+try{
+var data = JSON.parse(e.target.result);
+var preview = [];
+if(data.adr) preview.push("ADR: ¥" + data.adr);
+if(data.mode) preview.push("模式: " + (data.mode==="reverse"?"反向":"正向"));
+var previewEl = document.getElementById("importPreview");
+if(previewEl){
+previewEl.innerHTML =
+'<div style="margin-bottom:8px"><b>检测到数据：</b>' + preview.join(" / ") + '</div>' +
+'<button class="modal-btn primary" onclick="confirmImport()">确认导入并覆盖当前表单</button>' +
+'<button class="modal-btn secondary" onclick="closeModal(&quot;modalImport&quot;)">取消</button>';
+}
+window._pendingImport = data;
+}catch(err){
+var previewEl = document.getElementById("importPreview");
+if(previewEl) previewEl.innerHTML = '<span style="color:#dc2626">文件解析失败，请确认是有效的JSON文件</span>';
+}
+};
+reader.readAsText(file);
+}
+
+function confirmImport(){
+if(!window._pendingImport) return;
+setData(window._pendingImport);
+closeModal("modalImport");
+showToast("导入成功");
+saveDraft();
+window._pendingImport = null;
+}
+
+// 清空数据
+var btnClearStorage = document.getElementById("btnClearStorage");
+if(btnClearStorage){
+btnClearStorage.addEventListener("click", function(){
+if(!confirm("将永久删除所有已保存的方案和历史记录，不可恢复，确定？")) return;
+safeStorage(function(){
+localStorage.removeItem(STORAGE_KEY);
+localStorage.removeItem(DRAFT_KEY_REV);
+});
+resetForm();
+showToast("本地数据已清空，表单已重置");
+});
+}
+
+// 页面加载
+var hasDraft = loadDraft();
+initDefaultValues();
+syncAutoParams();
+if (!hasDraft) {
+  onRevGoalChange();
+}
+updateTotalBudget();
+updateBrand();
+updateBtnState();
+</script>
+</body>
+</html>
