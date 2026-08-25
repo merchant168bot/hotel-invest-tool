@@ -1240,7 +1240,7 @@ var lightHtml = "";
 lightHtml += "<div class=\"light "+(isGreen?"g":isYellow?"y":"r")+"\">ROI<br><b>"+roi.toFixed(2)+"</b><br>"+(isGreen?"绿灯":isYellow?"黄灯":"红灯")+"</div>";
 lightHtml += "<div class=\"light "+(costPerRoom<marginPerRoom?"g":costPerRoom<marginPerRoom*1.2?"y":"r")+"\">单房推广成本<br><b>¥"+costPerRoom.toFixed(1)+"</b><br>vs 单房毛利¥"+marginPerRoom.toFixed(1)+"</div>";
 lightHtml += "<div class=\"light "+(roomNights>0?"g":"r")+"\">间夜数<br><b>"+roomNights+"</b><br>"+(roomNights>0?"有转化":"零转化")+"</div>";
-lightHtml += "<div class=\"light "+(adr>floorPrice?"g":"r")+"\">底价线<br><b>"+(floorPrice>0?"¥"+floorPrice.toFixed(0):"异常")+"</b><br>ADR¥"+adr+"</div>";
+lightHtml += "<div class=\"light "+(adr>floorPrice?"g":"r")+"\">底价线<br><b>"+(floorPrice>0?"¥"+floorPrice.toFixed(1):"异常")+"</b><br>ADR¥"+adr+"</div>";
 
 // ===== 模块② 结论：数据化分点（并入"离亏损还有多远"风险信息） =====
 var decHtml = "";
@@ -1248,7 +1248,7 @@ if(isGreen){
 decHtml = "<div class=\"tip\"><b>📊 数据分析结论：投放有效</b><br>";
 decHtml += "1. 每投入1元推广费，预期净利润回报为 "+roi.toFixed(2)+" 元。<br>";
 decHtml += "2. 单房推广成本（¥"+costPerRoom.toFixed(1)+"）低于单房毛利（¥"+marginPerRoom.toFixed(1)+"），每获得1个推广间夜净贡献 ¥"+(marginPerRoom-costPerRoom).toFixed(1)+"。<br>";
-decHtml += "3. 底价线为 ¥"+floorPrice.toFixed(1)+"，当前房价 ¥"+adr+" 高出 "+(adr-floorPrice).toFixed(1)+" 元；房价下行空间约 "+adrDropPct.toFixed(1)+"%（即降至 ¥"+floorPrice.toFixed(0)+"）前，每间房仍可覆盖佣金、税费与变动成本。";
+decHtml += "3. 底价线为 ¥"+floorPrice.toFixed(1)+"，当前房价 ¥"+adr+" 高出 "+(adr-floorPrice).toFixed(1)+" 元；房价下行空间约 "+adrDropPct.toFixed(1)+"%（即降至 ¥"+floorPrice.toFixed(1)+"）前，每间房仍可覆盖佣金、税费与变动成本。";
 decHtml += "</div>";
 }else if(isYellow){
 decHtml = "<div class=\"warn\" style=\"padding:12px;border-radius:10px\"><b>📊 数据分析结论：投放盈利但效率偏低</b><br>";
@@ -1277,7 +1277,7 @@ var oppCost = roomNights * marginPerRoom;
 // ===== 模块③ 投流方案对比：表格保留，结论按赚/亏切换 =====
 var tRows = "";
 if(profit > 0){
-tRows += "<tr><td>不投流</td><td>¥0</td><td>0</td><td>¥0</td><td>少赚 ¥"+oppCost.toFixed(0)+"（"+roomNights+" 间夜的投放净利润贡献）</td></tr>";
+tRows += "<tr><td>不投流</td><td>¥0</td><td>0</td><td>¥0</td><td>少赚 ¥"+profit.toFixed(0)+"（投流净利润）</td></tr>";
 tRows += "<tr><td>投流当前</td><td>¥"+budget.toLocaleString()+"</td><td>"+roomNights+"</td><td>¥"+profit.toFixed(0)+"</td><td>赚 ¥"+profit.toFixed(0)+"</td></tr>";
 if(addBudget > 0){
 tRows += "<tr><td>小额追加</td><td>¥"+addBudget.toFixed(0)+"</td><td>+"+addRN+"</td><td>¥"+addProfit.toFixed(0)+"</td><td>"+(addProfit>0?"预计多赚 ¥"+addProfit.toFixed(0):"追加部分预期不盈利")+"（小额试投）</td></tr>";
@@ -1565,6 +1565,7 @@ html += '<div class="item"><span class="k">税费（税率'+taxRate+'%，含税�
 } else {
 html += '<div class="item"><span class="k">税费</span><span class="v orange">未计入（建议在高级参数填写实际税率）</span></div>';
 }
+html += '<div class="item"><span class="k">广告投放'+(capExceeded?'（预计实际消耗）':'')+'</span><span class="v">-¥'+budget.toLocaleString()+'</span></div>';
 html += '<div class="item"><span class="k">最终净利润</span><span class="v big '+(profit>=0?"green":"red")+'">'+(profit>=0?"¥":"-¥")+Math.abs(profit).toFixed(0)+'</span></div>';
 html += '</div>';
 html += '</div>';
@@ -1573,6 +1574,7 @@ html += '<div class="proc-body">';
 html += '<div class="item"><span class="k">点击量</span><span class="v">'+clicks.toLocaleString()+' 次</span></div>';
 html += '<div class="item"><span class="k">订单量</span><span class="v">'+orders.toLocaleString()+' 单</span></div>';
 html += '<div class="item"><span class="k">间夜数</span><span class="v">'+roomNights.toLocaleString()+' 间夜</span></div>';
+html += '<div class="item"><span class="k">订单履约率（订单→间夜，含取消/未入住）</span><span class="v">'+dispCheckin+'%</span></div>';
 html += '<div class="item"><span class="k">单房推广成本</span><span class="v">¥'+costPerRoom.toFixed(1)+'</span></div>';
 html += '<div class="item"><span class="k">单房毛利'+(activePlats.length>1?"（加权）":"")+'<span style="color:#999;font-size:11px;font-weight:normal">（税前）</span></span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
 html += '<div class="item"><span class="k">日均消耗</span><span class="v">¥'+dailySpend.toFixed(0)+'</span></div>';
