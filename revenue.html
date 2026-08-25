@@ -449,7 +449,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div id="platformList"></div>
 <span class="field-error" id="errPlatformGeneral" style="display:none"></span>
-<button type="button" class="add-plat-btn" id="btnAddPlatform" onclick="addPlatform()">＋ 添加平台</button>
+<button type="button" class="add-plat-btn" id="btnAddPlatform" onclick="addPlatformWithHint()">＋ 添加平台</button>
 <div id="budgetSummary" style="margin-top:10px;padding:10px 12px;background:#f1f5f9;border-radius:8px;font-size:13px;color:#475569;font-weight:600">当前总投入：<span id="budgetTotal" style="color:#94a3b8">请填写预算金额</span></div>
 <div class="adv-toggle" onclick="toggleAdv(this,'advFwd')"><span>全局高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
 <div class="adv-panel" id="advFwd">
@@ -726,7 +726,7 @@ html += '<div class="field"><label>CPC <span class="unit">元/点击</span></lab
 html += '<input type="number" id="platCpc_'+p.id+'" class="auto" value="'+p.cpc+'" step="0.1" placeholder="已按业态自动匹配" oninput="onPlatParamInput(\''+p.id+'\',\'cpc\')">';
 html += '<div class="hint">推广通后台平均点击成本</div></div>';
 html += '<div class="field"><label>佣金率 <span class="unit">%</span></label>';
-html += '<input type="number" id="platCommission_'+p.id+'" class="auto" value="'+p.commission+'" step="0.1" placeholder="已按平台自动匹配">';
+html += '<input type="number" id="platCommission_'+p.id+'" class="auto" value="'+p.commission+'" step="0.1" placeholder="已按平台自动匹配" oninput="onPlatParamInput(\''+p.id+'\',\'commission\')">';
 html += '<div class="hint">已按平台自动匹配，可按合同修改</div></div></div>';
 html += '<div class="inline-row">';
 html += '<div class="field"><label>转化率 <span class="unit">%</span></label>';
@@ -737,7 +737,7 @@ html += '<input type="number" id="platCheckinRate_'+p.id+'" class="auto" value="
 html += '<div class="hint">扣除No-show和取消</div></div></div>';
 html += '<div class="inline-row">';
 html += '<div class="field"><label>平台其他扣费 <span class="unit">元</span></label>';
-html += '<input type="number" id="platOtherFee_'+p.id+'" class="auto" value="'+p.otherFee+'" step="0.1" placeholder="无则填0">';
+html += '<input type="number" id="platOtherFee_'+p.id+'" class="auto" value="'+p.otherFee+'" step="0.1" placeholder="无则填0" oninput="onPlatParamInput(\''+p.id+'\',\'otherFee\')">';
 html += '<div class="hint">无则填0，有则按实际填写</div></div>';
 html += '</div>';
 html += '</div>'; // adv-panel
@@ -780,6 +780,30 @@ for(var i=0;i<platforms.length;i++){
 if(platforms[i].id === id) return platforms[i];
 }
 return null;
+}
+
+function onBudgetInput(id){
+var p = findPlat(id);
+if(!p) return;
+var el = document.getElementById("platBudget_"+id);
+if(!el) return;
+p.budget = el.value;
+updateBudgetSummary();
+saveDraft();
+}
+
+var platParamFieldIdMap = {cpc:"platCpc", commission:"platCommission", orderRate:"platOrderRate", checkinRate:"platCheckinRate", otherFee:"platOtherFee"};
+function onPlatParamInput(id, field){
+var p = findPlat(id);
+if(!p) return;
+var el = document.getElementById(platParamFieldIdMap[field]+"_"+id);
+if(!el) return;
+p[field] = el.value;
+if(el.classList.contains("auto")){
+el.classList.remove("auto");
+}
+updateBudgetSummary();
+saveDraft();
 }
 
 function toggleProc(t){
