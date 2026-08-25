@@ -232,7 +232,7 @@ h2{border-left:4px solid #2563eb}
 <body>
 <div class="box">
 <div class="print-brand" id="printBrand"></div>
-<h2>酒店投流损益-智能系统 <span style="font-size:14px;color:#dc2626;font-weight:800;background:#fee2e2;padding:2px 8px;border-radius:4px">v3.3 · CPC联动已修复 · 2026-08-24 21:22</span></h2>
+<h2>酒店投流损益-智能系统 <span style="font-size:14px;color:#dc2626;font-weight:800;background:#fee2e2;padding:2px 8px;border-radius:4px">v3.4 AI智能版 · 2026-08-25</span></h2>
 
 <div class="sub" id="subText">基于酒店收益管理（Revenue Management）模型，输入预算及经营参数，自动推演推广盈亏平衡点、底价红线及追加策略。</div>
 <div class="card" id="baseData">
@@ -249,7 +249,6 @@ h2{border-left:4px solid #2563eb}
 <option value="tier4">四线及以下</option>
 </select>
 <div class="hint">影响CPC基准系数</div>
-<div class="hint" style="color:#94a3b8;font-size:11px">一线=北上广深；新一线=成都/杭州/重庆等15城；二线=其余省会及强地级市；三线=普通地级市；四线=县级市/县城</div>
 <span class="field-error" id="errCityTier" style="display:none"></span>
 </div>
 <div class="field" id="locationField">
@@ -263,7 +262,6 @@ h2{border-left:4px solid #2563eb}
 <option value="res">居民区/社区</option>
 </select>
 <div class="hint">影响CPC基准系数与经营策略</div>
-<div class="hint" style="color:#94a3b8;font-size:11px">景区/商圈=知名景区或核心商圈；交通枢纽=车站/机场旁；商务区=写字楼集中区；大学城=高校周边；居民区=社区周边</div>
 <span class="field-error" id="errLocation" style="display:none"></span>
 </div>
 </div>
@@ -290,7 +288,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div class="row">
 <label>平均房价 <span style="color:#dc2626">*</span> <span class="unit">元/间夜 · 必填</span></label>
-<input type="number" id="adr" placeholder="例如：300">
+<input type="number" id="adr" placeholder="例如：300" oninput="autoMapByAdr()">
 <div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
 <span class="field-error" id="errAdr" style="display:none"></span>
 </div>
@@ -318,7 +316,7 @@ h2{border-left:4px solid #2563eb}
 <div class="row">
 <label>单房固定成本分摊 <span class="unit">元/间夜 · 选填</span></label>
 <input type="number" id="fixedCost" value="0" step="1" placeholder="例如：80">
-<div class="hint">估算：月租金+月人工+月折旧 ÷ 客房数 ÷ 30天 = 每间夜分摊；不会算就填0，不影响其他测算</div>
+<div class="hint">房租/人工/折旧等固定成本按间夜分摊（估算），用于展示含固定成本的建议售价；填0不展示</div>
 </div>
 <div class="row">
 <label>当前平均入住率 <span class="unit">%</span></label>
@@ -448,6 +446,44 @@ var platformOptions = [
 ];
 var varCostMap = {eco:35, biz:55, mid:70, boutique:70, star:100, bnb:40, resort:80};
 var adrBaseMap = {eco:140, biz:280, mid:350, boutique:420, star:700, bnb:180, resort:480};
+// 房价区间 → 业态自动映射（AI智能填充）
+function adrToType(adr){
+  if(adr < 200) return "eco";
+  if(adr < 400) return "mid";
+  if(adr < 600) return "boutique";
+  return "star";
+}
+// 业态 → 入住率 / 履约率 行业默认值
+var occMap = {eco:65, biz:60, mid:65, boutique:60, star:55, bnb:50, resort:55};
+var checkinMap = {eco:88, biz:85, mid:85, boutique:82, star:80, bnb:75, resort:78};
+// 填平均房价 → 自动映射业态并带出参数
+function autoMapByAdr(){
+  var adrEl = document.getElementById("adr");
+  if(!adrEl) return;
+  var v = parseFloat(adrEl.value);
+  if(!v || v <= 0) return;
+  var typeEl = document.getElementById("type");
+  if(!typeEl) return;
+  var t = adrToType(v);
+  if(typeEl.value !== t){
+    typeEl.value = t;
+    applyTypeAuto(t);
+  }
+}
+// 业态 → 自动带出高级参数（变动成本/入住率/CPC/履约率）
+function applyTypeAuto(t){
+  if(varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
+  if(occMap[t] !== undefined) setAuto("occ", occMap[t]);
+  onCpcFactorChange();
+  var ci = checkinMap[t] !== undefined ? checkinMap[t] : 85;
+  platforms.forEach(function(p){
+    var el = document.getElementById("platCheckinRate_"+p.id);
+    if(el && el.classList.contains("auto")){
+      p.checkinRate = ci;
+      el.value = ci;
+    }
+  });
+}
 var cpcMap = {eco:2.0, biz:3.0, mid:3.5, boutique:4.0, star:5.0, bnb:2.5, resort:4.5};
 
 // CPC联动系数映射
@@ -516,7 +552,7 @@ cpc: (data && data.cpc !== undefined) ? Math.round(Number(data.cpc) * 100) / 100
 orderRate: (data && data.orderRate !== undefined) ? data.orderRate : 3,
 commission: (data && data.commission !== undefined) ? data.commission : getDefaultCommission(platVal),
 otherFee: (data && data.otherFee !== undefined) ? data.otherFee : 0,
-checkinRate: (data && data.checkinRate !== undefined) ? data.checkinRate : 85
+checkinRate: (data && data.checkinRate !== undefined) ? data.checkinRate : (checkinMap[document.getElementById("type").value] || 85)
 };
 platforms.push(p);
 renderPlatforms();
@@ -1730,9 +1766,7 @@ var locationEl = document.getElementById("location");
 var seasonEl = document.getElementById("seasonHoliday");
 if(typeEl){
 typeEl.addEventListener("change", function(){
-var t = this.value;
-if(varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
-onCpcFactorChange();
+applyTypeAuto(this.value);
 });
 }
 if(cityTierEl){
