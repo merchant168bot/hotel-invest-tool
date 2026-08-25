@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>酒店投流损益-智能系统（收益测算版 v3.3 · CPC联动已修复）</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;padding:16px;font-size:14px;color:#333}
+.box{max-width:640px;margin:0 auto;background:transparent;padding:0}
+h2{font-size:20px;margin-bottom:12px;color:#1a1a1a;border-left:4px solid #2563eb;padding-left:12px}
+.sub{color:#666;font-size:13px;margin-bottom:20px;line-height:1.6}
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(15,23,42,0.07);border:1px solid #edf0f4;padding:20px;margin-bottom:16px}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;color:#1e293b}
+.req-badge{font-size:11px;color:#2563eb;background:#eff6ff;border:1px solid #dbeafe;border-radius:20px;padding:3px 10px;font-weight:600;white-space:nowrap}
+.row{margin-bottom:16px}
+.row:last-child{margin-bottom:0}
+.row label{display:block;margin-bottom:6px;font-size:14px;color:#333;font-weight:600}
+.row input,.row select{width:100%;padding:14px;border:1px solid #e2e7eb;border-radius:12px;font-size:16px;background:#fff}
+.row input:focus,.row select:focus{outline:none;border-color:#2563eb;background:#fff}
+.row input::placeholder{color:#c3c9d2;font-size:14px}
+.unit{float:right;color:#999;font-weight:normal}
+.hint{font-size:11px;color:#999;margin-top:4px;font-weight:normal}
+.auto{color:#9aa3b0 !important;font-style:italic}
+.inline-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.inline-row .field{flex:1;min-width:140px}
+.inline-row label{display:block;margin-bottom:6px;font-size:14px;color:#333;font-weight:600}
+.inline-row input,.inline-row select{width:100%;padding:14px;border:1px solid #e2e7eb;border-radius:12px;font-size:16px;background:#fff}
+.inline-row input:focus,.inline-row select:focus{outline:none;border-color:#2563eb;background:#fff}
+.inline-row input::placeholder{color:#c3c9d2;font-size:14px}
+.inline-row .unit{float:right;color:#999;font-weight:normal}
+.inline-row .hint{font-size:11px;color:#999;margin-top:4px;font-weight:normal}
+.adv-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#64748b;cursor:pointer;padding-top:12px;border-top:1px dashed #e5e7eb;user-select:none}
+.adv-toggle:hover{color:#2563eb}
+.adv-toggle .arrow{font-size:10px}
+.adv-panel{display:none;padding-top:16px}
+.adv-panel.open{display:block}
+.adv-panel .row{margin-bottom:12px}
+.adv-panel .row:last-child{margin-bottom:0}
+.adv-panel .row label{font-size:12px;font-weight:400;color:#64748b;margin-bottom:4px}
+.adv-panel .row input,.adv-panel .row select{padding:9px;font-size:13px;border-radius:8px;background:#fafafa}
+.adv-panel .row input::placeholder{font-size:12px}
+.adv-panel .hint{font-size:10px}
+.adv-panel .inline-row{margin-bottom:12px}
+.adv-panel .inline-row label{font-size:12px;font-weight:400;color:#64748b;margin-bottom:4px}
+.adv-panel .inline-row input,.adv-panel .inline-row select{padding:9px;font-size:13px;border-radius:8px;background:#fafafa}
+.adv-panel .inline-row .hint{font-size:10px}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.btn-group button{flex:1;min-width:90px;padding:12px 8px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:linear-gradient(135deg,#fff 0%,#f1f5f9 100%);color:#334155;box-shadow:0 2px 6px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);transition:all .2s;white-space:nowrap}
+.btn-group button:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.btn-group button:active{transform:translateY(0)}
+.btn-group button.danger{background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);color:#dc2626}
+.btn-group button.danger:hover{box-shadow:0 4px 12px rgba(220,38,38,0.12)}
+#btn{width:100%;padding:16px;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:bold;margin:8px 0 12px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.3);transition:all .2s}
+#btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.4)}
+#btn:active{transform:translateY(0)}
+#btn:disabled{background:#cbd5e1;color:#f8fafc;box-shadow:none;cursor:not-allowed}
+#result{display:none}
+.sec{margin-bottom:20px;background:#f8fafc;border-radius:12px;padding:16px}
+.sec-title{font-weight:bold;color:#1e293b;margin-bottom:12px;font-size:15px;display:flex;align-items:center;gap:6px}
+.sec input{width:100%;padding:10px;border:1px solid #e2e7eb;border-radius:8px;font-size:14px;background:#fff}
+.sec input:focus{outline:none;border-color:#2563eb}
+.sec .inline-row{margin-bottom:10px}
+.sec .inline-row label{display:block;font-size:12px;color:#64748b;font-weight:400;margin-bottom:4px}
+.item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e2e8f0;font-size:13px}
+.item:last-child{border-bottom:none}
+.item .k{color:#64748b}
+.item .v{color:#0f172a;font-weight:600}
+.v.green{color:#059669}
+.v.red{color:#dc2626}
+.v.orange{color:#d97706}
+.v.blue{color:#2563eb}
+.big{font-size:18px}
+.lights{display:flex;gap:8px;margin:12px 0}
+.light{flex:1;padding:12px 4px;border-radius:10px;text-align:center;font-size:12px;line-height:1.5}
+.light.g{background:#d1fae5;color:#065f46}
+.light.y{background:#fef3c7;color:#92400e}
+.light.r{background:#fee2e2;color:#991b1b}
+.light.b{background:#dbeafe;color:#1e40af}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+th,td{border:1px solid #e2e8f0;padding:8px;text-align:center}
+th{background:#f1f5f9;font-weight:600;color:#475569}
+td{color:#334155}
+.tip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;margin:12px 0;font-size:13px;line-height:1.8;color:#1e40af}
+.tip b{color:#1e3a8a}
+.danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.danger b{color:#7f1d1d}
+.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.actions{background:#f0fdf4;border-radius:10px;padding:14px;font-size:13px;line-height:2}
+.actions li{margin:6px 0;list-style:none;padding-left:20px;position:relative}
+.actions li:before{content:"▸";position:absolute;left:0;color:#059669;font-weight:bold}
+.formula-box{background:#f8fafc;border-left:3px solid #2563eb;padding:12px;margin:10px 0;font-size:12px;color:#475569;font-family:monospace;line-height:1.8}
+.brand-footer{text-align:center;padding:20px 0 8px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;margin-top:20px}
+.brand-footer a{color:#2563eb;text-decoration:none}
+.privacy-note{text-align:center;font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6}
+.brand-setting{margin-top:12px}
+.brand-setting label{display:block;margin-bottom:6px;font-size:12px;color:#64748b;font-weight:400}
+.brand-setting input{width:100%;padding:9px;font-size:13px;border:1px solid #e2e7eb;border-radius:8px;background:#fff}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;z-index:1000;padding:16px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow:auto;position:relative}
+.modal h3{font-size:16px;margin-bottom:16px;color:#1e293b}
+.modal-close{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;border:none;background:#f1f5f9;color:#64748b;font-size:16px;cursor:pointer;line-height:28px;text-align:center}
+.modal-close:hover{background:#e2e8f0}
+.modal-input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:10px;font-size:15px;margin-bottom:12px}
+.modal-input:focus{outline:none;border-color:#2563eb}
+.modal-btn{padding:10px 20px;border-radius:8px;border:none;font-size:14px;cursor:pointer;margin-right:8px}
+.modal-btn.primary{background:#2563eb;color:#fff}
+.modal-btn.secondary{background:#f1f5f9;color:#475569}
+.history-list{max-height:300px;overflow:auto}
+.history-item{padding:12px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.history-item:hover{background:#f8fafc;border-color:#2563eb}
+.history-item .h-name{font-weight:600;color:#1e293b;font-size:14px}
+.history-item .h-meta{color:#64748b;font-size:12px;margin-top:4px}
+.history-item .h-actions{margin-top:8px;display:flex;gap:8px}
+.history-item .h-actions button{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;color:#475569}
+.history-item .h-actions button:hover{background:#f1f5f9}
+.history-item .h-actions button.del{color:#dc2626;border-color:#fecaca}
+.history-item .h-actions button.del:hover{background:#fef2f2}
+.history-empty{text-align:center;color:#94a3b8;padding:20px;font-size:13px}
+.file-input-wrapper{position:relative;overflow:hidden;display:inline-block}
+.file-input-wrapper input[type=file]{position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.file-input-btn{padding:10px 20px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#475569;font-size:14px;cursor:pointer;display:inline-block}
+.file-input-btn:hover{background:#e2e8f0}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);background:#1e293b;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:2000;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.mode-switch{display:flex;gap:4px;margin-bottom:20px;background:#f1f5f9;border-radius:12px;padding:4px}
+.mode-btn{flex:1;padding:12px 8px;border:none;background:transparent;color:#475569;font-size:13px;font-weight:600;cursor:pointer;border-radius:10px;transition:all .2s;text-align:center;line-height:1.4}
+.mode-btn.active{background:#2563eb;color:#fff;box-shadow:0 2px 8px rgba(37,99,235,0.25)}
+.mode-btn:hover:not(.active){color:#1e293b;background:#e2e8f0}
+.goal-inputs{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #e2e8f0}
+.goal-inputs .row:last-child{margin-bottom:0}
+.path-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin:10px 0;font-size:13px;color:#166534;line-height:1.8}
+.path-box b{color:#14532d}
+.reverse-highlight{background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:1px solid #bfdbfe;border-radius:12px;padding:16px;margin:12px 0}
+.reverse-highlight .item{border-bottom-color:#bfdbfe}
+.reverse-highlight .item:last-child{border-bottom:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:6px}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-yellow{background:#fef3c7;color:#92400e}
+.mp-row{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px}
+.mp-row .inline-row{margin-bottom:8px}
+.mp-row .inline-row:last-child{margin-bottom:0}
+.mp-row label{font-size:12px;color:#64748b;font-weight:400;margin-bottom:4px;display:block}
+.mp-row input,.mp-row select{width:100%;padding:9px;border:1px solid #e2e7eb;border-radius:8px;font-size:13px;background:#fff}
+.mp-row input:focus,.mp-row select:focus{outline:none;border-color:#2563eb}
+.plat-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px;position:relative}
+.plat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.plat-head .plat-title{font-size:14px;font-weight:700;color:#1e293b}
+.plat-remove{background:none;border:1px solid #fecaca;color:#dc2626;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer}
+.plat-remove:hover{background:#fef2f2}
+.plat-card .inline-row{margin-bottom:8px}
+.plat-card .inline-row:last-child{margin-bottom:0}
+.plat-card label{font-size:12px;color:#64748b;font-weight:400;margin-bottom:4px;display:block}
+.plat-card input,.plat-card select{width:100%;padding:9px;border:1px solid #e2e7eb;border-radius:8px;font-size:13px;background:#fff}
+.plat-card input:focus,.plat-card select:focus{outline:none;border-color:#2563eb}
+.plat-card .hint{font-size:10px;color:#999;margin-top:3px}
+.plat-card .adv-toggle{padding-top:8px;border-top:1px dashed #e5e7eb;margin-top:8px}
+.plat-card .adv-panel{padding-top:10px}
+.plat-card .adv-panel .row{margin-bottom:8px}
+.plat-card .adv-panel .row:last-child{margin-bottom:0}
+.plat-card .adv-panel label{font-size:11px;color:#64748b;font-weight:400;margin-bottom:3px}
+.plat-card .adv-panel input{padding:8px;font-size:12px;border-radius:6px}
+.plat-card .adv-panel .hint{font-size:10px}
+.add-plat-btn{width:100%;padding:10px;border:2px dashed #cbd5e1;border-radius:10px;background:transparent;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.add-plat-btn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
+.field-error{display:block;font-size:12px;color:#dc2626;margin-top:6px;font-weight:600}
+.row.err>input,.row.err>select{border-color:#dc2626}
+.inline-row .field.err>input,.inline-row .field.err>select{border-color:#dc2626}
+.tier-label{font-size:12px;font-weight:700;color:#475569;margin:14px 0 4px;padding-bottom:4px;border-bottom:1px dashed #e2e8f0}
+.tier-label:first-of-type{margin-top:2px}
+.proc-toggle{font-size:12px;color:#2563eb;cursor:pointer;user-select:none;margin:12px 0 4px;display:inline-block}
+.proc-body{display:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:2px 12px;margin-top:6px}
+.proc-body.open{display:block}
+.add-note{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin:10px 0;font-size:13px;line-height:1.8;color:#166534}
+.add-note b{color:#14532d}
+.print-brand{display:none}
+
+/* 归因分析卡片样式 */
+.attr-card{border-radius:12px;padding:14px;margin:10px 0;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.attr-red{border:1px solid #fecaca;background:#fef2f2}
+.attr-yellow{border:1px solid #fde68a;background:#fffbeb}
+.attr-green{border:1px solid #bbf7d0;background:#f0fdf4}
+.attr-title{font-size:14px;font-weight:700;margin-bottom:8px}
+.attr-desc{font-size:12px;color:#475569;line-height:1.8;margin-bottom:10px}
+.attr-reason{font-size:12px;color:#334155;line-height:1.8;margin:8px 0;padding:8px;background:#f8fafc;border-radius:8px}
+.attr-reason b{color:#1e293b}
+
+/* 落地方案新样式 - 卡片式 */
+.plan-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin:10px 0;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.plan-card .plan-tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;margin-bottom:8px}
+.plan-card .tag-red{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.plan-card .tag-yellow{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.plan-card .tag-green{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.plan-card .plan-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:6px}
+.plan-card .plan-data{font-size:12px;color:#475569;line-height:1.8;margin-bottom:8px}
+.plan-card .plan-data .num{color:#2563eb;font-weight:700}
+.plan-card .plan-data .red-num{color:#dc2626;font-weight:700}
+.plan-card .plan-data .green-num{color:#059669;font-weight:700}
+.plan-card .plan-action{background:#f8fafc;border-radius:8px;padding:10px 12px;margin:8px 0;font-size:12px;color:#334155;line-height:1.8}
+.plan-card .plan-action b{color:#1e293b}
+.plan-card .plan-check{background:#f0fdf4;border-radius:8px;padding:10px 12px;margin:8px 0;font-size:12px;color:#334155;line-height:1.8}
+.plan-card .plan-check b{color:#166534}
+.plan-summary{background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.8;color:#1e40af}
+.plan-summary b{color:#1e3a8a;font-size:14px}
+.plan-redline{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin:12px 0;font-size:12px;line-height:1.8;color:#7f1d1d}
+.plan-redline b{color:#991b1b;font-size:13px}
+
+@media print {
+body{background:#fff;padding:0}
+.box{max-width:100%;box-shadow:none;padding:16px}
+.card{box-shadow:none;border:1px solid #e2e8f0;break-inside:avoid;margin-bottom:12px}
+#btn,.btn-group,.brand-footer,.privacy-note,.brand-setting,.modal-overlay,.toast,.mode-switch{display:none !important}
+#result{display:block !important}
+.sec{break-inside:avoid;margin-bottom:12px}
+h2{border-left:4px solid #2563eb}
+.print-brand{display:block;text-align:center;font-size:11px;color:#94a3b8;padding:8px 0;border-bottom:1px solid #e2e8f0;margin-bottom:16px}
+}
+</style>
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+<div class="box">
+<div class="print-brand" id="printBrand"></div>
+<h2>酒店投流损益-智能系统 <span style="font-size:14px;color:#dc2626;font-weight:800;background:#fee2e2;padding:2px 8px;border-radius:4px">v3.3 · CPC联动已修复 · 2026-08-24 21:22</span></h2>
+
+<div class="sub" id="subText">基于酒店收益管理（Revenue Management）模型，输入预算及经营参数，自动推演推广盈亏平衡点、底价红线及追加策略。</div>
+<div class="card" id="baseData">
+<div class="card-head"><div class="card-title">① 酒店基础信息</div><span class="req-badge">5 项必填</span></div>
+<div class="inline-row">
+<div class="field" id="cityTierField">
+<label>城市层级 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<select id="cityTier">
+<option value="">— 请选择 —</option>
+<option value="tier1">一线城市</option>
+<option value="newTier1">新一线城市</option>
+<option value="tier2">二线城市</option>
+<option value="tier3">三线城市</option>
+<option value="tier4">四线及以下</option>
+</select>
+<div class="hint">影响CPC基准系数</div>
+<span class="field-error" id="errCityTier" style="display:none"></span>
+</div>
+<div class="field" id="locationField">
+<label>地理位置 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<select id="location">
+<option value="">— 请选择 —</option>
+<option value="scenic">景区/商圈</option>
+<option value="traffic">交通枢纽（车站/机场）</option>
+<option value="biz">商务区/写字楼</option>
+<option value="edu">大学城</option>
+<option value="res">居民区/社区</option>
+</select>
+<div class="hint">影响CPC基准系数与经营策略</div>
+<span class="field-error" id="errLocation" style="display:none"></span>
+</div>
+</div>
+<div class="inline-row">
+<div class="field" id="typeField">
+<label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<select id="type">
+<option value="eco">经济型/快捷酒店</option>
+<option value="biz" selected>商务酒店</option>
+<option value="mid">中端酒店</option>
+<option value="boutique">精品酒店</option>
+<option value="star">星级酒店</option>
+<option value="bnb">民宿/客栈</option>
+<option value="resort">度假/景区酒店</option>
+</select>
+<div class="hint">切换业态会自动更新变动成本与CPC基准值，最终以您填写的数据为准</div>
+<span class="field-error" id="errType" style="display:none"></span>
+</div>
+<div class="field" id="roomsField">
+<label>客房总数 <span style="color:#dc2626">*</span> <span class="unit">间 · 必填</span></label>
+<input type="number" id="rooms" placeholder="例如：80">
+<span class="field-error" id="errRooms" style="display:none"></span>
+</div>
+</div>
+<div class="row">
+<label>平均房价 <span style="color:#dc2626">*</span> <span class="unit">元/间夜 · 必填</span></label>
+<input type="number" id="adr" placeholder="例如：300">
+<div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
+<span class="field-error" id="errAdr" style="display:none"></span>
+</div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
+<div class="adv-panel" id="advBase">
+<div class="row">
+<label>单房变动成本 <span class="unit">元/间夜</span></label>
+<input type="number" id="varCost" class="auto" value="55" placeholder="例如：55">
+<div class="hint">清洁+布草+洗漱易耗品+水电（客房专属部分），已按业态自动匹配</div>
+</div>
+<div class="row">
+<label>纳税人类型 <span class="unit">必选</span></label>
+<select id="taxType">
+<option value="general" selected>一般纳税人（6%）</option>
+<option value="small">小规模纳税人（3%）</option>
+<option value="small1">小规模纳税人（1%）</option>
+</select>
+<div class="hint">选择后自动填充税率，可手动修改</div>
+</div>
+<div class="row">
+<label>综合税费率 <span class="unit">%</span></label>
+<input type="number" id="taxRate" class="auto" value="6" step="0.1">
+<div class="hint">住宿服务增值税及附加。按含税房价折算扣除（税费=收入×税率÷(1+税率)），佣金仍按含税收入口径计算</div>
+</div>
+<div class="row">
+<label>单房固定成本分摊 <span class="unit">元/间夜 · 选填</span></label>
+<input type="number" id="fixedCost" value="0" step="1" placeholder="例如：80">
+<div class="hint">房租/人工/折旧等固定成本按间夜分摊（估算），用于展示含固定成本的建议售价；填0不展示</div>
+</div>
+<div class="row">
+<label>当前平均入住率 <span class="unit">%</span></label>
+<input type="number" id="occ" class="auto" value="60" step="0.1">
+<div class="hint">两种模式共用：用于测算空房消化空间与提入住率场景</div>
+</div>
+</div>
+</div>
+<div class="card" id="forwardOnly">
+<div class="card-head"><div class="card-title">② 投放配置（多平台投放）</div><span class="req-badge">3 项必填</span></div>
+<div class="inline-row">
+<div class="field" id="fwdPeriodField">
+<label>投放周期 <span style="color:#dc2626">*</span> <span class="unit">天 · 必填</span></label>
+<input type="number" id="fwdPeriod" class="auto" value="30" placeholder="例如：30">
+<div class="hint">本次预算计划投放的天数，用于空房容量校验与日均消耗统计（默认30天）</div>
+<span class="field-error" id="errFwdPeriod" style="display:none"></span>
+</div>
+<div class="field" id="seasonField">
+<label>投放时段类型 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<select id="seasonHoliday">
+<option value="">— 请选择 —</option>
+<option value="normal">平日</option>
+<option value="weekend">周末</option>
+<option value="small">小长假（中秋/清明/端午）</option>
+<option value="big">大长假（春节/国庆）</option>
+<option value="yearEnd">年末跨年</option>
+</select>
+<div class="hint">影响CPC与转化率基准值</div>
+<span class="field-error" id="errSeason" style="display:none"></span>
+</div>
+</div>
+<div id="platformList"></div>
+<span class="field-error" id="errPlatformGeneral" style="display:none"></span>
+<button type="button" class="add-plat-btn" id="btnAddPlatform" onclick="addPlatform()">＋ 添加平台</button>
+<div id="budgetSummary" style="margin-top:10px;padding:10px 12px;background:#f1f5f9;border-radius:8px;font-size:13px;color:#475569;font-weight:600">当前总投入：<span id="budgetTotal" style="color:#94a3b8">请填写预算金额</span></div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advFwd')"><span>全局高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
+<div class="adv-panel" id="advFwd">
+<div class="row">
+<label>新客人均后续复购间夜 <span class="unit">间夜 · 选填</span></label>
+<input type="number" id="ltvNights" class="auto" value="0" step="0.1">
+<div class="hint">新客后续复购不再产生广告费；填0表示不计入。仅作参考增值展示，不改变ROI（每笔订单近似按1位新客估算）</div>
+</div>
+</div>
+</div>
+
+<button id="btn">生成决策报告</button>
+<div class="btn-group">
+<button id="btnClear">🔄 重置表单</button>
+<button id="btnSave">💾 保存方案</button>
+<button id="btnCopy">📋 一键复制</button>
+<button id="btnHistory">📜 历史</button>
+<button id="btnPrint">🖨️ 导出报表</button>
+<button id="btnImport">📥 导入</button>
+<button id="btnClearStorage" class="danger">🗑️ 清空数据</button>
+</div>
+<div class="brand-setting">
+<label>报表署名（选填，导出报表页眉显示）</label>
+<input type="text" id="brandName" placeholder="请填写真实主体名称，不填则默认显示「酒店收益管理服务商」">
+<div class="hint">若报表用于对外分享或获客，请务必填写真实主体名称</div>
+</div>
+<div id="result"></div>
+<div class="brand-footer">
+由 <span id="brandFooterName">酒店收益管理服务商</span> 提供技术支持 &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.2
+</div>
+<div class="privacy-note">🔒 隐私说明：本工具所有数据仅保存在您本机浏览器（localStorage），不会上传任何服务器</div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalSave">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalSave')">×</button>
+<h3>保存当前方案</h3>
+<input type="text" class="modal-input" id="saveName" placeholder="请输入方案名称，如：国庆大促方案">
+<div>
+<button class="modal-btn primary" onclick="confirmSave()">保存</button>
+<button class="modal-btn secondary" onclick="closeModal('modalSave')">取消</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="modalHistory">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalHistory')">×</button>
+<h3>历史方案 <span id="historyCount" style="font-size:12px;color:#64748b;font-weight:normal"></span></h3>
+<div class="history-list" id="historyList"></div>
+</div>
+</div>
+<div class="modal-overlay" id="modalCopy">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalCopy')">×</button>
+<h3>一键复制 / 恢复数据</h3>
+<p style="font-size:13px;color:#64748b;margin-bottom:10px">用于换手机、换浏览器或发给自己留档。第①步复制代码，换设备后粘贴到第②步即可恢复当前表单。</p>
+<div style="font-size:13px;font-weight:600;margin-bottom:6px">① 复制当前表单数据</div>
+<textarea id="copyText" readonly rows="3" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;font-size:11px;word-break:break-all;box-sizing:border-box;height:auto;min-height:70px;background:#f8fafc"></textarea>
+<div style="margin:10px 0">
+<button class="modal-btn primary" onclick="copyScheme()">📋 复制代码</button>
+<button class="modal-btn secondary" onclick="copyCurrentUrl()">🔗 复制当前网址</button>
+</div>
+<div style="font-size:13px;font-weight:600;margin-bottom:6px">② 粘贴恢复（换设备时用）</div>
+<textarea id="pasteText" rows="3" placeholder="在此粘贴第①步复制的代码，点恢复数据" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;font-size:11px;word-break:break-all;box-sizing:border-box;height:auto;min-height:70px"></textarea>
+<div style="margin:10px 0">
+<button class="modal-btn primary" onclick="pasteScheme()">恢复数据</button>
+</div>
+<p style="font-size:12px;color:#64748b;margin:4px 0 0">提示：复制当前网址也能恢复（网址自带数据），但代码方式更通用、更短。</p>
+</div>
+</div>
+<div class="modal-overlay" id="modalImport">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalImport')">×</button>
+<h3>导入本地数据</h3>
+<p style="font-size:13px;color:#64748b;margin-bottom:12px">请选择由本系统导出的 .json 文件</p>
+<div class="file-input-wrapper">
+<div class="file-input-btn">选择文件</div>
+<input type="file" id="importFile" accept=".json,application/json" onchange="handleImportFile(this)">
+</div>
+<div id="importPreview" style="margin-top:12px;font-size:13px;color:#334155"></div>
+</div>
+</div>
+<script>
+var currentMode = "forward";
+var platformMap = {meituan:10, xiecheng:15, tongcheng:12, qunaer:12, feizhu:10, douyin:8};
+var platformOptions = [
+{value:"meituan",label:"美团"},
+{value:"xiecheng",label:"携程"},
+{value:"tongcheng",label:"同程"},
+{value:"qunaer",label:"去哪儿"},
+{value:"feizhu",label:"飞猪"},
+{value:"douyin",label:"抖音本地"}
+];
+var varCostMap = {eco:35, biz:55, mid:70, boutique:70, star:100, bnb:40, resort:80};
+var adrBaseMap = {eco:140, biz:280, mid:350, boutique:420, star:700, bnb:180, resort:480};
+var cpcMap = {eco:2.0, biz:3.0, mid:3.5, boutique:4.0, star:5.0, bnb:2.5, resort:4.5};
+
+// CPC联动系数映射
+var cityTierMap = {tier1:1.3, newTier1:1.15, tier2:1.0, tier3:0.85, tier4:0.7};
+var locationMap = {scenic:1.15, traffic:1.0, biz:1.1, edu:0.9, res:0.85};
+var seasonCpcMap = {normal:1.0, weekend:1.1, small:1.3, big:1.5, yearEnd:1.2};
+var seasonRateMap = {normal:3.0, weekend:3.5, small:4.5, big:5.0, yearEnd:4.0};
+
+function getCityTierCoeff(){
+  var el = document.getElementById("cityTier");
+  return el && cityTierMap[el.value] !== undefined ? cityTierMap[el.value] : 1.0;
+}
+function getLocationCoeff(){
+  var el = document.getElementById("location");
+  return el && locationMap[el.value] !== undefined ? locationMap[el.value] : 1.0;
+}
+function getSeasonCpcCoeff(){
+  var el = document.getElementById("seasonHoliday");
+  return el && seasonCpcMap[el.value] !== undefined ? seasonCpcMap[el.value] : 1.0;
+}
+function getSeasonRate(){
+  var el = document.getElementById("seasonHoliday");
+  return el && seasonRateMap[el.value] !== undefined ? seasonRateMap[el.value] : 3.0;
+}
+function getTypeBaseCpc(){
+  var t = document.getElementById("type");
+  return t && cpcMap[t.value] !== undefined ? cpcMap[t.value] : 3.0;
+}
+function calcBaseCpc(){
+  return getTypeBaseCpc() * getCityTierCoeff() * getLocationCoeff() * getSeasonCpcCoeff();
+}
+function getAdrBenchmark(){
+  var t = document.getElementById("type");
+  var base = (t && adrBaseMap[t.value] !== undefined) ? adrBaseMap[t.value] : 280;
+  return base * getCityTierCoeff() * getLocationCoeff();
+}
+var taxTypeMap = {general:6, small:3, small1:1};
+var STORAGE_KEY = "hotel_profit_history_v3";
+var DRAFT_KEY_FWD = "hotel_profit_draft_fwd_v3";
+var DRAFT_KEY_REV = "hotel_profit_draft_rev_v3";
+var MAX_HISTORY = 20;
+var lastForecast = null;
+
+// ========== 平等平台列表管理 ==========
+var platforms = []; // [{id, platform, budget, cpc, orderRate, commission, otherFee, checkinRate}]
+var platIdCounter = 0;
+
+function newPlatId(){ return "plat_" + (++platIdCounter); }
+
+function getDefaultCpc(){
+return calcBaseCpc();
+}
+
+function getDefaultCommission(platVal){
+return platformMap[platVal] !== undefined ? platformMap[platVal] : 15;
+}
+
+function addPlatform(data){
+var id = newPlatId();
+var platVal = (data && data.platform) ? data.platform : "xiecheng";
+var p = {
+id: id,
+platform: platVal,
+budget: (data && data.budget !== undefined) ? data.budget : "",
+cpc: (data && data.cpc !== undefined) ? Math.round(Number(data.cpc) * 100) / 100 : getDefaultCpc(),
+orderRate: (data && data.orderRate !== undefined) ? data.orderRate : 3,
+commission: (data && data.commission !== undefined) ? data.commission : getDefaultCommission(platVal),
+otherFee: (data && data.otherFee !== undefined) ? data.otherFee : 0,
+checkinRate: (data && data.checkinRate !== undefined) ? data.checkinRate : 85
+};
+platforms.push(p);
+renderPlatforms();
+onCpcFactorChange();
+updateBudgetSummary();
+saveDraft();
+return id;
+}
+
+function removePlatform(id){
+if(platforms.length <= 1){ showToast("至少保留一个平台"); return; }
+platforms = platforms.filter(function(p){ return p.id !== id; });
+renderPlatforms();
+updateBudgetSummary();
+saveDraft();
+}
+
+function renderPlatforms(){
+var container = document.getElementById("platformList");
+if(!container) return;
+var html = "";
+platforms.forEach(function(p, idx){
+var optsHtml = "";
+platformOptions.forEach(function(o){
+optsHtml += '<option value="'+o.value+'"'+(o.value===p.platform?' selected':'')+'>'+o.label+'</option>';
+});
+html += '<div class="plat-card" id="platCard_'+p.id+'">';
+html += '<div class="plat-head"><span class="plat-title">平台 '+(idx+1)+'</span>';
+if(platforms.length > 1){
+html += '<button type="button" class="plat-remove" onclick="removePlatform(\''+p.id+'\')">删除</button>';
+}
+html += '</div>';
+html += '<div class="inline-row">';
+html += '<div class="field" id="platFormField_'+p.id+'"><label>平台选择</label>';
+html += '<select id="platForm_'+p.id+'" onchange="onPlatFormChange(\''+p.id+'\')">'+optsHtml+'</select>';
+html += '<div class="hint">以酒店实际签约佣金为准</div>';
+html += '<span class="field-error" id="platFormErr_'+p.id+'" style="display:none"></span></div>';
+html += '<div class="field" id="platBudgetField_'+p.id+'"><label>预算 <span style="color:#dc2626">*</span> <span class="unit">元 · 必填</span></label>';
+html += '<input type="number" id="platBudget_'+p.id+'" value="'+(p.budget!=="" ? p.budget : "")+'" placeholder="例如：5000" oninput="updateBudgetSummary()">';
+html += '<span class="field-error" id="platBudgetErr_'+p.id+'" style="display:none"></span>';
+html += '</div></div>';
+html += '<div class="adv-toggle" onclick="toggleAdv(this,\'platAdv_'+p.id+'\')"><span>高级参数（CPC / 转化率 / 佣金率 / 其他扣费 / 履约率）</span><span class="arrow">▼</span></div>';
+html += '<div class="adv-panel" id="platAdv_'+p.id+'">';
+html += '<div class="inline-row">';
+html += '<div class="field"><label>CPC <span class="unit">元/点击</span></label>';
+html += '<input type="number" id="platCpc_'+p.id+'" class="auto" value="'+p.cpc+'" step="0.1" placeholder="已按业态自动匹配">';
+html += '<div class="hint">推广通后台平均点击成本</div></div>';
+html += '<div class="field"><label>佣金率 <span class="unit">%</span></label>';
+html += '<input type="number" id="platCommission_'+p.id+'" class="auto" value="'+p.commission+'" step="0.1" placeholder="已按平台自动匹配">';
+html += '<div class="hint">已按平台自动匹配，可按合同修改</div></div></div>';
+html += '<div class="inline-row">';
+html += '<div class="field"><label>转化率 <span class="unit">%</span></label>';
+html += '<input type="number" id="platOrderRate_'+p.id+'" class="auto" value="'+p.orderRate+'" step="0.1" placeholder="默认3%">';
+html += '<div class="hint">酒店行业通常2%-5%</div></div>';
+html += '<div class="field"><label>预估下单入住率/履约率 <span class="unit">%</span></label>';
+html += '<input type="number" id="platCheckinRate_'+p.id+'" class="auto" value="'+p.checkinRate+'" step="0.1" placeholder="默认85%">';
+html += '<div class="hint">扣除No-show和取消</div></div></div>';
+html += '<div class="inline-row">';
+html += '<div class="field"><label>平台其他扣费 <span class="unit">元</span></label>';
+html += '<input type="number" id="platOtherFee_'+p.id+'" class="auto" value="'+p.otherFee+'" step="0.1" placeholder="无则填0">';
+html += '<div class="hint">无则填0，有则按实际填写</div></div>';
+html += '</div>';
+html += '</div>'; // adv-panel
+html += '</div>'; // plat-card
+});
+container.innerHTML = html;
+}
+
+function onPlatFormChange(id){
+var sel = document.getElementById("platForm_"+id);
+if(!sel) return;
+var p = findPlat(id);
+if(!p) return;
+p.platform = sel.value;
+var comm = getDefaultCommission(sel.value);
+p.commission = comm;
+var commEl = document.getElementById("platCommission_"+id);
+if(commEl){ commEl.value = comm; commEl.classList.add("auto"); }
+saveDraft();
+}
+
+function onPlatTypeChange(){
+// 业态变化时联动所有平台的CPC
+var cpc = getDefaultCpc();
+platforms.forEach(function(p){
+p.cpc = cpc;
+var el = document.getElementById("platCpc_"+p.id);
+if(el){ el.value = cpc; el.classList.add("auto"); }
+});
+saveDraft();
+}
+
+function findPlat(id){
+for(var i=0;i<platforms.length;i++){
+if(platforms[i].id === id) return platforms[i];
+}
+return null;
+}
+
+function toggleProc(t){
+var body = t.nextElementSibling;
+if(!body) return;
+var open = body.classList.toggle("open");
+t.textContent = open ? "收起过程数据 ▲" : "展开过程数据 ▼";
+}
+
+function setFieldError(errId, rowSelector, msg){
+var el = document.getElementById(errId);
+if(el){ el.textContent = msg; el.style.display = msg ? "block" : "none"; }
+if(rowSelector){
+var target = document.querySelector(rowSelector);
+var wrap = target ? (target.closest(".row") || target.closest(".field")) : null;
+if(wrap){
+if(msg) wrap.classList.add("err"); else wrap.classList.remove("err");
+}
+}
+}
+
+function validateForwardForm(){
+var ok = true;
+// 城市层级
+var cityTierEl = document.getElementById("cityTier");
+var cityTierVal = cityTierEl ? cityTierEl.value : "";
+if(!cityTierVal){ setFieldError("errCityTier", "#cityTier", "请选择城市层级"); ok = false; }
+else setFieldError("errCityTier", "#cityTier", "");
+// 地理位置
+var locEl = document.getElementById("location");
+var locVal = locEl ? locEl.value : "";
+if(!locVal){ setFieldError("errLocation", "#location", "请选择地理位置"); ok = false; }
+else setFieldError("errLocation", "#location", "");
+// 酒店业态
+var typeEl = document.getElementById("type");
+var typeVal = typeEl ? typeEl.value : "";
+if(!typeVal){ setFieldError("errType", "#type", "请选择酒店业态"); ok = false; }
+else setFieldError("errType", "#type", "");
+// 客房总数
+var roomsEl = document.getElementById("rooms");
+var roomsRaw = roomsEl ? roomsEl.value.trim() : "";
+var roomsVal = parseFloat(roomsRaw);
+if(roomsRaw === "" || isNaN(roomsVal) || roomsVal <= 0){ setFieldError("errRooms", "#rooms", "请填写正确的客房总数"); ok = false; }
+else setFieldError("errRooms", "#rooms", "");
+// 平均房价
+var adrEl = document.getElementById("adr");
+var adrRaw = adrEl ? adrEl.value.trim() : "";
+var adrVal = parseFloat(adrRaw);
+if(adrRaw === "" || isNaN(adrVal) || adrVal <= 0){ setFieldError("errAdr", "#adr", "请填写正确的平均房价"); ok = false; }
+else setFieldError("errAdr", "#adr", "");
+// 投放周期
+var periodEl = document.getElementById("fwdPeriod");
+var periodRaw = periodEl ? periodEl.value.trim() : "";
+var periodVal = parseFloat(periodRaw);
+if(periodRaw === "" || isNaN(periodVal) || periodVal <= 0){ setFieldError("errFwdPeriod", "#fwdPeriod", "请填写正确的投放周期"); ok = false; }
+else setFieldError("errFwdPeriod", "#fwdPeriod", "");
+// 投放时段类型
+var seasonEl = document.getElementById("seasonHoliday");
+var seasonVal = seasonEl ? seasonEl.value : "";
+if(!seasonVal){ setFieldError("errSeason", "#seasonHoliday", "请选择投放时段类型"); ok = false; }
+else setFieldError("errSeason", "#seasonHoliday", "");
+setFieldError("errPlatformGeneral", "", "");
+if(platforms.length === 0){
+setFieldError("errPlatformGeneral", "", "至少保留一个投放平台");
+ok = false;
+} else {
+var multiple = platforms.length > 1;
+platforms.forEach(function(p, idx){
+var sel = document.getElementById("platForm_"+p.id);
+var platVal = sel ? sel.value : p.platform;
+var formErr = document.getElementById("platFormErr_"+p.id);
+var formField = document.getElementById("platFormField_"+p.id);
+if(!platVal){
+if(formErr){ formErr.textContent = "第"+(idx+1)+"个平台未选择投放平台"; formErr.style.display = "block"; }
+if(formField) formField.classList.add("err");
+ok = false;
+} else {
+if(formErr){ formErr.textContent = ""; formErr.style.display = "none"; }
+if(formField) formField.classList.remove("err");
+}
+var bEl = document.getElementById("platBudget_"+p.id);
+var bRaw = bEl ? bEl.value.trim() : "";
+var bVal = parseFloat(bRaw);
+var bErr = document.getElementById("platBudgetErr_"+p.id);
+var bField = document.getElementById("platBudgetField_"+p.id);
+var bad = (bRaw === "" || isNaN(bVal) || bVal <= 0);
+if(multiple && bad){
+if(bErr){ bErr.textContent = "第"+(idx+1)+"个平台的预算未填写或必须大于0"; bErr.style.display = "block"; }
+if(bField) bField.classList.add("err");
+ok = false;
+} else if(!multiple && bad){
+if(bErr){ bErr.textContent = "请填写正确的平台预算（必须大于0）"; bErr.style.display = "block"; }
+if(bField) bField.classList.add("err");
+ok = false;
+} else {
+if(bErr){ bErr.textContent = ""; bErr.style.display = "none"; }
+if(bField) bField.classList.remove("err");
+}
+});
+}
+return ok;
+}
+
+function readPlatforms(){
+// 从DOM读取当前所有平台数据
+var result = [];
+platforms.forEach(function(p){
+var budget = parseFloat((document.getElementById("platBudget_"+p.id)||{}).value) || 0;
+var cpc = parseFloat((document.getElementById("platCpc_"+p.id)||{}).value) || getDefaultCpc();
+var orderRate = parseFloat((document.getElementById("platOrderRate_"+p.id)||{}).value) || 3;
+var commission = parseFloat((document.getElementById("platCommission_"+p.id)||{}).value) || getDefaultCommission(p.platform);
+var otherFee = parseFloat((document.getElementById("platOtherFee_"+p.id)||{}).value) || 0;
+var checkinRate = parseFloat((document.getElementById("platCheckinRate_"+p.id)||{}).value) || 85;
+var sel = document.getElementById("platForm_"+p.id);
+var platVal = sel ? sel.value : p.platform;
+result.push({
+name: platformLabel(platVal),
+platform: platVal,
+budget: budget,
+cpc: cpc,
+orderRate: Math.min(orderRate, 100),
+commission: Math.min(commission, 99.9),
+otherFee: otherFee,
+checkinRate: Math.min(checkinRate, 100)
+});
+});
+return result;
+}
+
+function getVal(id){
+var el = document.getElementById(id);
+var v = el ? parseFloat(el.value) : NaN;
+return isNaN(v) ? 0 : v;
+}
+function getStr(id){
+var el = document.getElementById(id);
+return el ? el.value.trim() : "";
+}
+function filled(id){
+var el = document.getElementById(id);
+return el && el.value.trim() !== "";
+}
+function setAuto(id, v){
+var el = document.getElementById(id);
+if(el){ el.value = v; el.classList.add("auto"); }
+}
+function setVal(id, v){
+var el = document.getElementById(id);
+if(el){ el.value = v; el.classList.remove("auto"); }
+}
+function platformLabel(val){
+var m = {meituan:"美团", xiecheng:"携程", tongcheng:"同程", qunaer:"去哪儿", feizhu:"飞猪", douyin:"抖音本地"};
+return m[val] || val;
+}
+function showToast(msg){
+var toast = document.getElementById("toast");
+if(!toast) return;
+toast.textContent = msg;
+toast.classList.add("show");
+setTimeout(function(){ toast.classList.remove("show"); }, 2500);
+}
+function safeStorage(action){
+try{ return action(); }catch(e){ return null; }
+}
+function escapeHtml(text){
+var div = document.createElement("div");
+div.textContent = text;
+return div.innerHTML;
+}
+function escapeFileName(name){
+return name.replace(/[\/:*?"<>|]/g, "_");
+}
+function openModal(id){ var el = document.getElementById(id); if(el) el.classList.add("show"); }
+function closeModal(id){ var el = document.getElementById(id); if(el) el.classList.remove("show"); }
+function toggleAdv(toggleEl, panelId){
+var panel = document.getElementById(panelId);
+if(!panel) return;
+var open = panel.classList.toggle("open");
+var arrow = toggleEl.querySelector(".arrow");
+if(arrow) arrow.textContent = open ? "▲" : "▼";
+}
+
+function initDefaultValues(){
+var typeEl = document.getElementById("type");
+if(typeEl){
+var t = typeEl.value;
+if(varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
+}
+var taxTypeEl = document.getElementById("taxType");
+if(taxTypeEl){
+var taxVal = taxTypeMap[taxTypeEl.value];
+if(taxVal !== undefined) setAuto("taxRate", taxVal);
+}
+// 确保所有平台行CPC有值
+var cpc = getDefaultCpc();
+platforms.forEach(function(p){
+if(!p.cpc || p.cpc === 0) p.cpc = cpc;
+if(!p.commission || p.commission === 0) p.commission = getDefaultCommission(p.platform);
+});
+renderPlatforms();
+}
+
+var missingMsg = "";
+function updateBtnState(){
+var btn = document.getElementById("btn");
+if(!btn) return;
+if(isResultVisible){
+btn.disabled = false;
+btn.textContent = "收起结果 ▲";
+return;
+}
+missingMsg = "";
+if(!filled("rooms") || !filled("adr")){
+missingMsg = "请先填写酒店基础信息（客房总数、平均房价）";
+} else {
+// 至少一个平台有预算
+var hasBudget = false;
+platforms.forEach(function(p){
+var b = document.getElementById("platBudget_"+p.id);
+if(b && b.value.trim() !== "" && parseFloat(b.value) > 0) hasBudget = true;
+});
+if(!hasBudget){ missingMsg = "请至少为一个平台填写预算（需大于0）"; }
+}
+if(!filled("fwdPeriod")){ missingMsg = (missingMsg ? missingMsg + "；" : "") + "请填写投放周期"; }
+if(!filled("seasonHoliday")){ missingMsg = (missingMsg ? missingMsg + "；" : "") + "请选择投放时段类型"; }
+btn.disabled = false;
+btn.textContent = "生成决策报告";
+}
+
+// 单平台正向计算 - 每个平台独立计算
+function calcForwardPlatform(p, adr, varCost, mult){
+mult = mult || {cpc:1, rate:1, checkin:1, adr:1};
+var a = adr * (mult.adr || 1);
+var c = p.cpc * (mult.cpc || 1);
+var or = p.orderRate * (mult.rate || 1);
+var cr = p.checkinRate * (mult.checkin || 1);
+var clicks = c > 0 ? Math.floor(p.budget / c) : 0;
+var orders = Math.floor(clicks * (or / 100));
+var roomNights = Math.floor(orders * (cr / 100));
+var revenue = roomNights * a;
+var commFee = revenue * (p.commission / 100);
+var marginPerRoom = a * (1 - p.commission / 100) - varCost;
+var profit = roomNights * marginPerRoom - p.budget - (p.otherFee || 0);
+return {clicks:clicks, orders:orders, roomNights:roomNights, revenue:revenue, commFee:commFee, marginPerRoom:marginPerRoom, profit:profit};
+}
+
+// 多平台汇总
+function sumPlats(plats, adr, varCost, mult){
+var t = {clicks:0, orders:0, roomNights:0, revenue:0, commFee:0, profit:0, budget:0};
+var wMargin = 0;
+var first = null;
+plats.forEach(function(p){
+var r = calcForwardPlatform(p, adr, varCost, mult);
+t.clicks += r.clicks; t.orders += r.orders; t.roomNights += r.roomNights;
+t.revenue += r.revenue; t.commFee += r.commFee; t.profit += r.profit;
+t.budget += p.budget;
+wMargin += r.roomNights * r.marginPerRoom;
+if(!first) first = r;
+});
+t.marginPerRoom = t.roomNights > 0 ? (wMargin / t.roomNights) : (first ? first.marginPerRoom : 0);
+return t;
+}
+
+function makeDisclaimer(num){
+var html = '<div class="sec">';
+html += '<div class="sec-title">'+num+' 免责与数据说明</div>';
+html += '<div style="font-size:12px;color:#64748b;line-height:1.8">';
+html += '1. 数据存储：当前您填写与生成的数据仅保存在本机浏览器本地（localStorage）；如未来启用云端存储功能，我们将在启用前向您明确提示，不会默认上传。<br>';
+html += '2. 报告性质：本报告基于您输入的参数进行模型测算，全部结果为预估值而非经营承诺；文中各类阈值与提示均为模型参考，不构成投资建议。<br>';
+html += '3. 小额试投：推广间夜按"净增量"假设测算，实际增量通常低于账面值；追加或重启投放前，建议先以小额预算试投验证真实效果。<br>';
+html += '4. 责任边界：请以实际经营数据为准，必要时咨询专业收益管理顾问；因使用本报告产生的经营决策后果由使用者自行承担。';
+html += '</div></div>';
+return html;
+}
+
+function doCalculate(){
+if(!validateForwardForm()){ return false; }
+var plats = readPlatforms();
+var activePlats = plats.filter(function(p){ return p.budget > 0; });
+if(activePlats.length === 0){ alert("请填写正确的平台预算（必须大于0）"); return false; }
+
+var location = document.getElementById("location").value;
+var rooms = getVal("rooms");
+var adr = getVal("adr");
+var varCost = getVal("varCost");
+var taxRate = getVal("taxRate");
+var ltvPerGuest = getVal("ltvNights");
+var days = getVal("fwdPeriod") || 30;
+var fixedCost = getVal("fixedCost");
+var occRaw = getVal("occ");
+var occ = Math.min(Math.max(occRaw, 0), 100);
+
+var warnings = [];
+activePlats.forEach(function(p){
+if(p.commission > 40 && p.commission < 100) warnings.push(p.name+" 佣金率 "+p.commission+"% 明显高于主流平台常见区间（5%-15%），底价线与归因结论将失真，请核对合同条款");
+if(p.commission >= 100) warnings.push(p.name+" 佣金率 ≥100%，经营结构不可能成立，请立即核对");
+if(p.cpc > 0 && p.cpc < 0.3) warnings.push(p.name+" CPC ¥"+p.cpc+" 低于常见区间（约1-8元），请核对单位与数值");
+if(adr > 0 && p.cpc > adr) warnings.push(p.name+" CPC 已高于单晚房价，点击成本结构严重异常，请核对");
+if(p.orderRate > 30) warnings.push(p.name+" 下单转化率 "+p.orderRate+"% 远超行业常见区间（2%-5%），请核对");
+});
+if(adr > 0 && varCost > adr) warnings.push("单房变动成本高于房价，经营成本结构异常，请核对数据");
+if(taxRate < 0 || taxRate > 50) warnings.push("综合税费率超出常见范围（0-50%），请核对");
+
+var taxOf = function(rev){ return taxRate > 0 ? rev * taxRate / (100 + taxRate) : 0; };
+var capacity = Math.floor(rooms * (1 - occ/100) * days);
+
+var base = sumPlats(activePlats, adr, varCost, null);
+var clicks = base.clicks;
+var orders = base.orders;
+var roomNights = base.roomNights;
+var revenue = base.revenue;
+var commFee = base.commFee;
+var marginPerRoom = base.marginPerRoom;
+var budget = base.budget;
+var otherFeeTotal = 0;
+activePlats.forEach(function(p){ otherFeeTotal += (p.otherFee || 0); });
+
+// 原始测算间夜（容量倍数判断用）
+var rawNights = roomNights;
+
+var plannedBudget = budget;
+var capExceeded = roomNights > capacity;
+if(capExceeded && capacity >= 0){
+var capRatio = capacity / Math.max(roomNights, 1);
+roomNights = capacity;
+clicks = Math.floor(clicks * capRatio);
+orders = Math.floor(orders * capRatio);
+revenue = roomNights * adr;
+commFee = 0;
+activePlats.forEach(function(p){
+var pRatio = p.budget / budget;
+commFee += revenue * pRatio * (p.commission / 100);
+});
+// 3.1修复：容量不足时点击/订单按比例压缩，广告实际消耗也应按比例缩减（未消耗预算不会被扣费），避免利润与ROI被低估
+budget = Math.round(budget * capRatio);
+}
+
+var varTotal = roomNights * varCost;
+var taxFee = taxOf(revenue);
+var profitPretax = roomNights * marginPerRoom - budget - otherFeeTotal;
+var profit = profitPretax - taxFee;
+var roi = budget > 0 ? (profit / budget) : 0;
+var costPerRoom = roomNights > 0 ? (budget / roomNights) : 0;
+
+var wComm = 0;
+activePlats.forEach(function(p){ wComm += p.commission * (p.budget / budget); });
+// 3.1修复：底价线 = 覆盖「变动成本 + 佣金 + 税费」的保本房价（不含固定成本与推广成本）
+var taxFactor = taxRate > 0 ? taxRate / (100 + taxRate) : 0;
+var floorDenom = (1 - wComm/100) - taxFactor;
+var floorPrice = (wComm < 100 && floorDenom > 0.05) ? (varCost / floorDenom) : 0;
+
+var wCpcDen = 0, wRateNum = 0, wRateDen = 0, wChkNum = 0;
+activePlats.forEach(function(p){
+if(p.cpc > 0){
+var cl = p.budget / p.cpc;
+wCpcDen += cl;
+wRateNum += cl * p.orderRate;
+wRateDen += cl;
+wChkNum += cl * p.checkinRate;
+}
+});
+var diagCpc = wCpcDen > 0 ? budget / wCpcDen : activePlats[0].cpc;
+var diagRate = wRateDen > 0 ? wRateNum / wRateDen : activePlats[0].orderRate;
+var diagCheckin = wRateDen > 0 ? wChkNum / wRateDen : activePlats[0].checkinRate;
+var dispCpc = activePlats.length === 1 ? activePlats[0].cpc : Math.round(diagCpc * 100) / 100;
+var dispRate = activePlats.length === 1 ? activePlats[0].orderRate : Math.round(diagRate * 10) / 10;
+var dispCheckin = Math.round(diagCheckin * 10) / 10;
+var dailySpend = days > 0 ? budget / days : 0;
+
+var isGreen = roi > 0 && costPerRoom < marginPerRoom;
+var isYellow = roi > 0 && costPerRoom >= marginPerRoom;
+
+var checkinRate = diagCheckin;
+var commission = wComm;
+var cpcMain = diagCpc;
+var orderRate = diagRate;
+var otherFee = otherFeeTotal;
+// 3.1修复：佣金率异常时底价线失真，后续归因需加保护
+var commissionAbnormal = wComm > 35;
+
+// ===== 动态阈值：全部由当前数据计算；底价线全报告仅此一次 =====
+var cpcMax = marginPerRoom * (orderRate/100) * (checkinRate/100);
+var breakEvenCpc = diagCpc > 0 ? diagCpc * (1 + roi) : 0;
+var breakEvenRate = (1 + roi) > 0 ? diagRate / (1 + roi) : 0;
+var adrDropPct = adr > 0 ? Math.max(0, (adr - floorPrice) / adr * 100) : 0;
+var breakEvenNights = marginPerRoom > 0 ? (budget + otherFeeTotal + taxFee) / marginPerRoom : 0;
+var nightsBuffer = roomNights - breakEvenNights;
+var roomLoss = marginPerRoom < 0 ? -marginPerRoom : (costPerRoom > marginPerRoom ? costPerRoom - marginPerRoom : 0);
+
+// 追加建议（亏损场景不追加）
+var addBudget = roi > 0 ? Math.min(Math.abs(roi), 2) * 0.3 * budget : 0;
+var addRN = 0;
+if(addBudget > 0){
+var expNightPerYuan = diagCpc > 0 ? (orderRate/100) * (checkinRate/100) / diagCpc : 0;
+addRN = Math.floor(addBudget * expNightPerYuan);
+}
+var addProfit = addRN * marginPerRoom - addBudget;
+var addCapRemain = Math.max(0, capacity - roomNights);
+if(addRN > addCapRemain){ addRN = addCapRemain; addProfit = addRN * marginPerRoom - addBudget; }
+var addDays = dailySpend > 0 ? Math.max(1, Math.round(addBudget / dailySpend)) : days;
+var nextReviewDay = Math.min(Math.max(3, Math.round(days/3)), 7);
+
+var lightHtml = "";
+lightHtml += "<div class=\"light "+(isGreen?"g":isYellow?"y":"r")+"\">ROI<br><b>"+roi.toFixed(2)+"</b><br>"+(isGreen?"绿灯":isYellow?"黄灯":"红灯")+"</div>";
+lightHtml += "<div class=\"light "+(costPerRoom<marginPerRoom?"g":costPerRoom<marginPerRoom*1.2?"y":"r")+"\">单房推广成本<br><b>¥"+costPerRoom.toFixed(1)+"</b><br>vs 单房毛利¥"+marginPerRoom.toFixed(1)+"</div>";
+lightHtml += "<div class=\"light "+(roomNights>0?"g":"r")+"\">间夜数<br><b>"+roomNights+"</b><br>"+(roomNights>0?"有转化":"零转化")+"</div>";
+lightHtml += "<div class=\"light "+(adr>floorPrice?"g":"r")+"\">底价线<br><b>"+(floorPrice>0?"¥"+floorPrice.toFixed(0):"异常")+"</b><br>ADR¥"+adr+"</div>";
+
+// ===== 模块② 结论：数据化分点（并入"离亏损还有多远"风险信息） =====
+var decHtml = "";
+if(isGreen){
+decHtml = "<div class=\"tip\"><b>📊 数据分析结论：投放有效</b><br>";
+decHtml += "1. 每投入1元推广费，预期净利润回报为 "+roi.toFixed(2)+" 元。<br>";
+decHtml += "2. 单房推广成本（¥"+costPerRoom.toFixed(1)+"）低于单房毛利（¥"+marginPerRoom.toFixed(1)+"），每获得1个推广间夜净贡献 ¥"+(marginPerRoom-costPerRoom).toFixed(1)+"。<br>";
+decHtml += "3. 底价线为 ¥"+floorPrice.toFixed(1)+"，当前房价 ¥"+adr+" 高出 "+(adr-floorPrice).toFixed(1)+" 元；房价下行空间约 "+adrDropPct.toFixed(1)+"%（即降至 ¥"+floorPrice.toFixed(0)+"）前，每间房仍可覆盖佣金、税费与变动成本。";
+decHtml += "</div>";
+}else if(isYellow){
+decHtml = "<div class=\"warn\" style=\"padding:12px;border-radius:10px\"><b>📊 数据分析结论：投放盈利但效率偏低</b><br>";
+decHtml += "1. 每投入1元推广费，预期净利润回报为 "+roi.toFixed(2)+" 元。<br>";
+decHtml += "2. 单房推广成本（¥"+costPerRoom.toFixed(1)+"）已高于单房毛利（¥"+marginPerRoom.toFixed(1)+"），每获得1个推广间夜的推广支出超出房间净贡献 ¥"+(costPerRoom-marginPerRoom).toFixed(1)+"，效率不可持续。<br>";
+decHtml += "3. 距离亏损的缓冲空间：当前 ROI 为 "+roi.toFixed(2)+"，CPC 上升 "+(roi*100).toFixed(1)+"%（至 ¥"+breakEvenCpc.toFixed(2)+"）或转化率下降 "+(roi*100).toFixed(1)+"%（至 "+breakEvenRate.toFixed(2)+"%）即触及盈亏平衡。建议先优化流量效率，再考虑追加。";
+decHtml += "</div>";
+}else{
+decHtml = "<div class=\"danger\"><b>📊 数据分析结论：按当前参数测算，本方案亏损</b><br>";
+decHtml += "1. 每投入1元推广费，预期净利润为 "+roi.toFixed(2)+" 元（投入 ¥"+budget.toLocaleString()+"，净利润 ¥"+profit.toFixed(0)+"）。<br>";
+if(adr < floorPrice){
+decHtml += "2. 亏损主因：房价 ¥"+adr+" 低于底价线 ¥"+floorPrice.toFixed(1)+"，每成交一间亏损 ¥"+(floorPrice-adr).toFixed(1)+"，佣金与变动成本无法被房价覆盖。<br>";
+}else if(roomNights === 0){
+decHtml += "2. 亏损主因：当前参数下推广间夜为 0（预算 ¥"+budget.toLocaleString()+" 全部损耗），未产生任何收入。<br>";
+}else if(costPerRoom > marginPerRoom){
+decHtml += "2. 亏损主因：单房推广成本（¥"+costPerRoom.toFixed(1)+"）已超过单房毛利（¥"+marginPerRoom.toFixed(1)+"），每获得1个推广间夜净亏 ¥"+(costPerRoom-marginPerRoom).toFixed(1)+"。<br>";
+}else{
+decHtml += "2. 亏损主因：推广间夜 "+roomNights+" 低于保本间夜 "+Math.ceil(breakEvenNights)+"（覆盖总投入 ¥"+(budget+otherFeeTotal+taxFee).toFixed(0)+" 所需），间夜缺口 "+Math.max(0, Math.ceil(breakEvenNights)-roomNights)+"。<br>";
+}
+decHtml += "3. 距离亏损还有多远：当前已亏损 ¥"+Math.abs(profit).toFixed(0)+"；若继续按原参数投放，每增加 ¥1000 预算预计再亏损约 ¥"+Math.abs(roi*1000).toFixed(0)+"。";
+decHtml += "</div>";
+}
+
+var oppCost = roomNights * marginPerRoom;
+
+// ===== 模块③ 投流方案对比：表格保留，结论按赚/亏切换 =====
+var tRows = "";
+if(profit > 0){
+tRows += "<tr><td>不投流</td><td>¥0</td><td>0</td><td>¥0</td><td>少赚 ¥"+oppCost.toFixed(0)+"（"+roomNights+" 间夜的投放净利润贡献）</td></tr>";
+tRows += "<tr><td>投流当前</td><td>¥"+budget.toLocaleString()+"</td><td>"+roomNights+"</td><td>¥"+profit.toFixed(0)+"</td><td>赚 ¥"+profit.toFixed(0)+"</td></tr>";
+if(addBudget > 0){
+tRows += "<tr><td>小额追加</td><td>¥"+addBudget.toFixed(0)+"</td><td>+"+addRN+"</td><td>¥"+addProfit.toFixed(0)+"</td><td>"+(addProfit>0?"预计多赚 ¥"+addProfit.toFixed(0):"追加部分预期不盈利")+"（小额试投）</td></tr>";
+}
+}else if(profit === 0){
+tRows += "<tr><td>不投流</td><td>¥0</td><td>0</td><td>¥0</td><td>无推广贡献</td></tr>";
+tRows += "<tr><td>投流当前</td><td>¥"+budget.toLocaleString()+"</td><td>"+roomNights+"</td><td>¥0</td><td>盈亏平衡，不建议追加</td></tr>";
+}else{
+var avoidLoss = -profit;
+tRows += "<tr><td>不投流</td><td>¥0</td><td>0</td><td>¥0</td><td>可避免亏损 ¥"+avoidLoss.toFixed(0)+"</td></tr>";
+tRows += "<tr><td>投流当前</td><td>¥"+budget.toLocaleString()+"</td><td>"+roomNights+"</td><td>-¥"+Math.abs(profit).toFixed(0)+"</td><td>亏 ¥"+Math.abs(profit).toFixed(0)+"，不建议追加</td></tr>";
+}
+
+var ltvNightsTotal = 0, ltvValue = 0;
+if(ltvPerGuest > 0){
+ltvNightsTotal = orders * ltvPerGuest;
+ltvValue = ltvNightsTotal * marginPerRoom;
+tRows += "<tr><td>新客复购增值</td><td>¥0</td><td>+"+ltvNightsTotal.toFixed(1)+"</td><td>¥"+ltvValue.toFixed(0)+"</td><td>参考值，不计入ROI</td></tr>";
+}
+
+// ===== 模块④ 归因分析（12条） =====
+var nightlyEmpty = Math.floor(rooms * (1 - occ/100));
+var baseCpc = calcBaseCpc();
+var attr = "";
+
+// 辅助：保本转化率
+var breakEvenRateCpc = 0;
+if(diagCpc > 0 && marginPerRoom > 0 && diagCheckin > 0){
+  breakEvenRateCpc = (diagCpc / (marginPerRoom * (diagCheckin/100))) * 100;
+}
+
+// 归因1：点击成本偏高
+if(dispCpc > baseCpc * 1.2){
+  var highPct = ((dispCpc - baseCpc) / baseCpc * 100).toFixed(0);
+  attr += '<div class="attr-card attr-red">';
+  attr += '<div class="attr-title">归因1：点击成本偏高</div>';
+  attr += '<div class="attr-desc">你的CPC ¥'+dispCpc.toFixed(2)+'，同业态同商圈基准¥'+baseCpc.toFixed(2)+'，高了'+highPct+'%。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>投放时段覆盖了低转化时段（如凌晨）<br>→ <b>排查动作：</b>检查投放后台的时段设置，关闭0:00-7:00的投放<br>→ <b>预估效果：</b>CPC预估降20%-30%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>房价高于周边竞品，点击率低导致系统提高出价<br>→ <b>排查动作：</b>对比周边3家同类型酒店的挂牌价<br>→ <b>预估效果：</b>CPC预估降10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>定向范围过宽，覆盖了非目标客群<br>→ <b>排查动作：</b>缩小投放区域至酒店周边3-5公里<br>→ <b>预估效果：</b>CPC预估降15%-20%</div>';
+  attr += '<div class="attr-reason"><b>可能原因4：</b>关键词出价策略可能需要调整<br>→ <b>排查动作：</b>检查关键词出价，高价通用词适当降价<br>→ <b>预估效果：</b>CPC预估降10%-15%</div>';
+  attr += '</div>';
+}
+
+// 归因2：转化率偏低
+if(dispRate < breakEvenRateCpc * 0.8 && breakEvenRateCpc > 0){
+  var rateGap = (breakEvenRateCpc - dispRate).toFixed(2);
+  attr += '<div class="attr-card attr-red">';
+  attr += '<div class="attr-title">归因2：转化率偏低</div>';
+  attr += '<div class="attr-desc">你的转化率'+dispRate.toFixed(2)+'%，保本需要'+breakEvenRateCpc.toFixed(2)+'%（=CPC÷(单房毛利×履约率)，含税口径下已修正）。差距'+rateGap+'%。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>详情页首图不是实拍或光线差<br>→ <b>排查动作：</b>更换为客房实拍图，确保光线明亮、床铺整洁、卫生间干净<br>→ <b>预估效果：</b>转化率预估提升15%-25%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>列表页价格与详情页不一致<br>→ <b>排查动作：</b>检查各平台价格展示，确保列表页与详情页首屏价格一致<br>→ <b>预估效果：</b>转化率预估提升10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>取消政策太严（如"不可取消"）<br>→ <b>排查动作：</b>改为"入住前1天免费取消"<br>→ <b>预估效果：</b>转化率预估提升15%-30%</div>';
+  attr += '<div class="attr-reason"><b>可能原因4：</b>首页差评超过3条<br>→ <b>排查动作：</b>回复所有差评（诚恳道歉+改进措施），联系平台申请折叠恶意差评<br>→ <b>预估效果：</b>转化率预估提升5%-10%</div>';
+  attr += '</div>';
+}
+
+// 归因3：房价偏低
+if(adr < floorPrice && floorPrice > 0 && !commissionAbnormal){
+  var lossPerRoom = floorPrice - adr;
+  attr += '<div class="attr-card attr-red">';
+  attr += '<div class="attr-title">归因3：房价偏低</div>';
+  attr += '<div class="attr-desc">你的房价¥'+adr+'，底价线¥'+floorPrice.toFixed(1)+'（=变动成本¥'+varCost+' ÷ (1-佣金率-税因子)，覆盖变动成本+佣金+税费，不含固定成本与推广成本）。每卖1间少赚¥'+lossPerRoom.toFixed(1)+'。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>为抢客源过度降价<br>→ <b>排查动作：</b>对比周边3家同类型酒店价格，上调至市场价水平<br>→ <b>预估效果：</b>每间夜增收¥'+lossPerRoom.toFixed(1)+'，总营收预估提升15%-20%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>促销活动未关闭<br>→ <b>排查动作：</b>检查各平台营销中心，关闭所有低于底价线的促销活动<br>→ <b>预估效果：</b>实际成交价恢复至正常水平</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>协议价/团购价过低<br>→ <b>排查动作：</b>通知协议客户上调价格，下架或改价低于底价线的团购套餐<br>→ <b>预估效果：</b>低价订单占比降至≤10%</div>';
+  attr += '</div>';
+}
+
+// 归因4：房价偏高
+var adrBenchmark = getAdrBenchmark();
+if(adr > adrBenchmark && adrBenchmark > 0 && !(adr < floorPrice && floorPrice > 0)){
+  var highPct = ((adr - adrBenchmark) / adrBenchmark * 100).toFixed(0);
+  attr += '<div class="attr-card attr-yellow">';
+  attr += '<div class="attr-title">归因4：房价偏高</div>';
+  attr += '<div class="attr-desc">你的房价¥'+adr+'，同商圈同业态基准约¥'+adrBenchmark.toFixed(1)+'（已按业态/城市/位置综合测算），高出'+highPct+'%。价格脱离市场可能导致竞争力不足。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>定价脱离市场，竞争力不足<br>→ <b>排查动作：</b>对比周边3家同类型酒店价格，适当下调5%-10%<br>→ <b>预估效果：</b>入住率预估提升10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>设施/服务与价格不匹配<br>→ <b>排查动作：</b>检查酒店评分和差评内容，针对性改善<br>→ <b>预估效果：</b>转化率预估提升10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>未开通促销引流<br>→ <b>排查动作：</b>开通限时特惠（比正常价低10%-15%），设置早鸟价（提前7天预订享8折）<br>→ <b>预估效果：</b>点击量预估提升20%-30%</div>';
+  attr += '</div>';
+}
+
+// 归因5：净利润亏损
+if(profit < 0){
+  attr += '<div class="attr-card attr-red">';
+  attr += '<div class="attr-title">归因5：净利润亏损</div>';
+  attr += '<div class="attr-desc">当前方案净利润¥'+profit.toFixed(0)+'（投放回报'+roi.toFixed(2)+'）。投放是亏的，需要找出亏损原因并修复。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>点击成本过高<br>→ <b>排查动作：</b>按"点击成本偏高"归因排查，下调出价/换长尾词/优化时段<br>→ <b>预估效果：</b>单房推广成本预估降20%-30%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>转化率过低<br>→ <b>排查动作：</b>按"转化率偏低"归因排查，优化详情页/价格/政策/评价<br>→ <b>预估效果：</b>转化率预估提升15%-30%</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>佣金率偏高<br>→ <b>排查动作：</b>按"佣金率偏高"归因排查，谈判降佣或增加低佣平台比重<br>→ <b>预估效果：</b>综合佣金率预估降2-3个百分点</div>';
+  attr += '</div>';
+}
+
+// 归因6：投放回报偏低（微利）
+if(profit > 0 && roi > 0 && roi < 0.3){
+  attr += '<div class="attr-card attr-yellow">';
+  attr += '<div class="attr-title">归因6：投放回报偏低（微利）</div>';
+  attr += '<div class="attr-desc">当前投放回报'+roi.toFixed(2)+'，低于0.3安全线。投放有效但利润薄，优化参数后再考虑追加。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>点击成本偏高，吃掉利润<br>→ <b>排查动作：</b>按"点击成本偏高"归因排查，下调出价/换长尾词/优化时段<br>→ <b>预估效果：</b>单房推广成本预估降15%-20%，投放回报预估提升至0.4-0.5</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>转化率偏低，间夜不足<br>→ <b>排查动作：</b>按"转化率偏低"归因排查，优化详情页/价格/政策/评价<br>→ <b>预估效果：</b>转化率预估提升15%-25%，间夜增加，投放回报预估提升至0.4-0.6</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>佣金率偏高，压缩毛利<br>→ <b>排查动作：</b>按"佣金率偏高"归因排查，谈判降佣或增加低佣平台比重<br>→ <b>预估效果：</b>综合佣金率降2-3个百分点，单房毛利提升，投放回报预估提升至0.4-0.5</div>';
+  attr += '<div class="attr-reason"><b>可能原因4：</b>预算分配不合理，低回报平台占比大<br>→ <b>排查动作：</b>检查各平台实际回报，将预算向高回报平台倾斜30%<br>→ <b>预估效果：</b>综合投放回报预估提升0.1-0.2</div>';
+  attr += '</div>';
+}
+
+// 归因7：入住率偏高
+if(occ >= 80){
+  attr += '<div class="attr-card attr-yellow">';
+  attr += '<div class="attr-title">归因7：入住率偏高</div>';
+  attr += '<div class="attr-desc">入住率已达'+occ+'%，每晚空房仅约'+nightlyEmpty+'间。推广边际收益递减，策略应从"放量"转向"提价增效"。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>房价偏低，没有充分变现<br>→ <b>排查动作：</b>对比周边同类型酒店房价，尝试提价5%-10%<br>→ <b>预估效果：</b>每间夜增收¥'+(adr*0.05).toFixed(1)+'，总营收预估提升10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>广告预算可以继续加<br>→ <b>排查动作：</b>在入住率维持85%左右的前提下，适当加预算获取更多订单<br>→ <b>预估效果：</b>间夜增加，营收增加</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>老客复购率低，过度依赖新客<br>→ <b>排查动作：</b>建立客户微信群，推送老客户专属价（比OTA低8%）；店内放"扫码加微信，直订享9折"卡片<br>→ <b>预估效果：</b>直订订单占比提升至≥15%，佣金成本降低</div>';
+  attr += '</div>';
+}
+
+// 归因8：入住率偏低
+if(occ < 40){
+  attr += '<div class="attr-card attr-red">';
+  attr += '<div class="attr-title">归因8：入住率偏低</div>';
+  attr += '<div class="attr-desc">入住率仅'+occ+'%，每晚空房'+nightlyEmpty+'间。自然流量不足，但推广前需先排查产品和定价问题。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>房价过高，竞争力不足<br>→ <b>排查动作：</b>对比周边3家同类型酒店价格，适当下调5%-10%<br>→ <b>预估效果：</b>入住率预估提升10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>设施/服务评分低<br>→ <b>排查动作：</b>检查各平台评分和差评，针对性改善<br>→ <b>预估效果：</b>转化率预估提升10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>曝光不足，搜索排名靠后<br>→ <b>排查动作：</b>完善酒店标签（WiFi、停车、早餐、近地铁等），优化酒店名称关键词<br>→ <b>预估效果：</b>搜索曝光量预估提升20%-30%</div>';
+  attr += '<div class="attr-reason"><b>可能原因4：</b>未开通促销活动<br>→ <b>排查动作：</b>开通限时特惠（比正常价低10%-15%），设置连住优惠（住2晚减¥50）<br>→ <b>预估效果：</b>订单量预估提升15%-20%</div>';
+  attr += '</div>';
+}
+
+// 归因9：佣金率偏高
+if(commission > 12){
+  var extraComm = commission - 12;
+  var extraLoss = roomNights * adr * extraComm / 100;
+  attr += '<div class="attr-card attr-yellow">';
+  attr += '<div class="attr-title">归因9：佣金率偏高</div>';
+  attr += '<div class="attr-desc">你的综合佣金率'+commission.toFixed(2)+'%，行业通常10-12%。按'+roomNights+'间夜、ADR¥'+adr+'算，比12%基准多扣¥'+Math.round(extraLoss)+'。'+(commissionAbnormal?'<span style="color:#dc2626">当前佣金率异常偏高，底价线测算已失真，请优先与平台谈判降佣。</span>':'')+'以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>高佣平台（如携程15%）占比过大<br>→ <b>排查动作：</b>检查各平台订单占比，增加低佣平台（美团10%）投放比重<br>→ <b>预估效果：</b>综合佣金率预估降2-3个百分点</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>没有开通直销渠道<br>→ <b>排查动作：</b>开通酒店微信小程序，提供直订优惠（比OTA低5%-8%）<br>→ <b>预估效果：</b>长期佣金成本预估降5-10个百分点</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>未与平台谈判降佣<br>→ <b>排查动作：</b>联系业务经理，以高评分/高订单量为筹码申请降佣至12%<br>→ <b>预估效果：</b>佣金率预估降1-2个百分点</div>';
+  attr += '</div>';
+}
+
+// 归因10：单房推广成本过高
+if(costPerRoom > marginPerRoom && roomNights > 0){
+  var lossPerRoom = costPerRoom - marginPerRoom;
+  attr += '<div class="attr-card attr-red">';
+  attr += '<div class="attr-title">归因10：单房推广成本过高</div>';
+  attr += '<div class="attr-desc">你的单房推广成本¥'+costPerRoom.toFixed(1)+'，单房毛利¥'+marginPerRoom.toFixed(1)+'，每间净亏¥'+lossPerRoom.toFixed(1)+'。推广是亏的，需立即优化。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>点击成本过高<br>→ <b>排查动作：</b>按"点击成本偏高"归因排查，下调出价/换长尾词/优化时段<br>→ <b>预估效果：</b>单房推广成本预估降20%-30%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>转化率过低，间夜少摊薄不了成本<br>→ <b>排查动作：</b>按"转化率偏低"归因排查，优化详情页/价格/政策/评价<br>→ <b>预估效果：</b>间夜增加，单房推广成本预估降15%-25%</div>';
+  attr += '<div class="attr-reason"><b>可能原因3：</b>预算过大，超出空房容量<br>→ <b>排查动作：</b>按空房容量重新计算合理预算（空房×底价线×0.5）<br>→ <b>预估效果：</b>预算控制在合理范围，单房推广成本≤单房毛利</div>';
+  attr += '</div>';
+}
+
+// 归因11：单房变动成本偏高
+var varCostBenchmark = varCostMap[document.getElementById("type").value] || 55;
+if(varCost > varCostBenchmark * 1.2){
+  var highPct = ((varCost - varCostBenchmark) / varCostBenchmark * 100).toFixed(0);
+  attr += '<div class="attr-card attr-yellow">';
+  attr += '<div class="attr-title">归因11：单房变动成本偏高</div>';
+  attr += '<div class="attr-desc">你的单房变动成本¥'+varCost+'，同业态基准约¥'+varCostBenchmark+'，高出'+highPct+'%。以下原因供你排查：</div>';
+  attr += '<div class="attr-reason"><b>可能原因1：</b>布草、洗漱用品等消耗品成本偏高<br>→ <b>排查动作：</b>对比3家供应商报价，考虑更换或集中采购<br>→ <b>预估效果：</b>单房变动成本预估降10%-15%</div>';
+  attr += '<div class="attr-reason"><b>可能原因2：</b>清洁人工成本偏高<br>→ <b>排查动作：</b>检查清洁排班和外包价格<br>→ <b>预估效果：</b>单房变动成本预估降5%-10%</div>';
+  attr += '</div>';
+}
+
+// 归因12：全部健康
+if(attr === ""){
+  attr += '<div class="attr-card attr-green">';
+  attr += '<div class="attr-title">归因12：全部健康</div>';
+  attr += '<div class="attr-desc">你的各项指标正常，投放回报'+roi.toFixed(2)+'，处于盈利区间。无需调整。<br>如果想进一步扩大收益：可尝试将预算提升20%-30%，观察投放回报是否维持在当前水平。</div>';
+  attr += '<div class="attr-reason">→ <b>动作：</b>追加部分单独建计划，周期14天<br>→ <b>预估效果：</b>预计新增间夜'+Math.floor(roomNights*0.25)+'间，多赚约¥'+Math.round(roomNights*0.25*marginPerRoom*0.8)+'<br>→ <b>验收：</b>追加部分投放回报≥0.3继续，<0.3停止追加</div>';
+  attr += '</div>';
+}
+// ===== 模块⑤ 落地方案（简化版） =====
+var plan = "";
+var planTitle = "";
+
+function fmt0(n){ return n !== undefined && !isNaN(n) ? n.toFixed(0) : "0"; }
+function fmt(n){ return n !== undefined && !isNaN(n) ? n.toLocaleString() : "0"; }
+function fmt1(n){ return n !== undefined && !isNaN(n) ? n.toFixed(1) : "0.0"; }
+function fmt2(n){ return n !== undefined && !isNaN(n) ? n.toFixed(2) : "0.00"; }
+
+var platRois = activePlats.map(function(p){
+  var r = calcForwardPlatform(p, adr, varCost, null);
+  return {name: p.name, budget: p.budget, roi: p.budget > 0 ? r.profit / p.budget : -999, profit: r.profit, roomNights: r.roomNights, cpc: p.cpc, rate: p.orderRate, checkin: p.checkinRate, commission: p.commission};
+});
+platRois.sort(function(a,b){ return b.roi - a.roi; });
+var bestPlat = platRois[0];
+var worstPlat = platRois[platRois.length-1];
+var nightlyEmpty = Math.floor(rooms * (1 - occ/100));
+var dailyBudget = Math.round(dailySpend);
+
+if(capExceeded && profit < 0){
+  planTitle = "容量严重不足 → 立即缩小预算或暂停投放";
+  plan += '<div class="plan-summary"><b>📌 结论：</b>空房容量仅 <b>'+capacity+' 间夜</b>，但推广间夜原测算为 '+rawNights+' 间夜，容量严重不足。当前投放已亏损 ¥'+fmt0(Math.abs(profit))+'，继续投放将加剧亏损。<b>强烈建议立即缩小预算或暂停投放。</b></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">立即缩小预算至容量可消化范围</div><div class="plan-action"><b>→ 动作：</b>将总预算缩减至空房容量的50%以内（建议 ≤ ¥'+fmt0(Math.floor(capacity * marginPerRoom * 0.5))+'），或延长投放周期至'+Math.max(14, Math.ceil(days * rawNights / capacity))+'天</div><div class="plan-check"><b>→ 验收：</b>推广间夜 ≤ 空房容量的80%（即 ≤ '+Math.floor(capacity*0.8)+' 间夜）</div></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">评估是否暂停投放</div><div class="plan-action"><b>→ 动作：</b>若入住率已≥85%且房价正常，优先通过提价而非推广增收；若入住率<60%，先排查自然流量问题</div><div class="plan-check"><b>→ 验收：</b>3天内决定是否恢复投放或长期暂停</div></div>';
+} else if(adr < floorPrice){
+
+  planTitle = "定价灾难 → 立即修复定价";
+  plan += '<div class="plan-summary"><b>📌 结论：</b>当前房价¥'+adr+' <b>低于底价线¥'+fmt1(floorPrice)+'</b>，每卖1间亏¥'+fmt1(floorPrice-adr)+'。推广是加速失血，<b>48小时内修复定价，修复前禁止投流</b>。</div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">立即上调房价至底价线以上</div><div class="plan-action"><b>→ 动作：</b>全渠道后台统一上调房价至 ≥ ¥'+fmt0(Math.ceil(floorPrice*1.1))+'，关闭自动促销</div><div class="plan-check"><b>→ 验收：</b>连续2天无低于底价线成交</div></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">排查并关闭所有低价渠道</div><div class="plan-action"><b>→ 动作：</b>检查协议价、团购价、钟点房，低于底价线的立即改价或下架</div><div class="plan-check"><b>→ 验收：</b>昨日订单中成交房价低于¥'+fmt0(floorPrice)+'的订单 = 0单</div></div>';
+} else if(profit < 0){
+  planTitle = "投放亏损 → 修复参数再投";
+  plan += '<div class="plan-summary"><b>📌 结论：</b>当前投放亏损¥'+fmt0(Math.abs(profit))+'（投放回报 '+fmt2(roi)+'）。房价没问题，<b>问题是流量效率太低</b>。</div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">按归因分析逐项排查</div><div class="plan-action"><b>→ 动作：</b>根据上方模块④的归因结果，优先处理红色归因项，逐项修复CPC/转化率/定价问题</div><div class="plan-check"><b>→ 验收：</b>修复后重新测算，投放回报 > 0</div></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">修复后小额复测</div><div class="plan-action"><b>→ 动作：</b>仅保留'+bestPlat.name+'，预算¥'+fmt0(Math.min(budget*0.5,5000))+'，周期7天</div><div class="plan-check"><b>→ 验收：</b>7天平均投放回报 > 0.3 → 恢复全部；0-0.3 → 再测7天；< 0 → 长期暂停</div></div>';
+} else if(occ >= 80){
+  planTitle = "高入住率 → 提价保利润";
+  plan += '<div class="plan-summary"><b>📌 结论：</b>入住率已达<b>'+occ+'%</b>，每晚空房仅约'+nightlyEmpty+'间。策略从"填房"转向<b>"提价增效"</b>。</div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-red">🔴 P0 紧急</div><div class="plan-title">第一次提价 +5%</div><div class="plan-action"><b>→ 动作：</b>各平台统一上调5%至 ¥'+fmt0(Math.ceil(adr*1.05))+'，同步上调会员价、协议价</div><div class="plan-check"><b>→ 验收：</b>3天后入住率跌幅 ≤ 10% → 第二次提价；跌幅 > 10% → 回调</div></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">锁定预算，聚焦高回报平台</div><div class="plan-action"><b>→ 动作：</b>日预算上限 = ¥'+fmt0(dailyBudget)+'，关闭自动扩量'+ (platRois.length > 1 ? '，暂停'+worstPlat.name+'，仅保留'+bestPlat.name : '') +'</div><div class="plan-check"><b>→ 验收：</b>每日09:00检查实际消耗 ≤ 日预算上限</div></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-green">🟢 P2 观察</div><div class="plan-title">老客复购替代新客推广</div><div class="plan-action"><b>→ 动作：</b>给过去30天入住客人发微信专属价，店内放直订优惠卡片</div><div class="plan-check"><b>→ 验收：</b>直订订单占比提升至 ≥ 15%</div></div>';
+} else {
+  planTitle = "投放盈利 → 分阶段放大";
+  plan += '<div class="plan-summary"><b>📌 结论：</b>投放盈利，投放回报='+fmt2(roi)+'，单房毛利¥'+fmt1(marginPerRoom)+'，推广成本¥'+fmt1(costPerRoom)+'。<b>模式跑通，分阶段放大。</b></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-green">🟢 P2 观察</div><div class="plan-title">启动投放，设置硬上限</div><div class="plan-action"><b>→ 动作：</b>日预算上限¥'+fmt0(dailyBudget)+'，点击成本上限¥'+fmt1(cpcMax)+'，推广时段10:00-22:00</div><div class="plan-check"><b>→ 验收：</b>关闭"自动扩量"，改为手动控制</div></div>';
+  plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">每日09:00监控3个指标</div><div class="plan-action"><b>→ 动作：</b>1️⃣ 点击成本 > ¥'+fmt1(cpcMax)+' → 15:00前下调出价15%<br>2️⃣ 转化率 < '+fmt1(dispRate*0.8)+'% → 检查详情页/价格/评价<br>3️⃣ 间夜 = 0 → 排查房态/价格/平台限流</div><div class="plan-check"><b>→ 验收：</b>点击成本稳定在¥'+fmt1(cpcMax)+'以内</div></div>';
+  if(addBudget > 0 && addProfit > 0 && roi >= 0.3){
+    plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">追加预算（满'+nextReviewDay+'天后评估）</div><div class="plan-action"><b>→ 动作：</b>追加¥'+fmt0(addBudget)+'，预计新增'+addRN+'间夜、多赚¥'+fmt0(addProfit)+'。单独建计划，周期'+addDays+'天</div><div class="plan-check"><b>→ 验收：</b>追加部分独立核算，投放回报 ≥ 0.3 继续，< 0.3 停止</div></div>';
+  }
+  if(platRois.length > 1){
+    plan += '<div class="plan-card"><div class="plan-tag tag-yellow">🟡 P1 重要</div><div class="plan-title">平台间预算再分配</div><div class="plan-action"><b>→ 动作：</b>每'+nextReviewDay+'天复盘，'+worstPlat.name+'预算减30%，'+bestPlat.name+'预算加30%</div><div class="plan-check"><b>→ 验收：</b>高回报平台间夜占比 ≥ 60%</div></div>';
+  }
+}
+
+plan += '<div class="plan-card"><div class="plan-tag tag-green">🟢 时间节奏</div>';
+plan += '<div class="plan-action"><b>今天：</b>根据上方归因结果，执行P0紧急项<br><b>3天内：</b>完成P1重要项，每日09:00监控数据<br><b>持续监控：</b>投放回报、点击成本、转化率、入住率、底价线</div>';
+plan += '</div>';
+
+plan += '<div class="plan-redline"><b>🛑 总体验收标准（任一触发立即停投）：</b><br>';
+plan += '1. 实际投放回报 ≤ 0 连续2天<br>';
+plan += '2. 实际点击成本 > ¥'+fmt1(cpcMax)+' 连续3天<br>';
+plan += '3. 实际转化率 < '+fmt1(dispRate*0.5)+'% 连续3天<br>';
+plan += '4. 单房推广成本 > 单房毛利¥'+fmt1(marginPerRoom)+'<br>';
+plan += '5. 连续3天间夜低于日均'+fmt1(days>0?roomNights/days:0)+'间的50%<br>';
+plan += '6. 任意渠道成交房价 < ¥'+fmt0(floorPrice);
+plan += '</div>';
+lastForecast = {clicks:clicks, orders:orders, roomNights:roomNights, budget:budget, profit:profit, roi:roi, margin:marginPerRoom, otherFee:otherFeeTotal, cpc:diagCpc, orderRate:diagRate, checkinRate:dispCheckin, adr:adr, taxRate:taxRate};
+
+
+// ===== 报告组装 =====
+var html = "";
+if(warnings.length > 0){
+html += '<div class="warn" style="padding:12px;border-radius:10px;margin-bottom:16px"><b>⚠️ 输入合理性提醒</b><ul style="margin:6px 0 0 18px;line-height:1.8">';
+warnings.forEach(function(w){ html += "<li>"+w+"</li>"; });
+html += '</ul></div>';
+}
+
+// 模块① 核心指标（分层展示，公式隐藏）
+html += '<div class="sec">';
+html += '<div class="sec-title">① 核心指标</div>';
+html += '<div class="tier-label">核心结论</div>';
+html += '<div class="item"><span class="k">投放周期</span><span class="v">'+days+' 天</span></div>';
+html += '<div class="item"><span class="k">总投入'+(capExceeded?'（预计实际消耗）':'')+'</span><span class="v">¥'+budget.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">推广间夜</span><span class="v">'+roomNights+' 间夜</span></div>';
+html += '<div class="item"><span class="k">投放净利润</span><span class="v big '+(profit>=0?"green":"red")+'">'+(profit>=0?"¥":"-¥")+Math.abs(profit).toFixed(0)+'</span></div>';
+html += '<div class="item"><span class="k">投放ROI</span><span class="v big '+(roi>0?"green":roi<0?"red":"orange")+'">'+roi.toFixed(2)+(roi>0?"（赚）":roi<0?"（亏）":"（平）")+'</span></div>';
+html += '<div class="tier-label">收入与成本构成</div>';
+html += '<div class="item"><span class="k">客人实付收入</span><span class="v">¥'+revenue.toFixed(0)+'</span></div>';
+html += '<div class="item"><span class="k">平台佣金（'+commission.toFixed(1)+'%）</span><span class="v">-¥'+commFee.toFixed(0)+'</span></div>';
+html += '<div class="item"><span class="k">单房变动成本（¥'+varCost+' × '+roomNights+'间夜）</span><span class="v">-¥'+varTotal.toFixed(0)+'</span></div>';
+if(taxRate > 0){
+html += '<div class="item"><span class="k">税费（税率'+taxRate+'%，含税折算）</span><span class="v">-¥'+taxFee.toFixed(0)+'</span></div>';
+} else {
+html += '<div class="item"><span class="k">税费</span><span class="v orange">未计入（建议在高级参数填写实际税率）</span></div>';
+}
+html += '<div class="item"><span class="k">最终净利润</span><span class="v big '+(profit>=0?"green":"red")+'">'+(profit>=0?"¥":"-¥")+Math.abs(profit).toFixed(0)+'</span></div>';
+html += '<span class="proc-toggle" onclick="toggleProc(this)">展开过程数据 ▼</span>';
+html += '<div class="proc-body">';
+html += '<div class="item"><span class="k">点击量</span><span class="v">'+clicks.toLocaleString()+' 次</span></div>';
+html += '<div class="item"><span class="k">订单量</span><span class="v">'+orders.toLocaleString()+' 单</span></div>';
+html += '<div class="item"><span class="k">间夜数</span><span class="v">'+roomNights.toLocaleString()+' 间夜</span></div>';
+html += '<div class="item"><span class="k">单房推广成本</span><span class="v">¥'+costPerRoom.toFixed(1)+'</span></div>';
+html += '<div class="item"><span class="k">单房毛利'+(activePlats.length>1?"（加权）":"")+'<span style="color:#999;font-size:11px;font-weight:normal">（税前）</span></span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
+if(fixedCost > 0 && floorDenom > 0.05){
+html += '<div class="item"><span class="k">含固定成本建议售价<span style="color:#999;font-size:11px;font-weight:normal">（参考，覆盖固定成本+变动成本+佣金+税费）</span></span><span class="v blue">¥'+((varCost+fixedCost)/floorDenom).toFixed(1)+'</span></div>';
+}
+html += '<div class="item"><span class="k">日均消耗</span><span class="v">¥'+dailySpend.toFixed(0)+'</span></div>';
+html += '</div>';
+
+if(activePlats.length > 1){
+html += '<table><tr><th>平台</th><th>预算</th><th>点击</th><th>订单</th><th>间夜</th><th>净利润*</th><th>ROI</th></tr>';
+activePlats.forEach(function(p){
+var r = calcForwardPlatform(p, adr, varCost, null);
+var pr = p.budget > 0 ? r.profit / p.budget : 0;
+html += "<tr><td>"+p.name+"</td><td>¥"+p.budget+"</td><td>"+r.clicks+"</td><td>"+r.orders+"</td><td>"+r.roomNights+"</td><td>¥"+r.profit.toFixed(0)+"</td><td>"+pr.toFixed(2)+"</td></tr>";
+});
+html += "<tr><td><b>合计</b></td><td>¥"+budget+"</td><td>"+clicks+"</td><td>"+orders+"</td><td>"+roomNights+"</td><td>¥"+profitPretax.toFixed(0)+"</td><td>"+(budget>0?(profitPretax/budget).toFixed(2):"0.00")+"</td></tr>";
+html += '</table>';
+html += '<div class="hint" style="margin-top:6px">* 分平台净利润未含税费，税费在合计层面统一扣除。预算分配建议：对比各平台ROI，将预算向ROI更高的平台倾斜，单平台单次追加不超过30%并观察3天实际数据。</div>';
+}
+
+// 容量校验：按空房容量与推广间夜的倍数关系输出动态结论
+var ratio = roomNights > 0 ? capacity / roomNights : 0;
+var capMsg = "";
+var capClass = "tip";
+if(rawNights > capacity){
+capClass = "danger";
+capMsg = "<b>🛑 容量不足：</b>空房容量（"+capacity+" 间夜）低于原测算推广间夜（"+rawNights+" 间夜），仅可消化 "+capacity+" 间夜，超出 "+(rawNights-capacity)+" 间夜无法成交。本报告按预计实际消耗 ¥'+budget.toLocaleString()+'（原预算 '+(plannedBudget>0?Math.round(budget/plannedBudget*100):0)+'%）口径测算收益，未消耗预算不会被扣费。建议缩小预算、延长投放周期，或先提升自然流量入住率。";
+}else if(roomNights === 0){
+capClass = capacity > 0 ? "warn" : "danger";
+capMsg = capacity > 0 ? ("<b>⚠️ 容量充足但零转化：</b>"+days+" 天周期内空房容量为 "+capacity+" 间夜，容量本身充足；但按当前参数推广间夜为 0，流量转化链路未跑通，请先核对 CPC 与下单转化率。") : ("<b>🛑 容量为零：</b>当前入住率下空房容量为 0 间夜，无空房可供推广消化，投放难以带来增量间夜，建议先评估提价或等待入住率回落。");
+}else if(capacity > 0 && ratio >= 2){
+capMsg = "<b>✅ 容量充足：</b>空房容量（"+capacity+" 间夜）为推广间夜（"+roomNights+" 间夜）的 "+ratio.toFixed(1)+" 倍，消化空间充裕，当前预算无需担心房间不够卖。";
+}else if(capacity > 0 && ratio >= 1.2){
+capMsg = "<b>✅ 容量匹配：</b>空房容量（"+capacity+" 间夜）为推广间夜（"+roomNights+" 间夜）的 "+ratio.toFixed(1)+" 倍，可完全消化，尚余 "+(capacity-roomNights)+" 间夜缓冲。";
+}else if(capacity > 0 && ratio >= 1){
+capClass = "warn";
+capMsg = "<b>⚠️ 容量偏紧：</b>空房容量（"+capacity+" 间夜）仅为推广间夜（"+roomNights+" 间夜）的 "+ratio.toFixed(1)+" 倍，缓冲不足，实际入住率波动可能导致部分间夜无法消化。";
+}else{
+capClass = "danger";
+capMsg = "<b>🛑 容量为零：</b>当前入住率下空房容量为 "+capacity+" 间夜，无空房可供推广消化，投放难以带来增量间夜，建议先评估提价或等待入住率回落。";
+}
+html += '<div class="'+capClass+'" style="margin-top:10px;padding:12px;border-radius:10px">'+capMsg+'</div>';
+html += '</div>';
+
+// 模块② 决策红绿灯
+html += '<div class="sec">';
+html += '<div class="sec-title">② 决策红绿灯（模型数据阈值）</div>';
+html += '<div class="lights">'+lightHtml+'</div>';
+html += '<div id="decisionBox">'+decHtml+'</div>';
+
+// ===== 敏感度分析表格 =====
+html += '<div class="sec">';
+html += '<div class="sec-title">②-1 敏感度分析（CPC / 转化率 ±20% 对利润的影响）</div>';
+html += '<table><tr><th>场景</th><th>CPC</th><th>转化率</th><th>点击量</th><th>订单</th><th>间夜</th><th>净利润</th><th>ROI</th><th>结论</th></tr>';
+
+var sensScenarios = [
+  {label: "基准", cpcMult: 1.0, rateMult: 1.0},
+  {label: "CPC +20%", cpcMult: 1.2, rateMult: 1.0},
+  {label: "CPC -20%", cpcMult: 0.8, rateMult: 1.0},
+  {label: "转化率 +20%", cpcMult: 1.0, rateMult: 1.2},
+  {label: "转化率 -20%", cpcMult: 1.0, rateMult: 0.8},
+  {label: "CPC+20% & 转化率-20%", cpcMult: 1.2, rateMult: 0.8},
+  {label: "CPC-20% & 转化率+20%", cpcMult: 0.8, rateMult: 1.2}
+];
+
+sensScenarios.forEach(function(s){
+  var sBase = sumPlats(activePlats, adr, varCost, {cpc: s.cpcMult, rate: s.rateMult, checkin: 1, adr: 1});
+  var sCapExceeded = sBase.roomNights > capacity;
+  var sRoomNights = sBase.roomNights;
+  var sClicks = sBase.clicks;
+  var sOrders = sBase.orders;
+  if(sCapExceeded && capacity >= 0){
+    var sRatio = capacity / Math.max(sBase.roomNights, 1);
+    sRoomNights = capacity;
+    sClicks = Math.floor(sBase.clicks * sRatio);
+    sOrders = Math.floor(sBase.orders * sRatio);
+  }
+  var sRevenue = sRoomNights * adr;
+  var sCommFee = 0;
+  activePlats.forEach(function(p){
+    var pRatio = p.budget / budget;
+    sCommFee += sRevenue * pRatio * (p.commission / 100);
+  });
+  var sMarginPerRoom = sBase.marginPerRoom;
+  var sProfit = sRoomNights * sMarginPerRoom - budget - otherFeeTotal;
+  var sTaxFee = taxRate > 0 ? sRevenue * taxRate / (100 + taxRate) : 0;
+  sProfit = sProfit - sTaxFee;
+  var sRoi = budget > 0 ? (sProfit / budget) : 0;
+  var sCpc = diagCpc * s.cpcMult;
+  var sRate = diagRate * s.rateMult;
+  var cls = sProfit > 0 ? 'green' : (sProfit < 0 ? 'red' : 'orange');
+  var concl = sProfit > 0 ? '盈利' : (sProfit < 0 ? '亏损' : '持平');
+  html += '<tr><td>' + s.label + '</td><td>¥' + sCpc.toFixed(2) + '</td><td>' + sRate.toFixed(2) + '%</td><td>' + sClicks + '</td><td>' + sOrders + '</td><td>' + sRoomNights + '</td><td class="' + cls + '">¥' + sProfit.toFixed(0) + '</td><td class="' + cls + '">' + sRoi.toFixed(2) + '</td><td>' + concl + '</td></tr>';
+});
+
+html += '</table>';
+html += '<div class="hint" style="margin-top:8px">敏感度分析仅作参考：CPC与转化率联动变化时，实际效果可能非线性。建议以小额试投验证。</div>';
+html += '</div>';
+
+html += '</div>';
+
+// 模块③ 投流方案对比
+html += '<div class="sec">';
+html += '<div class="sec-title">③ 投流方案对比</div>';
+html += '<table><tr><th>方案</th><th>投入</th><th>间夜</th><th>净收益</th><th>结论</th></tr>'+tRows+'</table>';
+if(profit > 0){
+html += '<div class="add-note" style="margin-top:10px">';
+html += '<b>追加投放建议：</b><br>';
+if(addBudget > 0 && addProfit > 0){
+html += '1. 建议追加金额：约 ¥'+addBudget.toFixed(0)+'（基于当前 ROI '+roi.toFixed(2)+' 测算，单次不超过当前预算的 30%）。<br>';
+html += '2. 追加投放条件：当前方案实际投放回报 ≥ 0.3，且空房容量仍有余量（当前剩余 '+addCapRemain+' 间夜）。<br>';
+html += '3. 预期追加效果：新增约 '+addRN+' 间夜，预计多赚约 ¥'+addProfit.toFixed(0)+'；预算扩大后点击成本可能被竞价抬高，实际回报可能低于该预估。<br>';
+html += '4. 追加节奏：单次追加投放 '+addDays+' 天，验证实际投放回报 ≥ 0.3 后再继续，避免一次性大幅加码。';
+}else{
+html += '当前参数下追加投放的边际收益不足以覆盖成本，暂不建议追加；建议先优化 CPC 或转化率后再评估。';
+}
+html += '</div>';
+}else if(profit === 0){
+html += '<div class="warn" style="padding:12px;border-radius:10px;margin-top:10px"><b>⚠️ 追加建议：</b>当前方案处于盈亏平衡，不建议追加预算；待 CPC 下降或转化率提升后再评估。</div>';
+}else{
+html += '<div class="warn" style="padding:12px;border-radius:10px;margin-top:10px"><b>⚠️ 追加建议：</b>当前方案预计亏损 ¥'+Math.abs(profit).toFixed(0)+'，不建议追加投放；暂停投放可避免该笔亏损，待效率参数改善（CPC 降至 ¥'+cpcMax.toFixed(2)+' 以内或转化率提升）后重新测算。</div>';
+}
+html += '</div>';
+
+// 模块④ 归因分析
+html += '<div class="sec">';
+html += '<div class="sec-title">④ 归因分析</div>';
+html += '<div class="tip" style="margin-bottom:12px"><b>📋 排查优先级指引：</b>建议优先处理红色归因，按 <b>P0 → P1 → P2</b> 顺序逐项排查修复。红色项直接影响盈亏，黄色项影响效率，绿色项为健康提示。</div>';
+
+html += attr;
+html += '</div>';
+
+// 模块⑤ 落地方案
+html += '<div class="sec">';
+html += '<div class="sec-title">⑤ 落地方案：' + planTitle + '</div>';
+html += plan;
+html += '</div>';
+
+// 模块⑥ 投后复盘（保持原样，仅序号⑦→⑥）
+html += '<div class="sec">';
+html += '<div class="sec-title">⑥ 投后复盘（预测 vs 实际）</div>';
+html += '<div class="hint" style="margin-bottom:10px">投放结束后，填入平台后台的实际数据，系统自动对比偏差；点击"校准参数"可把预估值更新为实际值，重新测算会越来越准'+(activePlats.length>1?"（多平台投放时按汇总口径复盘；校准仅更新首个平台参数，多平台请分别录入实际值）":"")+'</div>';
+html += '<div class="inline-row"><div class="field"><label>实际消耗(元)</label><input type="number" id="rvCost" placeholder="平台后台实际扣费"></div><div class="field"><label>实际点击</label><input type="number" id="rvClicks" placeholder="实际点击次数"></div></div>';
+html += '<div class="inline-row"><div class="field"><label>实际订单</label><input type="number" id="rvOrders" placeholder="实际成交订单"></div><div class="field"><label>实际入住间夜</label><input type="number" id="rvNights" placeholder="实际入住间夜"></div></div>';
+html += '<div class="btn-group"><button onclick="runReview()">生成复盘对比</button><button onclick="calibrateParams()">用实际值校准预估参数</button></div>';
+html += '<div id="reviewResult"></div>';
+html += '</div>';
+html += makeDisclaimer("⑦");
+
+document.getElementById("result").innerHTML = html;
+return true;
+}
+
+
+function runReview(){
+var box = document.getElementById("reviewResult");
+if(!box) return;
+if(!lastForecast){ box.innerHTML = '<div class="warn" style="padding:10px;border-radius:8px">请先执行一次测算</div>'; return; }
+var aCost = getVal("rvCost"), aClicks = getVal("rvClicks"), aOrders = getVal("rvOrders"), aNights = getVal("rvNights");
+if(aCost <= 0 || aClicks <= 0 || aOrders <= 0 || aNights <= 0){ alert("请完整填写四项实际数据（均需大于0）"); return; }
+if(aOrders > aClicks){ alert("实际订单数不能大于实际点击数，请核对"); return; }
+if(aNights > aOrders){ alert("实际入住间夜不能大于实际订单数，请核对"); return; }
+var f = lastForecast;
+var aCpc = aCost / aClicks;
+var aRate = aOrders / aClicks * 100;
+var aCheckin = Math.min(aNights / aOrders * 100, 100);
+var aTax = f.taxRate > 0 ? aNights * (f.adr||0) * f.taxRate / (100 + f.taxRate) : 0;
+var aProfit = aNights * f.margin - aCost - f.otherFee - aTax;
+var aRoi = aProfit / aCost;
+function dev(a, p){
+if(p === 0) return "-";
+var d = (a - p) / Math.abs(p) * 100;
+return (d >= 0 ? "+" : "") + d.toFixed(0) + "%";
+}
+var h = '<table><tr><th>指标</th><th>预测</th><th>实际</th><th>偏差</th></tr>';
+h += '<tr><td>消耗</td><td>¥'+f.budget.toFixed(0)+'</td><td>¥'+aCost.toFixed(0)+'</td><td>'+dev(aCost, f.budget)+'</td></tr>';
+h += '<tr><td>点击</td><td>'+f.clicks+'</td><td>'+aClicks+'</td><td>'+dev(aClicks, f.clicks)+'</td></tr>';
+h += '<tr><td>订单</td><td>'+f.orders+'</td><td>'+aOrders+'</td><td>'+dev(aOrders, f.orders)+'</td></tr>';
+h += '<tr><td>入住间夜</td><td>'+f.roomNights+'</td><td>'+aNights+'</td><td>'+dev(aNights, f.roomNights)+'</td></tr>';
+h += '<tr><td>CPC</td><td>¥'+f.cpc.toFixed(2)+'</td><td>¥'+aCpc.toFixed(2)+'</td><td>'+dev(aCpc, f.cpc)+'</td></tr>';
+h += '<tr><td>下单转化率</td><td>'+f.orderRate.toFixed(2)+'%</td><td>'+aRate.toFixed(2)+'%</td><td>'+dev(aRate, f.orderRate)+'</td></tr>';
+h += '<tr><td>履约率</td><td>'+f.checkinRate+'%</td><td>'+aCheckin.toFixed(1)+'%</td><td>'+dev(aCheckin, f.checkinRate)+'</td></tr>';
+h += '<tr><td>ROI</td><td>'+f.roi.toFixed(2)+'</td><td>'+aRoi.toFixed(2)+'</td><td>'+dev(aRoi, f.roi)+'</td></tr>';
+h += '</table>';
+var concl = [];
+if(aRoi < 0) concl.push("实际ROI为负，投放亏损，建议暂停并核查CPC与转化漏斗");
+if(aCpc > f.cpc * 1.2) concl.push("实际CPC明显高于预估，建议优化出价/关键词或更换投放时段");
+if(aRate < f.orderRate * 0.8) concl.push("实际转化率明显低于预估，建议检查详情页、价格展示与取消政策");
+if(aCheckin < f.checkinRate * 0.85) concl.push("实际履约率低于预估，关注No-show与订单取消情况");
+if(concl.length === 0) concl.push("实际数据与预测基本一致，模型参数可靠，可继续沿用当前参数测算");
+concl.push("可点击上方「用实际值校准预估参数」，把CPC/转化率/履约率更新为实际值后重新测算");
+h += '<div class="tip" style="margin-top:10px"><b>复盘结论：</b><br>' + concl.map(function(c, i){ return (i+1) + ". " + c; }).join("<br>") + '</div>';
+box.innerHTML = h;
+}
+
+function calibrateParams(){
+var aCost = getVal("rvCost"), aClicks = getVal("rvClicks"), aOrders = getVal("rvOrders"), aNights = getVal("rvNights");
+if(aCost <= 0 || aClicks <= 0 || aOrders <= 0){ alert("请先填写实际消耗、实际点击、实际订单（用于校准CPC、转化率、履约率）"); return; }
+if(aOrders > aClicks){ alert("实际订单数不能大于实际点击数，请核对"); return; }
+// 校准第一个平台的参数
+if(platforms.length > 0){
+var p = platforms[0];
+p.cpc = (aCost / aClicks).toFixed(2);
+p.orderRate = (aOrders / aClicks * 100).toFixed(2);
+if(aNights > 0){ p.checkinRate = Math.min(aNights / aOrders * 100, 100).toFixed(1); }
+var cpcEl = document.getElementById("platCpc_"+p.id);
+if(cpcEl){ cpcEl.value = p.cpc; cpcEl.classList.remove("auto"); }
+var orEl = document.getElementById("platOrderRate_"+p.id);
+if(orEl){ orEl.value = p.orderRate; orEl.classList.remove("auto"); }
+var crEl = document.getElementById("platCheckinRate_"+p.id);
+if(crEl){ crEl.value = p.checkinRate; crEl.classList.remove("auto"); }
+}
+saveDraft();
+showToast("已用实际值校准预估参数，请重新生成报告");
+}
+
+// ==================== 事件绑定 & 存储 ====================
+function getForwardFields(){
+return ["type","location","rooms","adr","varCost","taxType","taxRate","occ","fwdPeriod","ltvNights"];
+}
+function getAllFieldIds(){
+return ["cityTier","location","type","rooms","adr","varCost","fixedCost","taxType","taxRate","occ","fwdPeriod","seasonHoliday","ltvNights","brandName"];
+}
+
+function getData(){
+var data = {mode: currentMode};
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(el) data[id] = el.value;
+});
+
+// 保存平台列表
+data._platforms = platforms.map(function(p){
+var budgetEl = document.getElementById("platBudget_"+p.id);
+var cpcEl = document.getElementById("platCpc_"+p.id);
+var orEl = document.getElementById("platOrderRate_"+p.id);
+var commEl = document.getElementById("platCommission_"+p.id);
+var ofEl = document.getElementById("platOtherFee_"+p.id);
+var crEl = document.getElementById("platCheckinRate_"+p.id);
+var selEl = document.getElementById("platForm_"+p.id);
+return {
+platform: selEl ? selEl.value : p.platform,
+budget: budgetEl ? budgetEl.value : p.budget,
+cpc: cpcEl ? cpcEl.value : p.cpc,
+orderRate: orEl ? orEl.value : p.orderRate,
+commission: commEl ? commEl.value : p.commission,
+otherFee: ofEl ? ofEl.value : p.otherFee,
+checkinRate: crEl ? crEl.value : p.checkinRate
+};
+});
+return data;
+}
+
+function setData(data){
+if(!data || typeof data !== "object") return;
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(el && data[id] !== undefined && data[id] !== null){
+el.value = data[id];
+}
+});
+// 恢复平台列表
+platforms = [];
+platIdCounter = 0;
+if(data._platforms && Array.isArray(data._platforms) && data._platforms.length > 0){
+data._platforms.forEach(function(pd){
+addPlatform(pd);
+});
+} else {
+// 兼容旧数据：尝试从旧字段恢复
+var mainBudget = data.budget || "";
+var mainPlatform = data.platform || "xiecheng";
+var mainCpc = data.cpc || getDefaultCpc();
+var mainOrderRate = data.orderRate || 3;
+var mainCommission = data.commission || getDefaultCommission(mainPlatform);
+var mainOtherFee = data.otherFee || 0;
+var mainCheckinRate = data.checkinRate || 85;
+addPlatform({platform:mainPlatform, budget:mainBudget, cpc:mainCpc, orderRate:mainOrderRate, commission:mainCommission, otherFee:mainOtherFee, checkinRate:mainCheckinRate});
+// 旧的多平台
+["mp1","mp2"].forEach(function(prefix){
+var b = data[prefix+"Budget"];
+if(b && parseFloat(b) > 0){
+addPlatform({
+platform: data[prefix+"Platform"] || "meituan",
+budget: b,
+cpc: data[prefix+"Cpc"] || getDefaultCpc(),
+orderRate: data[prefix+"Rate"] || 3,
+commission: data[prefix+"Commission"] || getDefaultCommission(data[prefix+"Platform"] || "meituan"),
+otherFee: 0,
+checkinRate: mainCheckinRate
+});
+}
+});
+}
+updateBrand();
+updateBtnState();
+}
+
+
+// ========== URL Hash 数据保存（解决 Safari/隐私模式 localStorage 失效问题） ==========
+function saveToHash(){
+  try{
+    var data = getData();
+    var json = JSON.stringify(data);
+    var encoded = btoa(encodeURIComponent(json));
+    window.location.hash = "data=" + encoded;
+  }catch(e){}
+}
+
+function loadFromHash(){
+  try{
+    var hash = window.location.hash;
+    if(hash && hash.indexOf("data=") === 1){
+      var encoded = hash.substring(6);
+      var json = decodeURIComponent(atob(encoded));
+      var data = JSON.parse(json);
+      if(data && typeof data === "object"){
+        setData(data);
+        return true;
+      }
+    }
+  }catch(e){}
+  return false;
+}
+
+function clearHash(){
+  if(window.history && window.history.replaceState){
+    window.history.replaceState(null, null, window.location.pathname + window.location.search);
+  }else{
+    window.location.hash = "";
+  }
+}
+
+function saveDraft(){
+var data = getData();
+safeStorage(function(){ localStorage.setItem(DRAFT_KEY_FWD, JSON.stringify(data)); });
+saveToHash();
+}
+
+function loadDraft(){
+var data = safeStorage(function(){ var r=localStorage.getItem(DRAFT_KEY_FWD); return r?JSON.parse(r):null; });
+if(data && typeof data === "object" && !Array.isArray(data)){
+setData(data);
+return true;
+}
+return false;
+}
+
+function getHistory(){
+return safeStorage(function(){
+var raw = localStorage.getItem(STORAGE_KEY);
+return raw ? JSON.parse(raw) : [];
+}) || [];
+}
+function setHistory(list){
+safeStorage(function(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); });
+}
+
+function getBrandName(){
+var el = document.getElementById("brandName");
+var v = el ? el.value.trim() : "";
+return v || "酒店收益管理服务商";
+}
+function updateBrand(){
+var n = getBrandName();
+var f = document.getElementById("brandFooterName");
+if(f) f.textContent = n;
+var pb = document.getElementById("printBrand");
+if(pb) pb.textContent = "— 由 " + n + " 提供技术支持 —";
+}
+
+
+
+// 业态/城市/地理位置/时段联动CPC和转化率
+function onCpcFactorChange(){
+  var baseCpc = calcBaseCpc();
+  var baseRate = getSeasonRate();
+  platforms.forEach(function(p){
+    var cpcEl = document.getElementById("platCpc_"+p.id);
+    if(cpcEl && cpcEl.classList.contains("auto")){
+      p.cpc = baseCpc;
+      cpcEl.value = baseCpc.toFixed(2);
+    }
+    var rateEl = document.getElementById("platOrderRate_"+p.id);
+    if(rateEl && rateEl.classList.contains("auto")){
+      p.orderRate = baseRate;
+      rateEl.value = baseRate.toFixed(1);
+    }
+  });
+  saveDraft();
+}
+(function(){
+var typeEl = document.getElementById("type");
+var cityTierEl = document.getElementById("cityTier");
+var locationEl = document.getElementById("location");
+var seasonEl = document.getElementById("seasonHoliday");
+if(typeEl){
+typeEl.addEventListener("change", function(){
+var t = this.value;
+if(varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
+onCpcFactorChange();
+});
+}
+if(cityTierEl){
+cityTierEl.addEventListener("change", onCpcFactorChange);
+}
+if(locationEl){
+locationEl.addEventListener("change", onCpcFactorChange);
+}
+if(seasonEl){
+seasonEl.addEventListener("change", onCpcFactorChange);
+}
+})();
+
+// 纳税人类型联动
+(function(){
+var taxTypeEl = document.getElementById("taxType");
+if(taxTypeEl){
+taxTypeEl.addEventListener("change", function(){
+var val = taxTypeMap[this.value];
+if(val !== undefined){
+setAuto("taxRate", val);
+}
+saveDraft();
+});
+}
+})();
+
+// 绑定change事件保存草稿
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(el) el.addEventListener("change", saveDraft);
+});
+
+// 总预算实时汇总显示
+function updateBudgetSummary(){
+var totalEl = document.getElementById("budgetTotal");
+if(!totalEl) return;
+var total = 0;
+platforms.forEach(function(p){
+var b = document.getElementById("platBudget_"+p.id);
+if(b){
+var v = parseFloat(b.value);
+if(!isNaN(v) && v > 0) total += v;
+}
+});
+if(total > 0){
+totalEl.textContent = "¥" + total.toLocaleString();
+totalEl.style.color = "#2563eb";
+} else {
+totalEl.textContent = "请填写预算金额";
+totalEl.style.color = "#94a3b8";
+}
+}
+
+// 输入监听
+var boxEl = document.querySelector(".box");
+if(boxEl){
+boxEl.addEventListener("input", function(e){
+var t = e.target;
+if(t && t.classList && t.classList.contains("auto")) t.classList.remove("auto");
+if(t && t.id){
+var errId = "";
+if(t.id === "cityTier") errId = "errCityTier";
+else if(t.id === "location") errId = "errLocation";
+else if(t.id === "type") errId = "errType";
+else if(t.id === "rooms") errId = "errRooms";
+else if(t.id === "adr") errId = "errAdr";
+else if(t.id === "fwdPeriod") errId = "errFwdPeriod";
+else if(t.id === "seasonHoliday") errId = "errSeason";
+else if(t.id.indexOf("platBudget_") === 0) errId = t.id.replace("platBudget_", "platBudgetErr_");
+else if(t.id.indexOf("platForm_") === 0) errId = t.id.replace("platForm_", "platFormErr_");
+if(errId){
+var errEl = document.getElementById(errId);
+if(errEl){ errEl.textContent = ""; errEl.style.display = "none"; }
+var wrap = t.closest(".row") || t.closest(".field");
+if(wrap) wrap.classList.remove("err");
+}
+if(t.id.indexOf("platBudget_") === 0){
+var genErr = document.getElementById("errPlatformGeneral");
+if(genErr){ genErr.textContent = ""; genErr.style.display = "none"; }
+}
+}
+updateBtnState();
+});
+boxEl.addEventListener("change", function(){ updateBtnState(); });
+}
+
+// 报表署名输入
+var brandNameEl = document.getElementById("brandName");
+if(brandNameEl){
+brandNameEl.addEventListener("input", function(){ updateBrand(); });
+}
+
+// 测算按钮
+var btnEl = document.getElementById("btn");
+var resultEl = document.getElementById("result");
+var isResultVisible = false;
+btnEl.addEventListener("click", function(){
+if(isResultVisible){
+resultEl.style.display = "none";
+isResultVisible = false;
+updateBtnState();
+} else {
+if(missingMsg){
+showToast(missingMsg);
+return;
+}
+var ok = doCalculate();
+if(ok){
+resultEl.style.display = "block";
+resultEl.scrollIntoView({behavior:"smooth", block:"start"});
+isResultVisible = true;
+btnEl.textContent = "收起结果 ▲";
+}
+}
+});
+
+// 重置表单
+function resetForm(){
+clearHash();
+getAllFieldIds().forEach(function(id){
+var el = document.getElementById(id);
+if(!el) return;
+if(el.tagName === "SELECT"){
+if(id === "type") el.value = "biz";
+else if(id === "taxType") el.value = "general";
+else el.selectedIndex = 0;
+} else {
+el.value = "";
+el.classList.remove("auto");
+}
+});
+setAuto("varCost", varCostMap.biz);
+setAuto("taxRate", 6);
+setAuto("occ", 60);
+setAuto("fwdPeriod", 30);
+setAuto("ltvNights", 0);
+setAuto("fixedCost", 0);
+// 重置平台列表
+platforms = [];
+platIdCounter = 0;
+addPlatform({platform:"xiecheng", budget:"", cpc:getDefaultCpc(), orderRate:getSeasonRate(), commission:platformMap.xiecheng, otherFee:0, checkinRate:85});
+updateBrand();
+resultEl.style.display = "none";
+isResultVisible = false;
+updateBtnState();
+}
+
+var btnClear = document.getElementById("btnClear");
+if(btnClear){
+btnClear.addEventListener("click", function(){
+if(!confirm("确定重置表单？所有已填数据将被清空。")) return;
+resetForm();
+safeStorage(function(){ localStorage.removeItem(DRAFT_KEY_FWD); });
+["errCityTier","errLocation","errType","errRooms","errAdr","errFwdPeriod","errSeason","errPlatformGeneral"].forEach(function(id){
+var el = document.getElementById(id);
+if(el){ el.textContent = ""; el.style.display = "none"; }
+});
+showToast("表单已重置");
+});
+}
+
+// 保存方案
+var btnSave = document.getElementById("btnSave");
+if(btnSave){
+btnSave.addEventListener("click", function(){
+var saveName = document.getElementById("saveName");
+if(saveName) saveName.value = "";
+openModal("modalSave");
+setTimeout(function(){ if(saveName) saveName.focus(); }, 100);
+});
+}
+
+function confirmSave(){
+var saveName = document.getElementById("saveName");
+var name = saveName ? saveName.value.trim() : "";
+if(!name){ alert("请输入方案名称"); return; }
+var list = getHistory();
+var data = getData();
+var summary = {};
+var adr = parseFloat(data.adr)||0;
+var budget = 0;
+if(data._platforms && Array.isArray(data._platforms)){
+data._platforms.forEach(function(p){ budget += (parseFloat(p.budget)||0); });
+}
+var varCostS = parseFloat(data.varCost)||0;
+var roi = 0;
+var profit = 0;
+var roomNights = 0;
+var lf = lastForecast;
+summary = {mode:"forward", adr:adr, budget:budget, roi: lf ? lf.roi : null, profit: lf ? lf.profit : null, roomNights: lf ? lf.roomNights : null};
+list.unshift({
+name: name,
+time: new Date().toLocaleString("zh-CN"),
+data: data,
+summary: summary
+});
+if(list.length > MAX_HISTORY) list = list.slice(0, MAX_HISTORY);
+setHistory(list);
+closeModal("modalSave");
+showToast("方案「" + name + "」已保存");
+}
+
+// 历史方案
+var btnHistory = document.getElementById("btnHistory");
+if(btnHistory){
+btnHistory.addEventListener("click", function(){
+renderHistory();
+openModal("modalHistory");
+});
+}
+
+function renderHistory(){
+var list = getHistory();
+var container = document.getElementById("historyList");
+var countEl = document.getElementById("historyCount");
+if(countEl) countEl.textContent = "（共 " + list.length + " 条）";
+if(!container) return;
+if(list.length===0){
+container.innerHTML = '<div class="history-empty">暂无保存的历史方案<br>点击"保存方案"按钮添加</div>';
+return;
+}
+container.innerHTML = list.map(function(item, idx){
+var s = item.summary || {};
+var modeTag = '<span class="badge badge-green">正向</span>';
+var roiStr = (s.roi !== undefined && s.roi !== null && !isNaN(s.roi)) ? "ROI " + s.roi.toFixed(2) : "未测算";
+var profitStr = (s.profit !== undefined && s.profit !== null && !isNaN(s.profit)) ? " 净利润 ¥" + Math.round(s.profit) : "";
+var adrStr = s.adr !== undefined ? "ADR ¥" + s.adr : "ADR -";
+var budgetStr = s.budget !== undefined ? "预算 ¥" + s.budget : "预算 -";
+return '<div class="history-item">' +
+'<div class="h-name">' + escapeHtml(item.name) + " " + modeTag + '</div>' +
+'<div class="h-meta">' + item.time + " &nbsp;|&nbsp; " + adrStr + " &nbsp;|&nbsp; " + budgetStr + " &nbsp;|&nbsp; " + roiStr + profitStr + '</div>' +
+'<div class="h-actions">' +
+'<button onclick="loadHistory(' + idx + ')">回填表单</button>' +
+'<button onclick="exportHistoryItem(' + idx + ')">导出JSON</button>' +
+'<button class="del" onclick="deleteHistory(' + idx + ')">删除</button>' +
+'</div>' +
+'</div>';
+}).join("");
+}
+
+function loadHistory(idx){
+var list = getHistory();
+if(!list[idx]) return;
+if(!confirm("确定用历史方案「" + escapeHtml(list[idx].name) + "」覆盖当前表单？")) return;
+setData(list[idx].data);
+closeModal("modalHistory");
+showToast("已加载方案「" + escapeHtml(list[idx].name) + "」");
+saveDraft();
+}
+
+function deleteHistory(idx){
+if(!confirm("确定删除该历史方案？")) return;
+var list = getHistory();
+list.splice(idx, 1);
+setHistory(list);
+renderHistory();
+showToast("已删除");
+}
+
+function exportHistoryItem(idx){
+var list = getHistory();
+if(!list[idx]) return;
+var blob = new Blob([JSON.stringify(list[idx].data, null, 2)], {type:"application/json"});
+var url = URL.createObjectURL(blob);
+var a = document.createElement("a");
+a.href = url;
+a.download = "酒店投流方案_" + escapeFileName(list[idx].name) + ".json";
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+showToast("已开始下载");
+}
+
+// ========== 一键复制 / 恢复（跨设备备份） ==========
+function encodeScheme(){
+  var data = getData();
+  var json = JSON.stringify(data);
+  return btoa(encodeURIComponent(json));
+}
+function decodeScheme(code){
+  var json = decodeURIComponent(atob(code.trim()));
+  return JSON.parse(json);
+}
+function copyTextToClipboard(text, onOk){
+  function ok(){ showToast("已复制，可粘贴到微信文件传输助手或直接发给需要的人"); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ ok(); if(onOk) onOk(); }, function(){ fallbackCopy(text, ok); });
+  } else {
+    fallbackCopy(text, ok);
+  }
+}
+function fallbackCopy(text, ok){
+  var ta = document.getElementById("copyText");
+  ta.value = text;
+  ta.removeAttribute("readonly");
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, ta.value.length);
+  try{
+    document.execCommand("copy");
+    ta.setAttribute("readonly","readonly");
+    ok();
+  }catch(e){
+    ta.setAttribute("readonly","readonly");
+    showToast("自动复制受限，请长按文本框手动复制");
+  }
+}
+var btnCopy = document.getElementById("btnCopy");
+if(btnCopy){
+  btnCopy.addEventListener("click", function(){
+    var code = encodeScheme();
+    var ta = document.getElementById("copyText");
+    ta.value = code;
+    document.getElementById("pasteText").value = "";
+    openModal("modalCopy");
+    setTimeout(function(){ ta.focus(); ta.select(); }, 100);
+  });
+}
+function copyScheme(){
+  var ta = document.getElementById("copyText");
+  var text = ta.value;
+  if(!text){ showToast("没有可复制的数据"); return; }
+  copyTextToClipboard(text);
+}
+function copyCurrentUrl(){
+  saveToHash();
+  var url = window.location.href;
+  copyTextToClipboard(url);
+}
+function pasteScheme(){
+  var code = document.getElementById("pasteText").value.trim();
+  if(!code){ alert("请先粘贴复制的代码"); return; }
+  try{
+    var data = decodeScheme(code);
+    setData(data);
+    closeModal("modalCopy");
+    showToast("已恢复方案数据");
+    saveDraft();
+    var btn = document.getElementById("btn");
+    if(btn){ btn.disabled = false; }
+  }catch(e){
+    alert("数据格式不正确，请确认完整复制了「一键复制」的代码");
+  }
+}
+
+// 导出报表
+var btnPrint = document.getElementById("btnPrint");
+if(btnPrint){
+btnPrint.addEventListener("click", function(){
+if(!resultEl || resultEl.style.display==="none" || resultEl.style.display===""){
+alert("请先执行测算，再导出报表");
+return;
+}
+updateBrand();
+window.print();
+});
+}
+
+// 导入
+var btnImport = document.getElementById("btnImport");
+if(btnImport){
+btnImport.addEventListener("click", function(){
+var preview = document.getElementById("importPreview");
+var fileInput = document.getElementById("importFile");
+if(preview) preview.innerHTML = "";
+if(fileInput) fileInput.value = "";
+openModal("modalImport");
+});
+}
+
+function handleImportFile(input){
+var file = input.files[0];
+if(!file) return;
+var reader = new FileReader();
+reader.onload = function(e){
+try{
+var data = JSON.parse(e.target.result);
+var preview = [];
+if(data.adr) preview.push("ADR: ¥" + data.adr);
+if(data._platforms && data._platforms.length > 0){
+var totalB = 0;
+data._platforms.forEach(function(p){ totalB += (parseFloat(p.budget)||0); });
+preview.push("预算: ¥" + totalB);
+} else if(data.budget) preview.push("预算: ¥" + data.budget);
+if(data.mode) preview.push("模式: " + (data.mode==="reverse"?"反向":"正向"));
+var previewEl = document.getElementById("importPreview");
+if(previewEl){
+previewEl.innerHTML =
+'<div style="margin-bottom:8px"><b>检测到数据：</b>' + preview.join(" / ") + '</div>' +
+'<button class="modal-btn primary" onclick="confirmImport()">确认导入并覆盖当前表单</button>' +
+'<button class="modal-btn secondary" onclick="closeModal(\'modalImport\')">取消</button>';
+}
+window._pendingImport = data;
+}catch(err){
+var previewEl = document.getElementById("importPreview");
+if(previewEl) previewEl.innerHTML = '<span style="color:#dc2626">文件解析失败，请确认是有效的JSON文件</span>';
+}
+};
+reader.readAsText(file);
+}
+
+function confirmImport(){
+if(!window._pendingImport) return;
+setData(window._pendingImport);
+closeModal("modalImport");
+showToast("导入成功");
+saveDraft();
+window._pendingImport = null;
+}
+
+// 清空数据
+var btnClearStorage = document.getElementById("btnClearStorage");
+if(btnClearStorage){
+btnClearStorage.addEventListener("click", function(){
+if(!confirm("将永久删除所有已保存的方案和历史记录，不可恢复，确定？")) return;
+safeStorage(function(){
+localStorage.removeItem(STORAGE_KEY);
+localStorage.removeItem(DRAFT_KEY_FWD);
+localStorage.removeItem(DRAFT_KEY_REV);
+});
+resetForm();
+showToast("本地数据已清空，表单已重置");
+});
+}
+
+// 页面加载
+var hashLoaded = loadFromHash();
+if(!hashLoaded){
+  loadDraft();
+}
+// 如果没有从草稿加载到平台，初始化一个默认平台
+if(platforms.length === 0){
+addPlatform({platform:"xiecheng", budget:"", cpc:getDefaultCpc(), orderRate:getSeasonRate(), commission:platformMap.xiecheng, otherFee:0, checkinRate:85});
+}
+initDefaultValues();
+updateBrand();
+updateBtnState();
+</script>
+</body>
+</html>
