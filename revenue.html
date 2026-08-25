@@ -1781,21 +1781,28 @@ function calibrateParams(){
 var aCost = getVal("rvCost"), aClicks = getVal("rvClicks"), aOrders = getVal("rvOrders"), aNights = getVal("rvNights");
 if(aCost <= 0 || aClicks <= 0 || aOrders <= 0){ alert("请先填写实际消耗、实际点击、实际订单（用于校准CPC、转化率、履约率）"); return; }
 if(aOrders > aClicks){ alert("实际订单数不能大于实际点击数，请核对"); return; }
+if(aNights > aOrders){ alert("实际入住间夜不能大于实际订单数，请核对"); return; }
+if(platforms.length > 1){
+if(!confirm("检测到多平台投放，校准仅更新第 1 个平台的参数，其余平台请分别录入实际值后手动修改。是否继续校准第 1 个平台？")){ return; }
+}
 // 校准第一个平台的参数
 if(platforms.length > 0){
 var p = platforms[0];
 p.cpc = (aCost / aClicks).toFixed(2);
 p.orderRate = (aOrders / aClicks * 100).toFixed(2);
+var nightsMsg = "";
 if(aNights > 0){ p.checkinRate = Math.min(aNights / aOrders * 100, 100).toFixed(1); }
+else { nightsMsg = "；未填写实际间夜，履约率未校准，请手动补充"; }
 var cpcEl = document.getElementById("platCpc_"+p.id);
 if(cpcEl){ cpcEl.value = p.cpc; cpcEl.classList.remove("auto"); }
 var orEl = document.getElementById("platOrderRate_"+p.id);
 if(orEl){ orEl.value = p.orderRate; orEl.classList.remove("auto"); }
 var crEl = document.getElementById("platCheckinRate_"+p.id);
 if(crEl){ crEl.value = p.checkinRate; crEl.classList.remove("auto"); }
-}
 saveDraft();
-showToast("已用实际值校准预估参数，请重新生成报告");
+showToast("已用实际值校准参数并自动重新生成报告" + nightsMsg);
+setTimeout(function(){ if(window.doCalculate){ window.doCalculate(); } }, 50);
+}
 }
 
 // ==================== 事件绑定 & 存储 ====================
