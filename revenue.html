@@ -149,6 +149,7 @@ td{color:#334155}
 .mp-row label{font-size:12px;color:#64748b;font-weight:400;margin-bottom:4px;display:block}
 .mp-row input,.mp-row select{width:100%;padding:9px;border:1px solid #e2e7eb;border-radius:8px;font-size:13px;background:#fff}
 .mp-row input:focus,.mp-row select:focus{outline:none;border-color:#2563eb}
+#platformList{max-height:480px;overflow-y:auto;padding-right:6px;margin-bottom:4px}
 .plat-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px;position:relative}
 .plat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .plat-head .plat-title{font-size:14px;font-weight:700;color:#1e293b}
@@ -655,9 +656,22 @@ function getDefaultCommission(platVal){
 return platformMap[platVal] !== undefined ? platformMap[platVal] : 15;
 }
 
+function getFirstUnusedPlatform(){
+var used = {};
+platforms.forEach(function(p){ used[p.platform] = true; });
+for(var i=0;i<platformOptions.length;i++){
+if(!used[platformOptions[i].value]) return platformOptions[i].value;
+}
+return "xiecheng";
+}
+
 function addPlatform(data){
+if(platforms.length >= platformOptions.length){
+showToast("最多同时选择 "+platformOptions.length+" 个平台，无需重复添加");
+return null;
+}
 var id = newPlatId();
-var platVal = (data && data.platform) ? data.platform : "xiecheng";
+var platVal = (data && data.platform) ? data.platform : getFirstUnusedPlatform();
 var p = {
 id: id,
 platform: platVal,
@@ -678,6 +692,7 @@ return id;
 
 function addPlatformWithHint(){
 var id = addPlatform();
+if(!id) return;
 var card = document.getElementById("platCard_"+id);
 if(card){ card.scrollIntoView({behavior:"smooth", block:"center"}); }
 showToast("已添加平台，请填写预算金额");
@@ -702,7 +717,8 @@ var html = "";
 platforms.forEach(function(p, idx){
 var optsHtml = "";
 platformOptions.forEach(function(o){
-optsHtml += '<option value="'+o.value+'"'+(o.value===p.platform?' selected':'')+'>'+o.label+'</option>';
+var usedByOther = (o.value !== p.platform) && platforms.some(function(q){ return q.id !== p.id && q.platform === o.value; });
+optsHtml += '<option value="'+o.value+'"'+(o.value===p.platform?' selected':'')+(usedByOther?' disabled':'')+'>'+o.label+(usedByOther?'（已选）':'')+'</option>';
 });
 html += '<div class="plat-card" id="platCard_'+p.id+'">';
 html += '<div class="plat-head"><span class="plat-title">平台 '+(idx+1)+'</span>';
@@ -751,6 +767,11 @@ var sel = document.getElementById("platForm_"+id);
 if(!sel) return;
 var p = findPlat(id);
 if(!p) return;
+if(sel.value !== p.platform && platforms.some(function(q){ return q.id !== id && q.platform === sel.value; })){
+sel.value = p.platform;
+showToast("该平台已选择，请勿重复");
+return;
+}
 p.platform = sel.value;
 var comm = getDefaultCommission(sel.value);
 var changed = Math.abs(Number(p.commission) - Number(comm)) > 0.0001;
