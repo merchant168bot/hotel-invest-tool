@@ -97,7 +97,8 @@ td{color:#334155}
 .brand-footer{text-align:center;padding:20px 0 8px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;margin-top:20px}
 .brand-footer a{color:#2563eb;text-decoration:none}
 .privacy-note{text-align:center;font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6}
-.brand-setting{margin-top:12px}
+.brand-setting{margin-top:12px;display:none}
+.brand-setting.open{display:block}
 .brand-setting label{display:block;margin-bottom:6px;font-size:12px;color:#64748b;font-weight:400}
 .brand-setting input{width:100%;padding:9px;font-size:13px;border:1px solid #e2e7eb;border-radius:8px;background:#fff}
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;z-index:1000;padding:16px}
@@ -483,12 +484,12 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div class="brand-setting">
 <label>报表署名（选填，导出报表页眉显示）</label>
-<input type="text" id="brandName" placeholder="请填写真实主体名称，不填则默认显示「酒店收益管理服务商」">
+<input type="text" id="brandName" placeholder="请填写真实主体名称，不填则不署名">
 <div class="hint">若报表用于对外分享或获客，请务必填写真实主体名称</div>
 </div>
 <div id="result"></div>
 <div class="brand-footer">
-由 <span id="brandFooterName">酒店收益管理服务商</span> 提供技术支持 &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.2
+<span id="brandFooterSupport" style="display:none">由 <span id="brandFooterName">酒店收益管理服务商</span> 提供技术支持</span> &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.2
 </div>
 <div class="privacy-note">🔒 隐私说明：本工具所有数据仅保存在您本机浏览器（localStorage），不会上传任何服务器</div>
 </div>
@@ -1940,15 +1941,16 @@ safeStorage(function(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 
 function getBrandName(){
 var el = document.getElementById("brandName");
-var v = el ? el.value.trim() : "";
-return v || "酒店收益管理服务商";
+return el ? el.value.trim() : "";
 }
 function updateBrand(){
 var n = getBrandName();
 var f = document.getElementById("brandFooterName");
-if(f) f.textContent = n;
+if(f) f.textContent = n || "酒店收益管理服务商";
+var fs = document.getElementById("brandFooterSupport");
+if(fs) fs.style.display = n ? "" : "none";
 var pb = document.getElementById("printBrand");
-if(pb) pb.textContent = "— 由 " + n + " 提供技术支持 —";
+if(pb) pb.textContent = n ? ("— 由 " + n + " 提供技术支持 —") : "";
 }
 
 
@@ -2270,7 +2272,10 @@ function copyReportText(){
     showToast("请先执行测算生成报告");
     return;
   }
-  var text = (el.innerText || el.textContent).replace(/📋\s*复制整份报告/g, "").replace(/^\s+|\s+$/g, "");
+  var clone = el.cloneNode(true);
+  var bar = clone.querySelector(".report-copy-bar");
+  if(bar && bar.parentNode) bar.parentNode.removeChild(bar);
+  var text = (clone.innerText || clone.textContent).replace(/^\s+|\s+$/g, "");
   copyTextToClipboard(text);
 }
 function copyTextToClipboard(text, onOk){
@@ -2341,6 +2346,15 @@ if(btnPrint){
 btnPrint.addEventListener("click", function(){
 if(!resultEl || resultEl.style.display==="none" || resultEl.style.display===""){
 alert("请先执行测算，再导出报表");
+return;
+}
+var bs = document.querySelector(".brand-setting");
+var bn = document.getElementById("brandName");
+if(bn && !bn.value.trim() && bs && !bs.classList.contains("open")){
+bs.classList.add("open");
+updateBrand();
+if(bs.scrollIntoView) bs.scrollIntoView({behavior:"smooth", block:"center"});
+showToast("如需在报表页眉署名，请填写主体名称；不需要署名可直接再次点击导出报表");
 return;
 }
 updateBrand();
