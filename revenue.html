@@ -427,12 +427,6 @@ h2{border-left:4px solid #2563eb}
 <div class="card" id="forwardOnly">
 <div class="card-head"><div class="card-title">② 投放配置（多平台投放）</div><span class="req-badge">3 项必填</span></div>
 <div class="inline-row">
-<div class="field" id="fwdPeriodField">
-<label>投放周期 <span style="color:#dc2626">*</span> <span class="unit">天 · 必填</span></label>
-<input type="number" id="fwdPeriod" class="auto" value="30" placeholder="例如：30">
-<div class="hint">本次预算计划投放的天数，用于空房容量校验与日均消耗统计（默认30天）</div>
-<span class="field-error" id="errFwdPeriod" style="display:none"></span>
-</div>
 <div class="field" id="seasonField">
 <label>投放时段类型 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
 <select id="seasonHoliday">
@@ -445,6 +439,12 @@ h2{border-left:4px solid #2563eb}
 </select>
 <div class="hint">影响CPC与转化率基准值</div>
 <span class="field-error" id="errSeason" style="display:none"></span>
+</div>
+<div class="field" id="fwdPeriodField">
+<label>投放周期 <span style="color:#dc2626">*</span> <span class="unit">天 · 必填</span></label>
+<input type="number" id="fwdPeriod" class="auto" value="30" placeholder="例如：30">
+<div class="hint">本次预算计划投放的天数，用于空房容量校验与日均消耗统计（默认30天）</div>
+<span class="field-error" id="errFwdPeriod" style="display:none"></span>
 </div>
 </div>
 <div id="platformList"></div>
@@ -676,6 +676,17 @@ saveDraft();
 return id;
 }
 
+function addPlatformWithHint(){
+var id = addPlatform();
+var card = document.getElementById("platCard_"+id);
+if(card){ card.scrollIntoView({behavior:"smooth", block:"center"}); }
+showToast("已添加平台，请填写预算金额");
+setTimeout(function(){
+var el = document.getElementById("platBudget_"+id);
+if(el){ el.focus(); }
+}, 350);
+}
+
 function removePlatform(id){
 if(platforms.length <= 1){ showToast("至少保留一个平台"); return; }
 platforms = platforms.filter(function(p){ return p.id !== id; });
@@ -705,24 +716,24 @@ html += '<select id="platForm_'+p.id+'" onchange="onPlatFormChange(\''+p.id+'\')
 html += '<div class="hint">以酒店实际签约佣金为准</div>';
 html += '<span class="field-error" id="platFormErr_'+p.id+'" style="display:none"></span></div>';
 html += '<div class="field" id="platBudgetField_'+p.id+'"><label>预算 <span style="color:#dc2626">*</span> <span class="unit">元 · 必填</span></label>';
-html += '<input type="number" id="platBudget_'+p.id+'" value="'+(p.budget!=="" ? p.budget : "")+'" placeholder="例如：5000" oninput="updateBudgetSummary()">';
+html += '<input type="number" id="platBudget_'+p.id+'" value="'+(p.budget!=="" ? p.budget : "")+'" placeholder="例如：5000" oninput="onBudgetInput(\''+p.id+'\')">';
 html += '<span class="field-error" id="platBudgetErr_'+p.id+'" style="display:none"></span>';
 html += '</div></div>';
 html += '<div class="adv-toggle" onclick="toggleAdv(this,\'platAdv_'+p.id+'\')"><span>高级参数（CPC / 转化率 / 佣金率 / 其他扣费 / 履约率）</span><span class="arrow">▼</span></div>';
 html += '<div class="adv-panel" id="platAdv_'+p.id+'">';
 html += '<div class="inline-row">';
 html += '<div class="field"><label>CPC <span class="unit">元/点击</span></label>';
-html += '<input type="number" id="platCpc_'+p.id+'" class="auto" value="'+p.cpc+'" step="0.1" placeholder="已按业态自动匹配">';
+html += '<input type="number" id="platCpc_'+p.id+'" class="auto" value="'+p.cpc+'" step="0.1" placeholder="已按业态自动匹配" oninput="onPlatParamInput(\''+p.id+'\',\'cpc\')">';
 html += '<div class="hint">推广通后台平均点击成本</div></div>';
 html += '<div class="field"><label>佣金率 <span class="unit">%</span></label>';
 html += '<input type="number" id="platCommission_'+p.id+'" class="auto" value="'+p.commission+'" step="0.1" placeholder="已按平台自动匹配">';
 html += '<div class="hint">已按平台自动匹配，可按合同修改</div></div></div>';
 html += '<div class="inline-row">';
 html += '<div class="field"><label>转化率 <span class="unit">%</span></label>';
-html += '<input type="number" id="platOrderRate_'+p.id+'" class="auto" value="'+p.orderRate+'" step="0.1" placeholder="默认3%">';
+html += '<input type="number" id="platOrderRate_'+p.id+'" class="auto" value="'+p.orderRate+'" step="0.1" placeholder="默认3%" oninput="onPlatParamInput(\''+p.id+'\',\'orderRate\')">';
 html += '<div class="hint">酒店行业通常2%-5%</div></div>';
 html += '<div class="field"><label>预估下单入住率/履约率 <span class="unit">%</span></label>';
-html += '<input type="number" id="platCheckinRate_'+p.id+'" class="auto" value="'+p.checkinRate+'" step="0.1" placeholder="默认85%">';
+html += '<input type="number" id="platCheckinRate_'+p.id+'" class="auto" value="'+p.checkinRate+'" step="0.1" placeholder="默认85%" oninput="onPlatParamInput(\''+p.id+'\',\'checkinRate\')">';
 html += '<div class="hint">扣除No-show和取消</div></div></div>';
 html += '<div class="inline-row">';
 html += '<div class="field"><label>平台其他扣费 <span class="unit">元</span></label>';
@@ -742,9 +753,14 @@ var p = findPlat(id);
 if(!p) return;
 p.platform = sel.value;
 var comm = getDefaultCommission(sel.value);
+var changed = Math.abs(Number(p.commission) - Number(comm)) > 0.0001;
 p.commission = comm;
 var commEl = document.getElementById("platCommission_"+id);
 if(commEl){ commEl.value = comm; commEl.classList.add("auto"); }
+if(changed){
+var label = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : sel.value;
+showToast("已按"+label+"默认佣金 "+comm+"% 更新，可按合同手动修改");
+}
 saveDraft();
 }
 
