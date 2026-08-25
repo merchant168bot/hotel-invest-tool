@@ -239,23 +239,123 @@ h2{border-left:4px solid #2563eb}
 <div class="card-head"><div class="card-title">① 酒店基础信息</div><span class="req-badge">5 项必填</span></div>
 <div class="inline-row">
 <div class="field" id="cityTierField">
-<label>城市层级 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<label>城市 <span style="color:#dc2626">*</span> <span class="unit">必选 · 选城市自动识别层级</span></label>
 <select id="cityTier">
-<option value="">— 请选择 —</option>
-<option value="tier1">一线城市</option>
-<option value="newTier1">新一线城市</option>
-<option value="tier2">二线城市</option>
-<option value="tier3">三线城市</option>
-<option value="tier4">四线及以下</option>
+<option value="">— 请选择城市 —</option>
+<optgroup label="一线城市（北上广深）">
+<option value="tier1">北京</option>
+<option value="tier1">上海</option>
+<option value="tier1">广州</option>
+<option value="tier1">深圳</option>
+</optgroup>
+<optgroup label="新一线城市（15个）">
+<option value="newTier1">成都</option>
+<option value="newTier1">重庆</option>
+<option value="newTier1">杭州</option>
+<option value="newTier1">武汉</option>
+<option value="newTier1">西安</option>
+<option value="newTier1">苏州</option>
+<option value="newTier1">天津</option>
+<option value="newTier1">南京</option>
+<option value="newTier1">长沙</option>
+<option value="newTier1">郑州</option>
+<option value="newTier1">东莞</option>
+<option value="newTier1">青岛</option>
+<option value="newTier1">沈阳</option>
+<option value="newTier1">宁波</option>
+<option value="newTier1">昆明</option>
+</optgroup>
+<optgroup label="二线城市（省会及计划单列市等）">
+<option value="tier2">福州</option>
+<option value="tier2">合肥</option>
+<option value="tier2">济南</option>
+<option value="tier2">南昌</option>
+<option value="tier2">贵阳</option>
+<option value="tier2">石家庄</option>
+<option value="tier2">太原</option>
+<option value="tier2">哈尔滨</option>
+<option value="tier2">长春</option>
+<option value="tier2">兰州</option>
+<option value="tier2">南宁</option>
+<option value="tier2">海口</option>
+<option value="tier2">乌鲁木齐</option>
+<option value="tier2">呼和浩特</option>
+<option value="tier2">银川</option>
+<option value="tier2">西宁</option>
+<option value="tier2">大连</option>
+<option value="tier2">厦门</option>
+<option value="tier2">无锡</option>
+<option value="tier2">佛山</option>
+<option value="tier2">常州</option>
+<option value="tier2">徐州</option>
+<option value="tier2">温州</option>
+<option value="tier2">绍兴</option>
+<option value="tier2">嘉兴</option>
+<option value="tier2">南通</option>
+<option value="tier2">泉州</option>
+<option value="tier2">烟台</option>
+<option value="tier2">珠海</option>
+<option value="tier2">惠州</option>
+</optgroup>
+<optgroup label="三线城市（主要地级市）">
+<option value="tier3">金华</option>
+<option value="tier3">台州</option>
+<option value="tier3">潍坊</option>
+<option value="tier3">临沂</option>
+<option value="tier3">洛阳</option>
+<option value="tier3">南阳</option>
+<option value="tier3">邯郸</option>
+<option value="tier3">保定</option>
+<option value="tier3">唐山</option>
+<option value="tier3">秦皇岛</option>
+<option value="tier3">包头</option>
+<option value="tier3">鄂尔多斯</option>
+<option value="tier3">绵阳</option>
+<option value="tier3">德阳</option>
+<option value="tier3">宜宾</option>
+<option value="tier3">泸州</option>
+<option value="tier3">遵义</option>
+<option value="tier3">曲靖</option>
+<option value="tier3">桂林</option>
+<option value="tier3">柳州</option>
+<option value="tier3">宜昌</option>
+<option value="tier3">襄阳</option>
+<option value="tier3">衡阳</option>
+<option value="tier3">岳阳</option>
+<option value="tier3">株洲</option>
+<option value="tier3">赣州</option>
+<option value="tier3">九江</option>
+<option value="tier3">芜湖</option>
+<option value="tier3">阜阳</option>
+<option value="tier3">盐城</option>
+<option value="tier3">扬州</option>
+<option value="tier3">泰州</option>
+<option value="tier3">镇江</option>
+<option value="tier3">江门</option>
+<option value="tier3">湛江</option>
+<option value="tier3">茂名</option>
+<option value="tier3">肇庆</option>
+<option value="tier3">汕头</option>
+<option value="tier3">揭阳</option>
+<option value="tier3">梅州</option>
+<option value="tier3">大理</option>
+<option value="tier3">丽江</option>
+<option value="tier3">北海</option>
+<option value="tier3">三亚</option>
+</optgroup>
+<optgroup label="四线及以下（其他城市）">
+<option value="tier4">其他城市（自动归四线及以下）</option>
+</optgroup>
 </select>
-<div class="hint">影响CPC基准系数</div>
+<div class="hint" id="tierHint">选城市后自动识别所属层级</div>
 <span class="field-error" id="errCityTier" style="display:none"></span>
 </div>
 <div class="field" id="locationField">
 <label>地理位置 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
 <select id="location">
 <option value="">— 请选择 —</option>
-<option value="scenic">景区/商圈</option>
+<option value="scenic">景区</option>
+<option value="biz_district">商圈</option>
 <option value="traffic">交通枢纽（车站/机场）</option>
 <option value="biz">商务区/写字楼</option>
 <option value="edu">大学城</option>
@@ -266,8 +366,20 @@ h2{border-left:4px solid #2563eb}
 </div>
 </div>
 <div class="inline-row">
-<div class="field" id="typeField">
-<label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<div class="field" id="roomsField">
+<label>客房总数 <span style="color:#dc2626">*</span> <span class="unit">间 · 必填</span></label>
+<input type="number" id="rooms" placeholder="例如：80">
+<span class="field-error" id="errRooms" style="display:none"></span>
+</div>
+<div class="field">
+<label>平均房价 <span style="color:#dc2626">*</span> <span class="unit">元/间夜 · 必填</span></label>
+<input type="number" id="adr" placeholder="例如：300" oninput="autoMapByAdr()">
+<div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
+<span class="field-error" id="errAdr" style="display:none"></span>
+</div>
+</div>
+<div class="row" id="typeField">
+<label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">自动识别 · 可手动改</span></label>
 <select id="type">
 <option value="eco">经济型/快捷酒店</option>
 <option value="biz" selected>商务酒店</option>
@@ -277,51 +389,38 @@ h2{border-left:4px solid #2563eb}
 <option value="bnb">民宿/客栈</option>
 <option value="resort">度假/景区酒店</option>
 </select>
-<div class="hint">切换业态会自动更新变动成本与CPC基准值，最终以您填写的数据为准</div>
+<div class="hint">按平均房价自动匹配业态（&lt;200经济型 / 200~400中端 / 400~600中高端 / &gt;600高端），可手动修改</div>
 <span class="field-error" id="errType" style="display:none"></span>
-</div>
-<div class="field" id="roomsField">
-<label>客房总数 <span style="color:#dc2626">*</span> <span class="unit">间 · 必填</span></label>
-<input type="number" id="rooms" placeholder="例如：80">
-<span class="field-error" id="errRooms" style="display:none"></span>
-</div>
-</div>
-<div class="row">
-<label>平均房价 <span style="color:#dc2626">*</span> <span class="unit">元/间夜 · 必填</span></label>
-<input type="number" id="adr" placeholder="例如：300" oninput="autoMapByAdr()">
-<div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
-<span class="field-error" id="errAdr" style="display:none"></span>
 </div>
 <div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
 <div class="adv-panel" id="advBase">
-<div class="row">
+<div class="inline-row">
+<div class="field">
 <label>单房变动成本 <span class="unit">元/间夜</span></label>
 <input type="number" id="varCost" class="auto" value="55" placeholder="例如：55">
-<div class="hint">清洁+布草+洗漱易耗品+水电（客房专属部分），已按业态自动匹配</div>
+<div class="hint">清洁+布草+洗漱易耗品+水电，已按业态自动匹配</div>
 </div>
-<div class="row">
+<div class="field">
 <label>纳税人类型 <span class="unit">必选</span></label>
 <select id="taxType">
 <option value="general" selected>一般纳税人（6%）</option>
 <option value="small">小规模纳税人（3%）</option>
 <option value="small1">小规模纳税人（1%）</option>
 </select>
-<div class="hint">选择后自动填充税率，可手动修改</div>
+<div class="hint">选择后自动填充税率</div>
 </div>
-<div class="row">
+</div>
+<div class="inline-row">
+<div class="field">
 <label>综合税费率 <span class="unit">%</span></label>
 <input type="number" id="taxRate" class="auto" value="6" step="0.1">
-<div class="hint">住宿服务增值税及附加。按含税房价折算扣除（税费=收入×税率÷(1+税率)），佣金仍按含税收入口径计算</div>
+<div class="hint">税费=收入×税率÷(1+税率)</div>
 </div>
-<div class="row">
-<label>单房固定成本分摊 <span class="unit">元/间夜 · 选填</span></label>
-<input type="number" id="fixedCost" value="0" step="1" placeholder="例如：80">
-<div class="hint">房租/人工/折旧等固定成本按间夜分摊（估算），用于展示含固定成本的建议售价；填0不展示</div>
-</div>
-<div class="row">
+<div class="field">
 <label>当前平均入住率 <span class="unit">%</span></label>
 <input type="number" id="occ" class="auto" value="60" step="0.1">
-<div class="hint">两种模式共用：用于测算空房消化空间与提入住率场景</div>
+<div class="hint">用于测算空房消化空间与提入住率场景</div>
+</div>
 </div>
 </div>
 </div>
@@ -488,7 +587,19 @@ var cpcMap = {eco:2.0, biz:3.0, mid:3.5, boutique:4.0, star:5.0, bnb:2.5, resort
 
 // CPC联动系数映射
 var cityTierMap = {tier1:1.3, newTier1:1.15, tier2:1.0, tier3:0.85, tier4:0.7};
-var locationMap = {scenic:1.15, traffic:1.0, biz:1.1, edu:0.9, res:0.85};
+var locationMap = {scenic:1.15, biz_district:1.0, traffic:1.0, biz:1.1, edu:0.9, res:0.85};
+var cityTierNames = {tier1:"一线城市", newTier1:"新一线城市", tier2:"二线城市", tier3:"三线城市", tier4:"四线及以下"};
+function updateTierHint(){
+  var el = document.getElementById("cityTier");
+  var hint = document.getElementById("tierHint");
+  if(!el || !hint) return;
+  var v = el.value;
+  if(v && cityTierMap[v] !== undefined){
+    hint.textContent = "已识别：" + cityTierNames[v] + " ×" + cityTierMap[v];
+  }else{
+    hint.textContent = "选城市后自动识别所属层级";
+  }
+}
 var seasonCpcMap = {normal:1.0, weekend:1.1, small:1.3, big:1.5, yearEnd:1.2};
 var seasonRateMap = {normal:3.0, weekend:3.5, small:4.5, big:5.0, yearEnd:4.0};
 
@@ -676,7 +787,7 @@ var ok = true;
 // 城市层级
 var cityTierEl = document.getElementById("cityTier");
 var cityTierVal = cityTierEl ? cityTierEl.value : "";
-if(!cityTierVal){ setFieldError("errCityTier", "#cityTier", "请选择城市层级"); ok = false; }
+if(!cityTierVal){ setFieldError("errCityTier", "#cityTier", "请选择城市"); ok = false; }
 else setFieldError("errCityTier", "#cityTier", "");
 // 地理位置
 var locEl = document.getElementById("location");
@@ -938,7 +1049,6 @@ var varCost = getVal("varCost");
 var taxRate = getVal("taxRate");
 var ltvPerGuest = getVal("ltvNights");
 var days = getVal("fwdPeriod") || 30;
-var fixedCost = getVal("fixedCost");
 var occRaw = getVal("occ");
 var occ = Math.min(Math.max(occRaw, 0), 100);
 
@@ -1370,9 +1480,6 @@ html += '<div class="item"><span class="k">订单量</span><span class="v">'+ord
 html += '<div class="item"><span class="k">间夜数</span><span class="v">'+roomNights.toLocaleString()+' 间夜</span></div>';
 html += '<div class="item"><span class="k">单房推广成本</span><span class="v">¥'+costPerRoom.toFixed(1)+'</span></div>';
 html += '<div class="item"><span class="k">单房毛利'+(activePlats.length>1?"（加权）":"")+'<span style="color:#999;font-size:11px;font-weight:normal">（税前）</span></span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
-if(fixedCost > 0 && floorDenom > 0.05){
-html += '<div class="item"><span class="k">含固定成本建议售价<span style="color:#999;font-size:11px;font-weight:normal">（参考，覆盖固定成本+变动成本+佣金+税费）</span></span><span class="v blue">¥'+((varCost+fixedCost)/floorDenom).toFixed(1)+'</span></div>';
-}
 html += '<div class="item"><span class="k">日均消耗</span><span class="v">¥'+dailySpend.toFixed(0)+'</span></div>';
 html += '</div>';
 
@@ -1589,7 +1696,7 @@ function getForwardFields(){
 return ["type","location","rooms","adr","varCost","taxType","taxRate","occ","fwdPeriod","ltvNights"];
 }
 function getAllFieldIds(){
-return ["cityTier","location","type","rooms","adr","varCost","fixedCost","taxType","taxRate","occ","fwdPeriod","seasonHoliday","ltvNights","brandName"];
+return ["cityTier","location","type","rooms","adr","varCost","taxType","taxRate","occ","fwdPeriod","seasonHoliday","ltvNights","brandName"];
 }
 
 function getData(){
@@ -1664,6 +1771,7 @@ checkinRate: mainCheckinRate
 }
 updateBrand();
 updateBtnState();
+updateTierHint();
 }
 
 
@@ -1770,7 +1878,7 @@ applyTypeAuto(this.value);
 });
 }
 if(cityTierEl){
-cityTierEl.addEventListener("change", onCpcFactorChange);
+cityTierEl.addEventListener("change", function(){ updateTierHint(); onCpcFactorChange(); });
 }
 if(locationEl){
 locationEl.addEventListener("change", onCpcFactorChange);
@@ -1904,7 +2012,6 @@ setAuto("taxRate", 6);
 setAuto("occ", 60);
 setAuto("fwdPeriod", 30);
 setAuto("ltvNights", 0);
-setAuto("fixedCost", 0);
 // 重置平台列表
 platforms = [];
 platIdCounter = 0;
