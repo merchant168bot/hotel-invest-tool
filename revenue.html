@@ -455,9 +455,12 @@ h2{border-left:4px solid #2563eb}
 <div class="adv-toggle" onclick="toggleAdv(this,'advFwd')"><span>全局高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
 <div class="adv-panel" id="advFwd">
 <div class="row">
-<label>新客人均后续复购间夜 <span class="unit">间夜 · 选填</span></label>
-<input type="number" id="ltvNights" class="auto" value="0" step="0.1">
-<div class="hint">新客后续复购不再产生广告费；填0表示不计入。仅作参考增值展示，不改变ROI（每笔订单近似按1位新客估算）</div>
+<label>新客复购率 <span class="unit">% · 默认20，填0不估算</span></label>
+<input type="number" id="ltvRate" class="auto" value="20" step="1" min="0" max="100">
+<div class="hint">这批新客一年内大概有多少比例会再来住。按一年估算回本周期，不影响ROI</div>
+<label>人均复购间夜 <span class="unit">间夜 · 默认2，填0不估算</span></label>
+<input type="number" id="ltvNights" class="auto" value="2" step="0.1" min="0">
+<div class="hint">复购的客人平均会再来住几间夜。复购不再产生广告费；填0表示不计入（每笔订单近似按1位新客估算）</div>
 </div>
 </div>
 </div>
@@ -1281,11 +1284,17 @@ tRows += "<tr><td>不投流</td><td>¥0</td><td>0</td><td>¥0</td><td>可避免�
 tRows += "<tr><td>投流当前</td><td>¥"+budget.toLocaleString()+"</td><td>"+roomNights+"</td><td>-¥"+Math.abs(profit).toFixed(0)+"</td><td>亏 ¥"+Math.abs(profit).toFixed(0)+"，不建议追加</td></tr>";
 }
 
-var ltvNightsTotal = 0, ltvValue = 0;
-if(ltvPerGuest > 0){
-ltvNightsTotal = orders * ltvPerGuest;
+var ltvRateVal = getVal("ltvRate");
+var ltvNightsTotal = 0, ltvValue = 0, ltvCpa = 0, ltvGuestValue = 0, ltvPayback = 0, ltvWorth = false;
+if(ltvRateVal > 0 && ltvPerGuest > 0 && orders > 0){
+var ltvGuests = orders * ltvRateVal / 100;
+ltvNightsTotal = ltvGuests * ltvPerGuest;
 ltvValue = ltvNightsTotal * marginPerRoom;
-tRows += "<tr><td>新客复购增值</td><td>¥0</td><td>+"+ltvNightsTotal.toFixed(1)+"</td><td>¥"+ltvValue.toFixed(0)+"</td><td>参考值，不计入ROI</td></tr>";
+ltvCpa = budget / orders;
+ltvGuestValue = ltvValue / orders;
+ltvPayback = 12 * ltvCpa / ltvGuestValue;
+ltvWorth = ltvGuestValue >= ltvCpa;
+tRows += "<tr><td>新客复购价值</td><td>¥"+ltvCpa.toFixed(0)+"/新客</td><td>+"+ltvNightsTotal.toFixed(1)+"</td><td>¥"+ltvValue.toFixed(0)+"</td><td>每新客复购价值 ¥"+ltvGuestValue.toFixed(0)+"，"+(ltvWorth ? "约 "+ltvPayback.toFixed(1)+" 个月回本" : "覆盖不了获客成本")+"（不计入ROI）</td></tr>";
 }
 
 // ===== 模块④ 归因分析（12条） =====
@@ -1644,6 +1653,12 @@ html += '</div>';
 html += '<div class="sec">';
 html += '<div class="sec-title">③ 投流方案对比</div>';
 html += '<table><tr><th>方案</th><th>投入</th><th>间夜</th><th>净收益</th><th>结论</th></tr>'+tRows+'</table>';
+if(ltvRateVal > 0 && ltvPerGuest > 0 && orders > 0){
+html += '<div class="add-note" style="margin-top:10px">';
+html += '<b>新客复购小结（一眼看懂）：</b><br>';
+html += '每带来 1 位新客要花广告费约 ¥'+ltvCpa.toFixed(0)+'。按复购率 '+ltvRateVal+'%、人均复购 '+ltvPerGuest+' 间夜估算，这 1 位新客一年内能带来约 ¥'+ltvGuestValue.toFixed(0)+' 的毛利，'+(ltvWorth ? '约 '+ltvPayback.toFixed(1)+' 个月就能把广告费赚回来，长期看划算。' : '还覆盖不了获客成本，建议先把复购做起来（加微信、发老客专属价）再加大投放。');
+html += '</div>';
+}
 if(profit > 0){
 html += '<div class="add-note" style="margin-top:10px">';
 html += '<b>追加投放建议：</b><br>';
@@ -1757,10 +1772,10 @@ showToast("已用实际值校准预估参数，请重新生成报告");
 
 // ==================== 事件绑定 & 存储 ====================
 function getForwardFields(){
-return ["type","location","rooms","adr","varCost","taxType","taxRate","occ","fwdPeriod","ltvNights"];
+return ["type","location","rooms","adr","varCost","taxType","taxRate","occ","fwdPeriod","ltvRate","ltvNights"];
 }
 function getAllFieldIds(){
-return ["cityTier","location","type","rooms","adr","varCost","taxType","taxRate","occ","fwdPeriod","seasonHoliday","ltvNights","brandName"];
+return ["cityTier","location","type","rooms","adr","varCost","taxType","taxRate","occ","fwdPeriod","seasonHoliday","ltvRate","ltvNights","brandName"];
 }
 
 function getData(){
@@ -2075,7 +2090,8 @@ setAuto("varCost", varCostMap.biz);
 setAuto("taxRate", 6);
 setAuto("occ", 60);
 setAuto("fwdPeriod", 30);
-setAuto("ltvNights", 0);
+setAuto("ltvRate", 20);
+setAuto("ltvNights", 2);
 // 重置平台列表
 platforms = [];
 platIdCounter = 0;
