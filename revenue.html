@@ -389,7 +389,7 @@ h2{border-left:4px solid #2563eb}
 <option value="bnb">民宿/客栈</option>
 <option value="resort">度假/景区酒店</option>
 </select>
-<div class="hint">按平均房价自动匹配业态（&lt;200经济型 / 200~400中端 / 400~600中高端 / &gt;600高端），可手动修改</div>
+<div class="hint">按平均房价自动匹配 7 种业态（经济/民宿/商务/中端/精品/度假/星级），可手动修改</div>
 <span class="field-error" id="errType" style="display:none"></span>
 </div>
 <div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
@@ -401,6 +401,13 @@ h2{border-left:4px solid #2563eb}
 <div class="hint">清洁+布草+洗漱易耗品+水电，已按业态自动匹配</div>
 </div>
 <div class="field">
+<label>当前平均入住率 <span class="unit">%</span></label>
+<input type="number" id="occ" class="auto" value="60" step="0.1">
+<div class="hint">用于测算空房消化空间与提入住率场景</div>
+</div>
+</div>
+<div class="inline-row">
+<div class="field">
 <label>纳税人类型 <span class="unit">必选</span></label>
 <select id="taxType">
 <option value="general" selected>一般纳税人（6%）</option>
@@ -409,17 +416,10 @@ h2{border-left:4px solid #2563eb}
 </select>
 <div class="hint">选择后自动填充税率</div>
 </div>
-</div>
-<div class="inline-row">
 <div class="field">
 <label>综合税费率 <span class="unit">%</span></label>
 <input type="number" id="taxRate" class="auto" value="6" step="0.1">
 <div class="hint">税费=收入×税率÷(1+税率)</div>
-</div>
-<div class="field">
-<label>当前平均入住率 <span class="unit">%</span></label>
-<input type="number" id="occ" class="auto" value="60" step="0.1">
-<div class="hint">用于测算空房消化空间与提入住率场景</div>
 </div>
 </div>
 </div>
@@ -547,9 +547,12 @@ var varCostMap = {eco:35, biz:55, mid:70, boutique:70, star:100, bnb:40, resort:
 var adrBaseMap = {eco:140, biz:280, mid:350, boutique:420, star:700, bnb:180, resort:480};
 // 房价区间 → 业态自动映射（AI智能填充）
 function adrToType(adr){
-  if(adr < 200) return "eco";
-  if(adr < 400) return "mid";
-  if(adr < 600) return "boutique";
+  if(adr < 160) return "eco";
+  if(adr < 230) return "bnb";
+  if(adr < 315) return "biz";
+  if(adr < 385) return "mid";
+  if(adr < 450) return "boutique";
+  if(adr < 590) return "resort";
   return "star";
 }
 // 业态 → 入住率 / 履约率 行业默认值
