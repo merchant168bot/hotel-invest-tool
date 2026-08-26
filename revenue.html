@@ -1377,9 +1377,9 @@ if(activePlats.length >= 2 && platRois.length >= 2){
     var delta = moveAmt * (top.roi - bot.roi);
     var profitNew = profit + delta;
     diagList.push({level:'red', tag:'P0', title:'预算错配：资金流向低效平台',
-      diag: top.name+'投入 ¥'+fmt0(top.budget)+'、ROI '+fmt2(top.roi)+'，'+bot.name+'投入 ¥'+fmt0(bot.budget)+'、ROI 仅 '+fmt2(bot.roi)+'，单位预算产出相差 ¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。当前月净利 ¥'+fmt0(profit)+' 的薄利状态，直接源于预算向低效平台倾斜。',
-      act:'一次性调整：'+bot.name+'预算由 ¥'+fmt0(bot.budget)+' 降至 ¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'预算由 ¥'+fmt0(top.budget)+' 增至 ¥'+fmt0(top.budget+moveAmt)+'，其余配置不变。调整后 '+top.name+' ROI 可能小幅回落，属正常现象。',
-      check:'7 天后核查调整后的 '+top.name+'（¥'+fmt0(top.budget+moveAmt)+'）ROI 是否 ≥ '+fmt2(top.roi*0.85)+'，且总月净利 ≥ ¥'+fmt0(profitNew)+'。',
+      diag: top.name+'投入 ¥'+fmt0(top.budget)+'、ROI '+fmt2(top.roi)+'，'+bot.name+'投入 ¥'+fmt0(bot.budget)+'、ROI 仅 '+fmt2(bot.roi)+'，同样一笔钱放'+top.name+'比放'+bot.name+'多赚 ¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。当前月净利 ¥'+fmt0(profit)+' 的薄利状态，直接源于预算向低效平台倾斜。',
+      act:'一次性调整：'+bot.name+'预算由 ¥'+fmt0(bot.budget)+' 降至 ¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'预算由 ¥'+fmt0(top.budget)+' 增至 ¥'+fmt0(top.budget+moveAmt)+'，其余配置不变。调整后，'+top.name+' ROI 可能小幅回落，属正常现象。',
+      check:'7 天后核查调整后的'+top.name+'（¥'+fmt0(top.budget+moveAmt)+'）ROI 是否 ≥ '+fmt2(top.roi*0.85)+'，且总月净利 ≥ ¥'+fmt0(profitNew)+'。',
       then:'本次调整正确，维持该分配不变继续投放，之后每 7 天对比一次各平台 ROI，再决定是否微调。',
       els: top.name+'吃不下更多预算，将分配调回原样（'+top.name+' ¥'+fmt0(top.budget)+' / '+bot.name+' ¥'+fmt0(bot.budget)+'），问题转查转化率（见下一条诊断）。'});
   }
@@ -1466,7 +1466,8 @@ diagShow.forEach(function(d){
   attr += '<div class="plan-step"><b>1. 问题诊断：</b>'+d.diag+'</div>';
   attr += '<div class="plan-step"><b>2. 执行动作：</b>'+d.act+'</div>';
   attr += '<div class="plan-step"><b>3. 效果验收：</b>'+d.check+'</div>';
-  attr += '<div class="plan-step"><b>4. 后续路径：</b><span class="plan-then">达标 → '+d.then+'；</span><span class="plan-els">未达标 → '+d.els+'。</span></div>';
+  function trimDot(s){ return String(s).replace(/[。；\s]+$/g, ""); }
+  attr += '<div class="plan-step"><b>4. 后续路径：</b><span class="plan-then">达标 → '+trimDot(d.then)+'；</span><span class="plan-els">未达标 → '+trimDot(d.els)+'。</span></div>';
   attr += '</div>';
 });
 // 移除旧的模块⑤行动令（已合并进诊断卡）
@@ -1588,7 +1589,6 @@ html += '<div id="decisionBox">'+decHtml+'</div>';
 // ===== 敏感度分析表格 =====
 html += '<div class="sec">';
 html += '<div class="sec-title">②-1 敏感度分析（CPC / 转化率 ±20% 对利润的影响）</div>';
-html += '<div class="hint" style="margin-bottom:8px">💡 大白话：模拟"广告变贵 / 客人变少"时赚赔会怎么变，提前心里有数。</div>';
 html += '<span class="proc-toggle" onclick="toggleProc(this)">查看分析表格 ▼</span>';
 html += '<div class="proc-body">';
 html += '<table><tr><th>场景</th><th>CPC</th><th>转化率</th><th>点击量</th><th>订单</th><th>间夜</th><th>净利润</th><th>ROI</th><th>结论</th></tr>';
@@ -2353,6 +2353,8 @@ function buildCopyHtml(root){
       }
       if(c.nodeType !== 1) continue;
       var cls = c.className || "";
+      if(c.tagName === "BR"){ h += "<br>"; continue; }
+      if(/light/.test(cls)){ h += innerHtml(c) + "<br>"; continue; }
       if(/sec-title/.test(cls)){ h += '<div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px">'+esc(txt(c))+'</div>'; continue; }
       if(/proc-toggle/.test(cls)) continue;
       if(/item/.test(cls)){
@@ -2454,7 +2456,9 @@ function buildCopyHtml(root){
       out += secHtml(nd);
     } else if(/report-head/.test(nd.className || "")){
       out += '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:6px">'+esc(txt(nd))+'</div>';
-    } else if(/warn|one-liner|report-copy-bar/.test(nd.className || "")){
+    } else if(/report-copy-bar/.test(nd.className || "")){
+      continue;
+    } else if(/warn|one-liner/.test(nd.className || "")){
       out += '<div style="margin:8px 0;line-height:1.7">'+esc(txt(nd))+'</div>';
     } else {
       out += innerHtml(nd);
@@ -2470,6 +2474,7 @@ function buildCopyText(root){
   for(var i = 0; i < kids.length; i++){
     var nd = kids[i];
     if(nd.nodeType !== 1) continue;
+    if(/report-copy-bar/.test(nd.className || "")) continue;
     if(nd.tagName === "DIV" && /sec/.test(nd.className || "")){
       var block = [];
       var secKids = nd.childNodes;
@@ -2535,6 +2540,26 @@ function txtBlock(el){
       var k = kEl ? (kEl.innerText||kEl.textContent||"").replace(/\s+/g," ").trim() : "";
       var v = vEl ? (vEl.innerText||vEl.textContent||"").replace(/\s+/g," ").trim() : "";
       if(k) h += k+"："+v+"\n";
+    } else if(/light/.test(cls)){
+      var lns = [];
+      var curTxt = "";
+      var lkids = c.childNodes;
+      for(var li = 0; li < lkids.length; li++){
+        var lnd = lkids[li];
+        if(lnd.nodeType === 3){ curTxt += lnd.nodeValue; }
+        else if(lnd.nodeType === 1){
+          if(lnd.tagName === "BR"){ lns.push(curTxt.replace(/\s+/g," ").trim()); curTxt = ""; }
+          else { curTxt += (lnd.innerText || lnd.textContent || ""); }
+        }
+      }
+      if(curTxt) lns.push(curTxt.replace(/\s+/g," ").trim());
+      lns = lns.filter(Boolean);
+      if(lns.length >= 2){
+        var lb = lns[0] || "";
+        var lv = lns[1] || "";
+        var ls = lns.slice(2).join(" ") || "";
+        h += lb + "：" + lv + (ls ? "（" + ls + "）" : "") + "\n";
+      }
     } else if(/table/.test(cls) || c.tagName === "TABLE"){
       h += txtTable(c) + "\n";
     } else if(/plan-step/.test(cls)){
