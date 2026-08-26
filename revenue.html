@@ -1311,141 +1311,117 @@ var nightlyEmpty = Math.floor(rooms * (1 - occ/100));
 var baseCpc = calcBaseCpc();
 var attr = "";
 
-// 辅助：保本转化率
-var breakEvenRateCpc = 0;
-if(diagCpc > 0 && marginPerRoom > 0 && diagCheckin > 0){
-  breakEvenRateCpc = (diagCpc / (marginPerRoom * (diagCheckin/100))) * 100;
-}
+// ===== 模块④ 顾问诊断（按本单数据算出，每单不同） =====
+function fmt0(n){ return n !== undefined && !isNaN(n) ? n.toFixed(0) : "0"; }
+function fmt(n){ return n !== undefined && !isNaN(n) ? n.toLocaleString() : "0"; }
+function fmt1(n){ return n !== undefined && !isNaN(n) ? n.toFixed(1) : "0.0"; }
+function fmt2(n){ return n !== undefined && !isNaN(n) ? n.toFixed(2) : "0.00"; }
 
-// 归因1：点击成本偏高
-if(dispCpc > baseCpc * 1.2){
-  var highPct = ((dispCpc - baseCpc) / baseCpc * 100).toFixed(0);
-  attr += '<div class="attr-card attr-red">';
-  attr += '<div class="attr-title">归因1：点击成本偏高</div>';
-  attr += '<div class="attr-desc">你的CPC ¥'+dispCpc.toFixed(2)+'，同业态同商圈基准¥'+baseCpc.toFixed(2)+'，高了'+highPct+'%。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>投放时段覆盖了低转化时段（如凌晨）<br>→ <b>排查动作：</b>检查投放后台的时段设置，关闭0:00-7:00的投放<br>→ <b>预估效果：</b>CPC预估降20%-30%</div>';
-  ;
-  attr += '</div>';
-}
+var platRois = activePlats.map(function(p){
+  var r = calcForwardPlatform(p, adr, varCost, null);
+  return {name: p.name, budget: p.budget, roi: p.budget > 0 ? r.profit / p.budget : -999, profit: r.profit, roomNights: r.roomNights, cpc: p.cpc, rate: p.orderRate, checkin: p.checkinRate, commission: p.commission};
+});
+platRois.sort(function(a,b){ return b.roi - a.roi; });
+var nightlyEmpty = Math.floor(rooms * (1 - occ/100));
 
-// 归因2：转化率偏低
-if(dispRate < breakEvenRateCpc * 0.8 && breakEvenRateCpc > 0){
-  var rateGap = (breakEvenRateCpc - dispRate).toFixed(2);
-  attr += '<div class="attr-card attr-red">';
-  attr += '<div class="attr-title">归因2：转化率偏低</div>';
-  attr += '<div class="attr-desc">你的转化率'+dispRate.toFixed(2)+'%，保本需要'+breakEvenRateCpc.toFixed(2)+'%（=CPC÷(单房毛利×履约率)，含税口径下已修正）。差距'+rateGap+'%。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>详情页首图不是实拍或光线差<br>→ <b>排查动作：</b>更换为客房实拍图，确保光线明亮、床铺整洁、卫生间干净<br>→ <b>预估效果：</b>转化率预估提升15%-25%</div>';
-  ;
-  attr += '</div>';
-}
+var diagList = [];
 
-// 归因3：房价偏低
-if(adr < floorPrice && floorPrice > 0 && !commissionAbnormal){
-  var lossPerRoom = floorPrice - adr;
-  attr += '<div class="attr-card attr-red">';
-  attr += '<div class="attr-title">归因3：房价偏低</div>';
-  attr += '<div class="attr-desc">你的房价¥'+adr+'，底价线¥'+floorPrice.toFixed(1)+'（=变动成本¥'+varCost+' ÷ (1-佣金率-税因子)，覆盖变动成本+佣金+税费，不含固定成本与推广成本）。每卖1间少赚¥'+lossPerRoom.toFixed(1)+'。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>为抢客源过度降价<br>→ <b>排查动作：</b>对比周边3家同类型酒店价格，上调至市场价水平<br>→ <b>预估效果：</b>每间夜增收¥'+lossPerRoom.toFixed(1)+'，总营收预估提升15%-20%</div>';
-  ;
-  attr += '</div>';
+// D0a 容量不足
+if(capExceeded && profit < 0){
+  diagList.push({level:'red', tag:'P0', title:'容量不够还硬投，越投越亏',
+    desc:'空房容量只有 '+capacity+' 间夜，推广却算出 '+rawNights+' 间夜，装不下。当前已亏 ¥'+fmt0(Math.abs(profit))+'，继续投只会更亏。',
+    action:'总预算砍到容量能消化的范围（建议 ≤ ¥'+fmt0(Math.floor(capacity*marginPerRoom*0.5))+'），或延长投放周期到 '+Math.max(14, Math.ceil(days*rawNights/capacity))+' 天',
+    check:'推广间夜 ≤ 空房容量的80%（≤ '+Math.floor(capacity*0.8)+' 间夜）'});
 }
-
-// 归因4：房价偏高
-var adrBenchmark = getAdrBenchmark();
-if(adr > adrBenchmark && adrBenchmark > 0 && !(adr < floorPrice && floorPrice > 0)){
-  var highPct = ((adr - adrBenchmark) / adrBenchmark * 100).toFixed(0);
-  attr += '<div class="attr-card attr-yellow">';
-  attr += '<div class="attr-title">归因4：房价偏高</div>';
-  attr += '<div class="attr-desc">你的房价¥'+adr+'，同商圈同业态基准约¥'+adrBenchmark.toFixed(1)+'（已按业态/城市/位置综合测算），高出'+highPct+'%。价格脱离市场可能导致竞争力不足。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>定价脱离市场，竞争力不足<br>→ <b>排查动作：</b>对比周边3家同类型酒店价格，适当下调5%-10%<br>→ <b>预估效果：</b>入住率预估提升10%-15%</div>';
-  ;
-  attr += '</div>';
+// D0b 定价灾难
+if(adr < floorPrice && floorPrice > 0){
+  diagList.push({level:'red', tag:'P0', title:'房价低于底价线 ¥'+fmt0(floorPrice)+'，卖一间亏一间',
+    desc:'当前房价 ¥'+fmt0(adr)+'，底价线 ¥'+fmt0(floorPrice)+'（按成本+税费+合理利润算出）。每卖一间都在亏，投流越多亏越多。',
+    action:'今天就把各平台价格提到 ¥'+fmt0(Math.ceil(floorPrice*1.1))+' 以上，关闭自动促销',
+    check:'连续2天无低于底价线成交'});
 }
-
-// 归因5：净利润亏损
-if(profit < 0){
-  attr += '<div class="attr-card attr-red">';
-  attr += '<div class="attr-title">归因5：净利润亏损</div>';
-  attr += '<div class="attr-desc">当前方案净利润¥'+profit.toFixed(0)+'（投放回报'+roi.toFixed(2)+'）。投放是亏的，需要找出亏损原因并修复。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>点击成本过高<br>→ <b>排查动作：</b>按"点击成本偏高"归因排查，下调出价/换长尾词/优化时段<br>→ <b>预估效果：</b>单房推广成本预估降20%-30%</div>';
-  ;
-  attr += '</div>';
-}
-
-// 归因6：投放回报偏低（微利）
-if(profit > 0 && roi > 0 && roi < 0.3){
-  attr += '<div class="attr-card attr-yellow">';
-  attr += '<div class="attr-title">归因6：投放回报偏低（微利）</div>';
-  attr += '<div class="attr-desc">当前投放回报'+roi.toFixed(2)+'，低于0.3安全线。投放有效但利润薄，优化参数后再考虑追加。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>点击成本偏高，吃掉利润<br>→ <b>排查动作：</b>按"点击成本偏高"归因排查，下调出价/换长尾词/优化时段<br>→ <b>预估效果：</b>单房推广成本预估降15%-20%，投放回报预估提升至0.4-0.5</div>';
-  attr += '<div class="attr-reason"><b>可能原因2：</b>转化率偏低，间夜不足<br>→ <b>排查动作：</b>按"转化率偏低"归因排查，优化详情页/价格/政策/评价<br>→ <b>预估效果：</b>转化率预估提升15%-25%，间夜增加，投放回报预估提升至0.4-0.6</div>';
-  ;
-  attr += '</div>';
-}
-
-// 归因7：入住率偏高
+// D0c 高入住率
 if(occ >= 80){
-  attr += '<div class="attr-card attr-yellow">';
-  attr += '<div class="attr-title">归因7：入住率偏高</div>';
-  attr += '<div class="attr-desc">入住率已达'+occ+'%，每晚空房仅约'+nightlyEmpty+'间。推广边际收益递减，策略应从"放量"转向"提价增效"。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>房价偏低，没有充分变现<br>→ <b>排查动作：</b>对比周边同类型酒店房价，尝试提价5%-10%<br>→ <b>预估效果：</b>每间夜增收¥'+(adr*0.05).toFixed(1)+'，总营收预估提升10%-15%</div>';
-  ;
-  attr += '</div>';
+  diagList.push({level:'yellow', tag:'P1', title:'入住率已达 '+occ+'%，该提价了',
+    desc:'每晚空房只剩约 '+nightlyEmpty+' 间，投流填不满。策略从"填房"转向"提价"：平台统一提 5% 到 ¥'+fmt0(Math.ceil(adr*1.05))+'。',
+    action:'各平台统一上调 5% 至 ¥'+fmt0(Math.ceil(adr*1.05))+'，同步上调会员价、协议价',
+    check:'提价后3天入住率仍 ≥ '+Math.max(70, Math.floor(occ*0.9))+'%，说明提价成功'});
 }
-
-// 归因8：入住率偏低
-if(occ < 40){
-  attr += '<div class="attr-card attr-red">';
-  attr += '<div class="attr-title">归因8：入住率偏低</div>';
-  attr += '<div class="attr-desc">入住率仅'+occ+'%，每晚空房'+nightlyEmpty+'间。自然流量不足，但推广前需先排查产品和定价问题。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>房价过高，竞争力不足<br>→ <b>排查动作：</b>对比周边3家同类型酒店价格，适当下调5%-10%<br>→ <b>预估效果：</b>入住率预估提升10%-15%</div>';
-  ;
-  attr += '</div>';
+// D1 平台预算错配
+if(activePlats.length >= 2 && platRois.length >= 2){
+  var top = platRois[0], bot = platRois[platRois.length-1];
+  if(top.roi > 0 && top.roi - bot.roi >= 0.05){
+    var moveAmt = Math.round(Math.min(bot.budget*0.3, bot.budget));
+    var delta = moveAmt * (top.roi - bot.roi);
+    var profitNew = profit + delta;
+    diagList.push({level:'red', tag:'P0', title:'预算错配：钱放错了平台（值¥'+fmt0(delta)+'/月）',
+      desc: top.name+'投了¥'+fmt0(top.budget)+'，赚回¥'+fmt0(top.profit)+'（ROI '+fmt2(top.roi)+'）；'+bot.name+'投了¥'+fmt0(bot.budget)+'，赚回¥'+fmt0(bot.profit)+'（ROI '+fmt2(bot.roi)+'）。同样一笔钱，'+top.name+'比'+bot.name+'多赚¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。把'+bot.name+'的预算砍¥'+fmt0(moveAmt)+'挪给'+top.name+'，其他不动，月净利预计从¥'+fmt0(profit)+'变¥'+fmt0(profitNew)+'。',
+      action:'今天就把'+bot.name+'预算从¥'+fmt0(bot.budget)+'调到¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'从¥'+fmt0(top.budget)+'调到¥'+fmt0(top.budget+moveAmt),
+      check:'7天后'+top.name+'实际ROI ≥ '+fmt2(top.roi*0.85)+'，总月净利 ≥ ¥'+fmt0(profitNew)});
+  }
 }
-
-// 归因9：佣金率偏高
+// D2 亏损缺口
+if(profit < 0){
+  var netC = marginPerRoom - costPerRoom;
+  var shortN = netC > 0 ? Math.ceil(Math.abs(profit)/netC) : Math.ceil(Math.abs(profit)/Math.max(1, marginPerRoom*0.5));
+  var perDay = days > 0 ? Math.max(1, Math.ceil(shortN/days)) : 1;
+  diagList.push({level:'red', tag:'P0', title:'亏损缺口：还差约'+shortN+'间夜才回本',
+    desc:'当前亏¥'+fmt0(Math.abs(profit))+'（ROI '+fmt2(roi)+'）。每间夜净贡献¥'+fmt1(netC)+'，还差约'+shortN+'间夜回本，相当于每天多'+perDay+'单。',
+    action:'先别加预算，按下方行动令把问题修好，间夜做上来再重新测算',
+    check:'修复后重新测算，投放回报 > 0'});
+}
+// D3 点击成本
+if(costPerRoom > marginPerRoom * 0.8 && roomNights > 0){
+  var newCost = costPerRoom * 0.85;
+  var newNet = marginPerRoom - newCost;
+  var addP3 = roomNights * costPerRoom * 0.15;
+  var newRoi = budget > 0 ? (profit + addP3) / budget : 0;
+  diagList.push({level:'red', tag:'P0', title:'点击成本偏高：利润被点击吃掉了（值¥'+fmt0(addP3)+'/月）',
+    desc:'单房推广成本¥'+fmt1(costPerRoom)+'，单房毛利¥'+fmt1(marginPerRoom)+'，每间夜只剩¥'+fmt1(marginPerRoom-costPerRoom)+'。CPC现在¥'+fmt2(dispCpc)+'，压到¥'+fmt2(Math.round(dispCpc*0.85*100)/100)+'（降15%），单房推广成本降到¥'+fmt1(newCost)+'，每间夜净贡献提到¥'+fmt1(newNet)+'，投放ROI预计从'+fmt2(roi)+'提到'+fmt2(newRoi)+'。',
+    action:'出价下调15%，暂停0:00-7:00低转化时段，定向缩到酒店周边3-5公里',
+    check:'3天后CPC ≤ ¥'+fmt2(Math.round(dispCpc*0.9*100)/100)+'，单房推广成本 ≤ ¥'+fmt1(newCost)});
+}
+// D4 转化率
+if(dispRate < 3.5){
+  var newRate = Math.round((dispRate + 0.5)*10)/10;
+  var addRN = Math.floor(clicks * (newRate - dispRate)/100 * checkinRate/100);
+  var addP4 = Math.round(addRN * marginPerRoom * 0.85);
+  diagList.push({level:'yellow', tag:'P1', title:'转化率偏低：有流量没订单（值¥'+fmt0(addP4)+'/月）',
+    desc:'转化率'+fmt1(dispRate)+'%，每100次点击只成'+fmt1(dispRate)+'单。提到'+fmt1(newRate)+'%，预计多'+addRN+'间夜，多赚约¥'+fmt0(addP4)+'。',
+    action:'换客房实拍主图，列表页与详情页价格对齐，取消政策放宽到入住前1天免费取消',
+    check:'3天后转化率 ≥ '+fmt1(newRate)+'%'});
+}
+// D5 佣金
 if(commission > 12){
-  var extraComm = commission - 12;
-  var extraLoss = roomNights * adr * extraComm / 100;
-  attr += '<div class="attr-card attr-yellow">';
-  attr += '<div class="attr-title">归因9：佣金率偏高</div>';
-  attr += '<div class="attr-desc">你的综合佣金率'+commission.toFixed(2)+'%，行业通常10-12%。按'+roomNights+'间夜、ADR¥'+adr+'算，比12%基准多扣¥'+Math.round(extraLoss)+'。'+(commissionAbnormal?'<span style="color:#dc2626">当前佣金率异常偏高，底价线测算已失真，请优先与平台谈判降佣。</span>':'')+'以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>高佣平台（如携程15%）占比过大<br>→ <b>排查动作：</b>检查各平台订单占比，增加低佣平台（美团10%）投放比重<br>→ <b>预估效果：</b>综合佣金率预估降2-3个百分点</div>';
-  ;
-  attr += '</div>';
+  var saveC = Math.round(commFee * (commission - 12) / commission);
+  diagList.push({level:'yellow', tag:'P1', title:'佣金偏高：平台抽成吃利润（值¥'+fmt0(saveC)+'/月）',
+    desc:'综合佣金率'+fmt1(commission)+'%，这个月光佣金就付了¥'+fmt0(commFee)+'。综合佣金率压到12%的话，一个月省¥'+fmt0(saveC)+'。',
+    action:'查各平台佣金占比，预算往低佣平台倾斜（如美团10%）；再约平台经理谈降到12%',
+    check:'2周内综合佣金率 ≤ 12%'});
 }
 
-// 归因10：单房推广成本过高
-if(costPerRoom > marginPerRoom && roomNights > 0){
-  var lossPerRoom = costPerRoom - marginPerRoom;
-  attr += '<div class="attr-card attr-red">';
-  attr += '<div class="attr-title">归因10：单房推广成本过高</div>';
-  attr += '<div class="attr-desc">你的单房推广成本¥'+costPerRoom.toFixed(1)+'，单房毛利¥'+marginPerRoom.toFixed(1)+'，每间净亏¥'+lossPerRoom.toFixed(1)+'。推广是亏的，需立即优化。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>点击成本过高<br>→ <b>排查动作：</b>按"点击成本偏高"归因排查，下调出价/换长尾词/优化时段<br>→ <b>预估效果：</b>单房推广成本预估降20%-30%</div>';
-  ;
-  attr += '</div>';
-}
+// 最多取3条最值钱的诊断
+var diagShow = diagList.slice(0,3);
 
-// 归因11：单房变动成本偏高
-var varCostBenchmark = varCostMap[document.getElementById("type").value] || 55;
-if(varCost > varCostBenchmark * 1.2){
-  var highPct = ((varCost - varCostBenchmark) / varCostBenchmark * 100).toFixed(0);
-  attr += '<div class="attr-card attr-yellow">';
-  attr += '<div class="attr-title">归因11：单房变动成本偏高</div>';
-  attr += '<div class="attr-desc">你的单房变动成本¥'+varCost+'，同业态基准约¥'+varCostBenchmark+'，高出'+highPct+'%。以下原因供你排查：</div>';
-  attr += '<div class="attr-reason"><b>可能原因1：</b>布草、洗漱用品等消耗品成本偏高<br>→ <b>排查动作：</b>对比3家供应商报价，考虑更换或集中采购<br>→ <b>预估效果：</b>单房变动成本预估降10%-15%</div>';
-  ;
-  attr += '</div>';
-}
+// 一句话判断
+var judge = "";
+if(profit < 0){ judge = '当前投放亏损¥'+fmt0(Math.abs(profit))+'（ROI '+fmt2(roi)+'），先别加钱，把下面诊断的问题修好再投。'; }
+else if(roi >= 0.3){ judge = '投放回报'+fmt2(roi)+'，模式跑通，按节奏放大即可。'; }
+else if(diagShow.length>0 && diagShow[0].title.indexOf('预算错配')>=0){ judge = '你不是亏，是钱放错地方了：'+platRois[0].name+' ROI '+fmt2(platRois[0].roi)+'、'+platRois[platRois.length-1].name+' ROI '+fmt2(platRois[platRois.length-1].roi)+'，把钱挪一挪就能多赚。'; }
+else if(roi > 0){ judge = '投放回报'+fmt2(roi)+'，能赚但赚得薄，先按诊断把利润做厚。'; }
+else { judge = '当前不赚不亏，先优化 CPC 或转化率再评估投放。'; }
 
-// 归因12：全部健康
-if(attr === ""){
-  attr += '<div class="attr-card attr-green">';
-  attr += '<div class="attr-title">归因12：全部健康</div>';
-  attr += '<div class="attr-desc">你的各项指标正常，投放回报'+roi.toFixed(2)+'，处于盈利区间。无需调整。<br>如果想进一步扩大收益：可尝试将预算提升20%-30%，观察投放回报是否维持在当前水平。</div>';
-  attr += '<div class="attr-reason">→ <b>动作：</b>追加部分单独建计划，周期14天<br>→ <b>预估效果：</b>预计新增间夜'+Math.floor(roomNights*0.25)+'间，多赚约¥'+Math.round(roomNights*0.25*marginPerRoom*0.8)+'<br>→ <b>验收：</b>追加部分投放回报≥0.3继续，<0.3停止追加</div>';
-  attr += '</div>';
+attr += '<div class="plan-summary" style="margin-bottom:12px"><b>📌 一句话判断：</b>'+judge+'</div>';
+if(diagShow.length === 0){
+  attr += '<div class="attr-card attr-green"><div class="attr-title">✅ 各项指标正常</div><div class="attr-desc">投放回报'+fmt2(roi)+'，处于健康区间。想扩大收益：预算提升20%-30%，观察投放回报是否维持。</div></div>';
 }
+diagShow.forEach(function(d){
+  attr += '<div class="attr-card '+(d.level==='red'?'attr-red':'attr-yellow')+'">';
+  attr += '<div class="attr-title">'+(d.level==='red'?'🔴 ':'🟡 ')+d.title+'</div>';
+  attr += '<div class="attr-desc">'+d.desc+'</div>';
+  attr += '</div>';
+});
+
 // ===== 模块⑤ 落地方案（简化版） =====
 var plan = "";
 var hasP0 = false, hasP1 = false;
@@ -1553,6 +1529,30 @@ plan += '4. 单房推广成本 > 单房毛利¥'+fmt1(marginPerRoom)+'<br>';
 plan += '5. 连续3天间夜低于日均'+fmt1(days>0?roomNights/days:0)+'间的50%<br>';
 plan += '6. 任意渠道成交房价 < ¥'+fmt0(floorPrice);
 plan += '</div>';
+// ===== 模块⑤ 行动令（诊断的处方，按顺序执行） =====
+var plan = "";
+var planTitle = "行动令";
+
+var actList = [];
+diagShow.forEach(function(d, i){
+  actList.push({no:i+1, text:d.action, check:d.check, tag:d.tag});
+});
+if(actList.length === 0){
+  actList.push({no:1, text:'预算提升20%-30%，观察投放回报是否维持', check:'14天后投放回报 ≥ 0.3', tag:'P1'});
+  actList.push({no:2, text:'每天盯一次投放后台，CPC超过¥'+fmt2(Math.round(dispCpc*1.1*100)/100)+'就下调出价5%', check:'CPC稳定在¥'+fmt2(dispCpc)+'以内', tag:'P1'});
+  actList.push({no:3, text:'7天后重新测算，投放回报 ≥ 0.3 继续，< 0.3 停投复盘', check:'投放回报 ≥ 0.3', tag:'P1'});
+} else if(actList.length === 1){
+  actList.push({no:2, text:'每天盯一次投放后台，CPC超过¥'+fmt2(Math.round(dispCpc*1.1*100)/100)+'就下调出价5%', check:'CPC稳定', tag:'P1'});
+  actList.push({no:3, text:'7天后重新测算，投放回报 ≥ 0.3 继续，< 0.3 停投复盘', check:'投放回报 ≥ 0.3', tag:'P1'});
+} else if(actList.length === 2){
+  actList.push({no:3, text:'7天后重新测算，投放回报 ≥ 0.3 继续，< 0.3 停投复盘', check:'投放回报 ≥ 0.3', tag:'P1'});
+}
+
+plan += '<div class="plan-summary"><b>📋 行动令（按顺序做，共'+actList.length+'件事）：</b></div>';
+actList.forEach(function(a){
+  plan += '<div class="plan-card"><div class="plan-tag '+(a.tag==='P0'?'tag-red':'tag-yellow')+'">'+(a.tag==='P0'?'🔴 P0 紧急':'🟡 P1 重要')+'</div><div class="plan-title">第'+a.no+'件事</div><div class="plan-action"><b>→ 做什么：</b>'+a.text+'</div><div class="plan-check"><b>→ 验收：</b>'+a.check+'</div></div>';
+});
+
 lastForecast = {clicks:clicks, orders:orders, roomNights:roomNights, budget:budget, profit:profit, roi:roi, margin:marginPerRoom, otherFee:otherFeeTotal, cpc:diagCpc, orderRate:diagRate, checkinRate:dispCheckin, adr:adr, taxRate:taxRate};
 
 
@@ -1743,17 +1743,12 @@ html += '<div class="warn" style="padding:12px;border-radius:10px;margin-top:10p
 }
 html += '</div>';
 
-// 模块④ 归因分析
+// 模块④ 顾问诊断与行动令（归因+落地合并）
 html += '<div class="sec">';
-html += '<div class="sec-title">④ 归因分析</div>';
-html += '<div class="tip" style="margin-bottom:12px"><b>📋 排查优先级指引：</b>建议优先处理红色归因，按 <b>P0 → P1 → P2</b> 顺序逐项排查修复。红色项直接影响盈亏，黄色项影响效率，绿色项为健康提示。</div>';
+html += '<div class="sec-title">④ 顾问诊断与行动令</div>';
+html += '<div class="tip" style="margin-bottom:12px"><b>📌 下面每条都是按你这份数据算出来的，先看诊断，再按行动令执行。</b></div>';
 
 html += attr;
-html += '</div>';
-
-// 模块⑤ 落地方案
-html += '<div class="sec">';
-html += '<div class="sec-title">⑤ 落地方案：' + planTitle + '</div>';
 html += plan;
 html += '</div>';
 
