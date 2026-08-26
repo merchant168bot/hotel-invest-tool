@@ -131,6 +131,12 @@ td{color:#334155}
 .goal-inputs .row:last-child{margin-bottom:0}
 .path-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin:10px 0;font-size:13px;color:#166534;line-height:1.8}
 .path-box b{color:#14532d}
+.report-head{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px;letter-spacing:.3px}
+.one-liner{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:14px;color:#1e40af;line-height:1.7}
+.report-copy-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;justify-content:flex-end}
+.report-copy-bar button{background:#0ea5e9;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.report-copy-bar button:hover{background:#0284c7}
+.report-copy-tip{font-size:12px;color:#94a3b8}
 .reverse-highlight{background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:1px solid #bfdbfe;border-radius:12px;padding:16px;margin:12px 0}
 .reverse-highlight .item{border-bottom-color:#bfdbfe}
 .reverse-highlight .item:last-child{border-bottom:none}
@@ -270,7 +276,7 @@ h2{border-left:4px solid #2563eb}
 <div class="card" id="baseData">
 <div class="card-head"><div class="card-title">① 酒店基础信息</div><span class="req-badge">3 项必填</span></div>
 <div class="row">
-<label>酒店业态 <span style="color:red;">*</span> <span class="unit">必选</span></label>
+<label>酒店业态 <span style="color:red;">*</span> <span class="unit">自动识别 · 可手动改</span></label>
 <select id="type">
 <option value="eco">经济型/快捷</option>
 <option value="biz" selected>商务</option>
@@ -300,16 +306,115 @@ h2{border-left:4px solid #2563eb}
 <div class="adv-panel" id="advBase">
 <div class="compact-row">
 <div class="field" id="cityTierField">
-<label>城市层级 <span class="unit">必选</span></label>
+<label>城市 <span style="color:#dc2626">*</span> <span class="unit">自动识别 · 可手动改</span></label>
 <select id="cityTier">
-<option value="">— 请选择 —</option>
-<option value="tier1">一线城市</option>
-<option value="newTier1">新一线城市</option>
-<option value="tier2">二线城市</option>
-<option value="tier3">三线城市</option>
-<option value="tier4">四线及以下</option>
+<option value="">— 请选择城市 —</option>
+<optgroup label="一线城市（北上广深）">
+<option value="tier1">北京</option>
+<option value="tier1">上海</option>
+<option value="tier1">广州</option>
+<option value="tier1">深圳</option>
+</optgroup>
+<optgroup label="新一线城市（15个）">
+<option value="newTier1">成都</option>
+<option value="newTier1">重庆</option>
+<option value="newTier1">杭州</option>
+<option value="newTier1">武汉</option>
+<option value="newTier1">西安</option>
+<option value="newTier1">苏州</option>
+<option value="newTier1">天津</option>
+<option value="newTier1">南京</option>
+<option value="newTier1">长沙</option>
+<option value="newTier1">郑州</option>
+<option value="newTier1">东莞</option>
+<option value="newTier1">青岛</option>
+<option value="newTier1">沈阳</option>
+<option value="newTier1">宁波</option>
+<option value="newTier1">昆明</option>
+</optgroup>
+<optgroup label="二线城市（省会及计划单列市等）">
+<option value="tier2">福州</option>
+<option value="tier2">合肥</option>
+<option value="tier2">济南</option>
+<option value="tier2">南昌</option>
+<option value="tier2">贵阳</option>
+<option value="tier2">石家庄</option>
+<option value="tier2">太原</option>
+<option value="tier2">哈尔滨</option>
+<option value="tier2">长春</option>
+<option value="tier2">兰州</option>
+<option value="tier2">南宁</option>
+<option value="tier2">海口</option>
+<option value="tier2">乌鲁木齐</option>
+<option value="tier2">呼和浩特</option>
+<option value="tier2">银川</option>
+<option value="tier2">西宁</option>
+<option value="tier2">大连</option>
+<option value="tier2">厦门</option>
+<option value="tier2">无锡</option>
+<option value="tier2">佛山</option>
+<option value="tier2">常州</option>
+<option value="tier2">徐州</option>
+<option value="tier2">温州</option>
+<option value="tier2">绍兴</option>
+<option value="tier2">嘉兴</option>
+<option value="tier2">南通</option>
+<option value="tier2">泉州</option>
+<option value="tier2">烟台</option>
+<option value="tier2">珠海</option>
+<option value="tier2">惠州</option>
+</optgroup>
+<optgroup label="三线城市（主要地级市）">
+<option value="tier3">金华</option>
+<option value="tier3">台州</option>
+<option value="tier3">潍坊</option>
+<option value="tier3">临沂</option>
+<option value="tier3">洛阳</option>
+<option value="tier3">南阳</option>
+<option value="tier3">邯郸</option>
+<option value="tier3">保定</option>
+<option value="tier3">唐山</option>
+<option value="tier3">秦皇岛</option>
+<option value="tier3">包头</option>
+<option value="tier3">鄂尔多斯</option>
+<option value="tier3">绵阳</option>
+<option value="tier3">德阳</option>
+<option value="tier3">宜宾</option>
+<option value="tier3">泸州</option>
+<option value="tier3">遵义</option>
+<option value="tier3">曲靖</option>
+<option value="tier3">桂林</option>
+<option value="tier3">柳州</option>
+<option value="tier3">宜昌</option>
+<option value="tier3">襄阳</option>
+<option value="tier3">衡阳</option>
+<option value="tier3">岳阳</option>
+<option value="tier3">株洲</option>
+<option value="tier3">赣州</option>
+<option value="tier3">九江</option>
+<option value="tier3">芜湖</option>
+<option value="tier3">阜阳</option>
+<option value="tier3">盐城</option>
+<option value="tier3">扬州</option>
+<option value="tier3">泰州</option>
+<option value="tier3">镇江</option>
+<option value="tier3">江门</option>
+<option value="tier3">湛江</option>
+<option value="tier3">茂名</option>
+<option value="tier3">肇庆</option>
+<option value="tier3">汕头</option>
+<option value="tier3">揭阳</option>
+<option value="tier3">梅州</option>
+<option value="tier3">大理</option>
+<option value="tier3">丽江</option>
+<option value="tier3">北海</option>
+<option value="tier3">三亚</option>
+</optgroup>
+<optgroup label="四线及以下（其他城市）">
+<option value="tier4">其他城市（自动归四线及以下）</option>
+</optgroup>
 </select>
-<div class="hint">影响CPC基准系数</div>
+<div class="hint" id="tierHint">选城市后自动识别所属层级</div>
 <span class="field-error" id="errCityTier" style="display:none"></span>
 </div>
 <div class="field">
@@ -371,7 +476,7 @@ h2{border-left:4px solid #2563eb}
 <div class="row">
 <label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
 <select id="revGoal" onchange="onRevGoalChange()">
-<option value="newGuest">拉新客 — 冲间夜量</option>
+<option value="newGuest">拉新 — 冲间夜量</option>
 <option value="revenue">冲营收</option>
 <option value="occupancy">提入住率</option>
 <option value="repurchase">提复购</option>
@@ -473,7 +578,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div id="result"></div>
 <div class="brand-footer">
-由 <span id="brandFooterName">酒店收益管理服务商</span> 提供技术支持 &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.3
+由 <span id="brandFooterName">酒店收益管理服务商</span> 提供技术支持 &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.4
 </div>
 <div class="privacy-note">🔒 隐私说明：本工具所有数据仅保存在您本机浏览器（localStorage），不会上传任何服务器</div>
 </div>
@@ -944,6 +1049,279 @@ html += '</div></div>';
 return html;
 }
 
+// ========== 复制整份报告（富文本 + 纯文本双格式） ==========
+function copyReportText(){
+  var el = document.getElementById("result");
+  if(!el || !el.innerHTML || el.innerHTML.indexOf("report-head") < 0){
+    showToast("请先执行测算生成报告");
+    return;
+  }
+  var clone = el.cloneNode(true);
+  // 移除顶部按钮条
+  var bar = clone.querySelector(".report-copy-bar");
+  if(bar && bar.parentNode) bar.parentNode.removeChild(bar);
+  // 移除投后复盘、免责说明（报告正文不含这两块）
+  var secs = clone.querySelectorAll(".sec");
+  for(var si = secs.length - 1; si >= 0; si--){
+    var st = secs[si].querySelector(".sec-title");
+    if(st && (/投后复盘/.test(st.textContent) || /免责/.test(st.textContent))){
+      if(secs[si].parentNode) secs[si].parentNode.removeChild(secs[si]);
+    }
+  }
+  // 移除复盘结果残留
+  var rr = clone.querySelector("#reviewResult");
+  if(rr) rr.innerHTML = "";
+  // 同时生成富文本 HTML（保留格式）与纯文本（兜底）
+  var html = buildCopyHtml(clone);
+  var text = buildCopyText(clone);
+  copyRichText(html, text);
+}
+function copyRichText(html, text){
+  function ok(){ showToast("已复制，可直接粘贴到微信/文档（保留格式）"); }
+  function copyHtmlFallback(){
+    var holder = document.getElementById("copyHtmlHolder");
+    if(!holder){
+      holder = document.createElement("div");
+      holder.id = "copyHtmlHolder";
+      holder.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;";
+      document.body.appendChild(holder);
+    }
+    holder.innerHTML = html;
+    var range = document.createRange();
+    range.selectNodeContents(holder);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    try{
+      var done = document.execCommand("copy");
+      sel.removeAllRanges();
+      if(done){ ok(); } else { fallbackCopy(text, ok); }
+    }catch(e){
+      sel.removeAllRanges();
+      fallbackCopy(text, ok);
+    }
+  }
+  if(navigator.clipboard && window.ClipboardItem){
+    try{
+      var blobHtml = new Blob([html], {type: "text/html"});
+      var blobText = new Blob([text], {type: "text/plain"});
+      navigator.clipboard.write([new ClipboardItem({"text/html": blobHtml, "text/plain": blobText})]).then(function(){ ok(); }, function(){ copyHtmlFallback(); });
+    }catch(e){
+      copyHtmlFallback();
+    }
+  } else {
+    copyHtmlFallback();
+  }
+}
+// 把报告 clone 转成带内联样式的富文本 HTML（粘贴到微信/文档时格式不丢）
+function buildCopyHtml(root){
+  function esc(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function txt(el){ return (el.innerText || el.textContent || "").replace(/\s+/g," ").replace(/^\s+|\s+$/g,""); }
+  function tableHtml(tb){
+    var h = '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:8px 0;font-size:13px;width:100%">';
+    var rows = tb.querySelectorAll("tr");
+    for(var r = 0; r < rows.length; r++){
+      h += "<tr>";
+      var cells = rows[r].querySelectorAll("th,td");
+      for(var cc = 0; cc < cells.length; cc++){
+        var tag = cells[cc].tagName === "TH" ? "th" : "td";
+        h += "<"+tag+' style="border:1px solid #cbd5e1;padding:6px 8px;'+(tag==="th"?"background:#f1f5f9;font-weight:700;":"")+'">'+esc(txt(cells[cc]))+"</"+tag+">";
+      }
+      h += "</tr>";
+    }
+    h += "</table>";
+    return h;
+  }
+  function innerHtml(nd){
+    var h = "";
+    var kids = nd.childNodes;
+    for(var i = 0; i < kids.length; i++){
+      var c = kids[i];
+      if(c.nodeType === 3){
+        var t = c.nodeValue.replace(/\s+/g," ").replace(/^\s+|\s+$/g,"");
+        if(t) h += esc(t);
+        continue;
+      }
+      if(c.nodeType !== 1) continue;
+      var cls = c.className || "";
+      if(c.tagName === "BR"){ h += "<br>"; continue; }
+      if(/light/.test(cls)){ h += innerHtml(c) + "<br>"; continue; }
+      if(/sec-title/.test(cls)){ h += '<div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px">'+esc(txt(c))+'</div>'; continue; }
+      if(/proc-toggle/.test(cls)) continue;
+      if(/item/.test(cls)){
+        var kEl = c.querySelector && c.querySelector(".k");
+        var vEl = c.querySelector && c.querySelector(".v");
+        var k = kEl ? txt(kEl) : "";
+        var v = vEl ? txt(vEl) : "";
+        h += '<div style="margin:5px 0;line-height:1.6"><b>'+esc(k)+'：</b>'+esc(v)+'</div>';
+        continue;
+      }
+      if(/proc-body/.test(cls) || /kpi-grid|kpi-col|tier-label|lights|decisionBox/.test(cls)){ h += innerHtml(c); continue; }
+      if(c.tagName === "TABLE"){ h += tableHtml(c); continue; }
+      if(/big-card/.test(cls)){
+        var lb = c.querySelector && c.querySelector(".label");
+        var nm = c.querySelector && c.querySelector(".num");
+        h += '<div style="margin:5px 0;line-height:1.6"><b>'+esc(lb?txt(lb):"")+'：</b>'+esc(nm?txt(nm):"")+'</div>';
+        continue;
+      }
+      if(/path-box|one-liner|warn|hint|tip|danger|plan-summary|attr-card|add-note/.test(cls)){
+        h += '<div style="margin:8px 0;line-height:1.7;color:#333">'+esc(txt(c))+'</div>';
+        continue;
+      }
+      h += innerHtml(c);
+    }
+    return h;
+  }
+  function secHtml(sec){
+    var h = "";
+    var tEl = sec.querySelector && sec.querySelector(".sec-title");
+    var t = tEl ? txt(tEl) : "";
+    h += '<div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px">'+esc(t)+'</div>';
+    var kids = sec.childNodes;
+    for(var i = 0; i < kids.length; i++){
+      var nd = kids[i];
+      if(nd.nodeType !== 1) continue;
+      var cls = nd.className || "";
+      if(/sec-title/.test(cls)) continue;
+      if(/proc-toggle/.test(cls)) continue;
+      if(/item/.test(cls)){
+        var kEl = nd.querySelector && nd.querySelector(".k");
+        var vEl = nd.querySelector && nd.querySelector(".v");
+        var k = kEl ? txt(kEl) : "";
+        var v = vEl ? txt(vEl) : "";
+        h += '<div style="margin:5px 0;line-height:1.6"><b>'+esc(k)+'：</b>'+esc(v)+'</div>';
+        continue;
+      }
+      if(/kpi-grid|kpi-col|tier-label|lights|decisionBox/.test(cls)){
+        h += innerHtml(nd);
+        continue;
+      }
+      if(/table/.test(cls) || nd.tagName === "TABLE"){
+        h += tableHtml(nd);
+        continue;
+      }
+      if(/big-card/.test(cls)){
+        var lb2 = nd.querySelector && nd.querySelector(".label");
+        var nm2 = nd.querySelector && nd.querySelector(".num");
+        h += '<div style="margin:5px 0;line-height:1.6"><b>'+esc(lb2?txt(lb2):"")+'：</b>'+esc(nm2?txt(nm2):"")+'</div>';
+        continue;
+      }
+      if(/attr-card|plan-card|plan-summary|one-liner|add-note|warn|hint|tip|danger|path-box/.test(cls)){
+        h += '<div style="margin:8px 0;line-height:1.7;color:#333">'+esc(txt(nd))+'</div>';
+        continue;
+      }
+      h += innerHtml(nd);
+    }
+    return h;
+  }
+  var out = "";
+  var kids = root.childNodes;
+  for(var i = 0; i < kids.length; i++){
+    var nd = kids[i];
+    if(nd.nodeType !== 1) continue;
+    if(nd.tagName === "DIV" && /sec/.test(nd.className || "")){
+      out += secHtml(nd);
+    } else if(/report-head/.test(nd.className || "")){
+      out += '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:6px">'+esc(txt(nd))+'</div>';
+    } else if(/report-copy-bar/.test(nd.className || "")){
+      continue;
+    } else if(/warn|one-liner/.test(nd.className || "")){
+      out += '<div style="margin:8px 0;line-height:1.7">'+esc(txt(nd))+'</div>';
+    } else {
+      out += innerHtml(nd);
+    }
+  }
+  return out;
+}
+// 纯文本兜底：分点清晰、不挤成一坨
+function buildCopyText(root){
+  function t2(el){ return (el.innerText || el.textContent || "").replace(/\s+/g," ").replace(/^\s+|\s+$/g,""); }
+  function txtBlock(nd){
+    var parts = [];
+    var kids = nd.childNodes;
+    for(var i = 0; i < kids.length; i++){
+      var c = kids[i];
+      if(c.nodeType !== 1) continue;
+      var cls = c.className || "";
+      if(/item/.test(cls)){
+        var kEl = c.querySelector && c.querySelector(".k");
+        var vEl = c.querySelector && c.querySelector(".v");
+        var k = kEl ? t2(kEl) : "";
+        var v = vEl ? t2(vEl) : "";
+        if(k) parts.push(k+"："+v);
+      } else if(/big-card/.test(cls)){
+        var lb = c.querySelector && c.querySelector(".label");
+        var nm = c.querySelector && c.querySelector(".num");
+        parts.push((lb?t2(lb):"")+"："+(nm?t2(nm):""));
+      } else {
+        var t = t2(c);
+        if(t) parts.push(t);
+      }
+    }
+    return parts.join("；");
+  }
+  function txtTable(tb){
+    var rows = tb.querySelectorAll("tr");
+    var lines = [];
+    for(var r = 0; r < rows.length; r++){
+      var cells = rows[r].querySelectorAll("th,td");
+      var vals = [];
+      for(var cc = 0; cc < cells.length; cc++) vals.push(t2(cells[cc]));
+      lines.push(vals.join(" | "));
+    }
+    return lines.join("\n");
+  }
+  var parts = [];
+  var kids = root.childNodes;
+  for(var i = 0; i < kids.length; i++){
+    var nd = kids[i];
+    if(nd.nodeType !== 1) continue;
+    if(/report-copy-bar/.test(nd.className || "")) continue;
+    if(nd.tagName === "DIV" && /sec/.test(nd.className || "")){
+      var block = [];
+      var secKids = nd.childNodes;
+      for(var j = 0; j < secKids.length; j++){
+        var c = secKids[j];
+        if(c.nodeType !== 1) continue;
+        var cls = c.className || "";
+        if(/sec-title/.test(cls)){
+          block.push("【"+t2(c)+"】");
+        } else if(/proc-toggle/.test(cls)){
+          continue;
+        } else if(/item/.test(cls)){
+          var kEl = c.querySelector && c.querySelector(".k");
+          var vEl = c.querySelector && c.querySelector(".v");
+          var k = kEl ? t2(kEl) : "";
+          var v = vEl ? t2(vEl) : "";
+          if(k) block.push(k+"："+v);
+        } else if(/big-card/.test(cls)){
+          var lb = c.querySelector && c.querySelector(".label");
+          var nm = c.querySelector && c.querySelector(".num");
+          block.push((lb?t2(lb):"")+"："+(nm?t2(nm):""));
+        } else if(/proc-body/.test(cls) || /kpi-grid|kpi-col|lights|decisionBox/.test(cls)){
+          block.push(txtBlock(c));
+        } else if(c.tagName === "TABLE"){
+          block.push(txtTable(c));
+        } else if(/plan-summary|one-liner|add-note|warn|hint|tip|danger|report-head|path-box/.test(cls)){
+          block.push(t2(c));
+        } else {
+          block.push(txtBlock(c));
+        }
+      }
+      var merged = block.join("\n").replace(/\n{3,}/g, "\n\n").replace(/^\s+|\s+$/g, "");
+      if(merged) parts.push(merged);
+    } else if(/report-head/.test(nd.className || "")){
+      parts.push(t2(nd));
+    } else if(/warn|one-liner/.test(nd.className || "")){
+      parts.push(t2(nd));
+    } else {
+      var extra = txtBlock(nd);
+      if(extra) parts.push(extra);
+    }
+  }
+  return parts.join("\n\n");
+}
+
 function generateReview(){
 var actualCost = getVal("actualCost");
 var actualClicks = getVal("actualClicks");
@@ -1057,6 +1435,11 @@ var varCost = getVal("varCost");
 var taxRate = getVal("taxRate");
 var taxOf = function(rev){ return taxRate > 0 ? rev * taxRate / (100 + taxRate) : 0; };
 var marginPerRoom = adr*(1-commission/100) - varCost;
+// ===== 底价线 = 覆盖「变动成本 + 佣金 + 税费」的保本房价（不含固定成本与推广成本） =====
+var taxFactorD = taxRate > 0 ? taxRate / (100 + taxRate) : 0;
+var floorDenomD = (1 - commission/100) - taxFactorD;
+var floorPriceD = (commission < 100 && floorDenomD > 0.05) ? (varCost / floorDenomD) : 0;
+var adrDropPctD = adr > 0 ? Math.max(0, (adr - floorPriceD) / adr * 100) : 0;
 
 if(cpc <= 0) empty.push("当前CPC");
 if(orderRate <= 0) empty.push("当前下单转化率");
@@ -1070,7 +1453,7 @@ var occIncrease = 0;
 if(goal === "newGuest"){
 targetNights = getVal("revTargetNights");
 if(targetNights <= 0) empty.push("目标新增间夜数");
-goalTitle = "拉新客 — 冲间夜量";
+goalTitle = "拉新 — 冲间夜量";
 goalDesc = "新增 "+targetNights+" 间夜（"+period+"天内）";
 occIncrease = rooms > 0 ? (targetNights / (rooms * period) * 100) : 0;
 }
@@ -1121,7 +1504,31 @@ var repurchaseProfit = repurchaseRevenue - repurchaseVarCost - totalRecallCost -
 var repurchaseRoi = totalRecallCost > 0 ? (repurchaseProfit / totalRecallCost) : 0;
 
 var totalEmptyCapacity2 = Math.floor(rooms * (1 - occ/100) * period);
-var html = '<div class="sec">';
+var html = '';
+// ===== 报告抬头（去模板感：品牌 · 业态 · 位置 · 日期） =====
+var brandNameH2 = getBrandName() || "酒店投流方案";
+var typeElH2 = document.getElementById("type");
+var typeNameH2 = typeElH2 && typeElH2.options[typeElH2.selectedIndex] ? typeElH2.options[typeElH2.selectedIndex].text : "";
+var locElH2 = document.getElementById("location");
+var locNameH2 = locElH2 && locElH2.options[locElH2.selectedIndex] ? locElH2.options[locElH2.selectedIndex].text : "";
+var dNowH2 = new Date();
+var todayStrH2 = dNowH2.getFullYear() + "-" + String(dNowH2.getMonth()+1).padStart(2,"0") + "-" + String(dNowH2.getDate()).padStart(2,"0");
+html += '<div class="report-head">'+brandNameH2+' · '+typeNameH2+(locNameH2?' · '+locNameH2:'')+' · '+todayStrH2+'</div>';
+// ===== 一句话结论（按目标场景动态话术） =====
+var oneLineH2 = "";
+if(repurchaseRoi < 0){
+  oneLineH2 = '复购召回需花 ¥'+totalRecallCost.toFixed(0)+'，预计亏损 ¥'+Math.abs(repurchaseProfit).toFixed(0)+'（ROI '+repurchaseRoi.toFixed(2)+'），先别加预算，先压单客召回成本或优化触达人群。';
+}else if(repurchaseRoi >= 0.3){
+  oneLineH2 = '花 ¥'+totalRecallCost.toFixed(0)+' 召回 '+newRepurchaseCustomers+' 位老客，预计带来 '+targetNights+' 间夜、净赚 ¥'+repurchaseProfit.toFixed(0)+'，复购模式跑通，按节奏执行、投后复盘放大。';
+}else if(repurchaseRoi > 0){
+  oneLineH2 = '花 ¥'+totalRecallCost.toFixed(0)+'，预计净赚 ¥'+repurchaseProfit.toFixed(0)+'，可投但利润偏薄，先按优化路径把召回成本压下来再考虑加预算。';
+}else{
+  oneLineH2 = '当前测算不赚不亏，先优化召回成本或响应率，再评估是否投放。';
+}
+html += '<div class="one-liner">💬 '+oneLineH2+'</div>';
+// 报告顶部：复制整份报告
+html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制整份报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div>';
+html += '<div class="sec">';
 html += '<div class="sec-title">🎯 '+goalTitle+'</div>';
 html += '<div class="path-box"><b>目标：</b>复购率从 '+currentRepurchase+'% 提升至 '+targetRepurchase+'%<br>';
 html += '<b>客户池：</b>'+customerPool.toLocaleString()+' 人 &nbsp;|&nbsp; <b>新增复购人数：</b>'+newRepurchaseCustomers.toLocaleString()+' 人<br>';
@@ -1300,6 +1707,35 @@ period: period
 
 var html = '';
 
+// ===== 报告抬头（去模板感：品牌 · 业态 · 位置 · 日期） =====
+var brandNameH = getBrandName() || "酒店投流方案";
+var typeElH = document.getElementById("type");
+var typeNameH = typeElH && typeElH.options[typeElH.selectedIndex] ? typeElH.options[typeElH.selectedIndex].text : "";
+var locElH = document.getElementById("location");
+var locNameH = locElH && locElH.options[locElH.selectedIndex] ? locElH.options[locElH.selectedIndex].text : "";
+var dNowH = new Date();
+var todayStrH = dNowH.getFullYear() + "-" + String(dNowH.getMonth()+1).padStart(2,"0") + "-" + String(dNowH.getDate()).padStart(2,"0");
+html += '<div class="report-head">'+brandNameH+' · '+typeNameH+(locNameH?' · '+locNameH:'')+' · '+todayStrH+'</div>';
+// ===== 一句话结论（按目标场景动态话术） =====
+var oneLineH = "";
+if(vRoi < 0){
+  oneLineH = '达成目标需投 ¥'+needBudget.toFixed(0)+'，按当前参数预计亏损 ¥'+Math.abs(vProfit).toFixed(0)+'（ROI '+vRoi.toFixed(2)+'），先别加预算，按下方风险与优化路径把 CPC/转化率修好再投。';
+}else if(vRoi >= 0.3){
+  oneLineH = '每天花 ¥'+dailyBudget.toFixed(0)+'，预计带来 '+vNights+' 间夜、净赚 ¥'+vProfit.toFixed(0)+'，'+goalTitle+' 模式跑通，按节奏执行、投后复盘放大。';
+}else if(vRoi > 0){
+  oneLineH = '每天花 ¥'+dailyBudget.toFixed(0)+'，预计净赚 ¥'+vProfit.toFixed(0)+'，可投但利润偏薄，先按优化路径把成本压下来再考虑加预算。';
+}else{
+  oneLineH = '当前测算不赚不亏，先优化 CPC 或转化率，再评估是否投放。';
+}
+html += '<div class="one-liner">💬 '+oneLineH+'</div>';
+// 报告顶部：复制整份报告
+html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制整份报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div>';
+// ===== 目标摘要（goalDesc 渲染，前3场景补齐） =====
+html += '<div class="sec">';
+html += '<div class="sec-title">🎯 '+goalTitle+'</div>';
+html += '<div class="path-box"><b>目标：</b>'+goalDesc+'</div>';
+html += '</div>';
+
 var targetOccupyRate = totalEmptyCapacity > 0 ? (targetNights / totalEmptyCapacity * 100) : 0;
 html += '<div class="sec">';
 html += '<div class="sec-title">P1. 目标可行性确认</div>';
@@ -1314,6 +1750,18 @@ html += '<div class="danger" style="margin-top:10px;padding:12px;border-radius:1
 } else {
 html += '<div class="tip" style="margin-top:10px;"><b>✅ 容量充足</b><br>'+period+'天内空房容量 '+totalEmptyCapacity+' 间夜，目标 '+targetNights+' 间夜，空间充裕。日均需消化 '+dailyNights.toFixed(1)+' 间夜，当前日均空房 '+dailyEmptyRooms.toFixed(1)+' 间。</div>';
 html += '<div class="tip" style="margin-top:6px;"><b>模型验证：</b>按反推漏斗（点击→订单→入住）验算，实际可达成 <b>'+vNights.toLocaleString()+'</b> 间夜，与目标差 '+(targetNights-vNights).toLocaleString()+' 间夜（取整损耗）；若需精确达成目标，可将目标间夜上调 1-2 间。</div>';
+}
+html += '</div>';
+
+// ===== 底价线诊断（定价安全垫） =====
+html += '<div class="sec">';
+html += '<div class="sec-title">底价线（定价安全垫）</div>';
+if(adr >= floorPriceD && floorPriceD > 0){
+html += '<div class="tip" style="margin-top:6px;"><b>✅ 当前房价高于底价线</b><br>底价线 ¥'+floorPriceD.toFixed(1)+'（覆盖变动成本+佣金+税费），当前房价 ¥'+adr+' 高出 <b>¥'+(adr-floorPriceD).toFixed(1)+'</b>，房价下行空间约 '+adrDropPctD.toFixed(1)+'%；在此范围内降价仍可覆盖成本，投放安全垫充足。</div>';
+} else if(floorPriceD > 0){
+html += '<div class="danger" style="margin-top:6px;padding:12px;border-radius:10px;"><b>🛑 定价低于底价线</b><br>当前房价 ¥'+adr+' 低于底价线 ¥'+floorPriceD.toFixed(1)+'，每卖一间亏 ¥'+(floorPriceD-adr).toFixed(1)+'；投放量越大亏损越大。建议先上调价格至 ¥'+Math.ceil(floorPriceD*1.05)+' 以上再考虑投放。</div>';
+} else {
+html += '<div class="tip" style="margin-top:6px;">底价线暂无法计算（佣金率异常或成本参数缺失），请核对佣金率与变动成本。</div>';
 }
 html += '</div>';
 
@@ -1602,10 +2050,23 @@ saveDraft();
 
 // 城市层级/地理位置/时段联动CPC与转化率（与收益测算口径一致）
 (function(){
+var tierNameMap = {tier1:"一线城市", newTier1:"新一线城市", tier2:"二线城市", tier3:"三线城市", tier4:"四线及以下"};
 ["cityTier","location","seasonHoliday"].forEach(function(id){
 var el = document.getElementById(id);
 if(el){
 el.addEventListener("change", function(){
+if(id === "cityTier"){
+var hint = document.getElementById("tierHint");
+if(hint){
+if(this.value && tierNameMap[this.value]){
+hint.innerHTML = "已自动识别：<b>"+tierNameMap[this.value]+"</b>（如需调整可手动更换城市）";
+hint.style.color = "#166534";
+} else {
+hint.innerHTML = "选城市后自动识别所属层级";
+hint.style.color = "";
+}
+}
+}
 syncAutoParams();
 saveDraft();
 });
