@@ -415,33 +415,19 @@ h2{border-left:4px solid #2563eb}
 <span class="field-error" id="errAdr" style="display:none"></span>
 </div>
 </div>
-<div class="inline-row">
-<div class="field" id="typeField">
+<div class="row" id="typeField">
 <label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">按平均房价自动识别 · 可手动改</span></label>
 <select id="type">
-<option value="eco">经济型/快捷</option>
-<option value="biz" selected>商务</option>
+<option value="eco">经济型/快捷酒店</option>
+<option value="biz" selected>商务酒店</option>
 <option value="mid">中端酒店</option>
-<option value="boutique">精品</option>
-<option value="star">星级</option>
+<option value="boutique">精品酒店</option>
+<option value="star">星级酒店</option>
 <option value="bnb">民宿/客栈</option>
 <option value="resort">度假/景区酒店</option>
 </select>
-<div class="hint">填写平均房价后自动匹配业态（经济/商务/中端/精品/星级/民宿/度假），可手动修改</div>
+<div class="hint">按平均房价自动匹配 7 种业态（经济/民宿/商务/中端/精品/度假/星级），可手动修改</div>
 <span class="field-error" id="errType" style="display:none"></span>
-</div>
-<div class="field">
-<label>时段/节假日 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
-<select id="seasonHoliday">
-<option value="">— 请选择 —</option>
-<option value="normal">平日</option>
-<option value="weekend">周末</option>
-<option value="small">小长假（中秋/清明/端午）</option>
-<option value="big">大长假（春节/国庆）</option>
-<option value="yearEnd">年末跨年</option>
-</select>
-<div class="hint">影响CPC与转化率基准，与收益测算口径一致</div>
-</div>
 </div>
 <div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
 <div class="adv-panel" id="advBase">
@@ -489,13 +475,27 @@ h2{border-left:4px solid #2563eb}
 <div class="hint">选择你要达成的经营目标，系统将反向推导所需预算</div>
 </div>
 <div class="goal-inputs" id="revGoalInputs"></div>
-<div id="platformsContainer">
-<div class="row" style="margin-bottom:20px">
+<div class="inline-row">
+<div class="field">
+<label>投放时段类型 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<select id="seasonHoliday">
+<option value="">— 请选择 —</option>
+<option value="normal">平日</option>
+<option value="weekend">周末</option>
+<option value="small">小长假（中秋/清明/端午）</option>
+<option value="big">大长假（春节/国庆）</option>
+<option value="yearEnd">年末跨年</option>
+</select>
+<div class="hint">影响CPC与转化率基准，与收益测算口径一致</div>
+</div>
+<div class="field">
 <label>投放周期 <span style="color:red;">*</span> <span class="unit">天 · 必填</span></label>
 <input type="number" id="revAdPeriod" class="auto" value="30" placeholder="30">
 <div class="hint">本次预算计划投放的天数，用于空房容量校验与日均消耗统计（默认30天）</div>
 <span class="field-error" id="errRevAdPeriod" style="display:none"></span>
 </div>
+</div>
+<div id="platformsContainer">
 <div class="platform-block" data-index="0">
 <div class="del-platform" onclick="removePlatform(0)" style="display:none">删除</div>
 <div class="compact-row">
@@ -643,9 +643,12 @@ var platformMap = {meituan:10, xiecheng:15, tongcheng:12, qunaer:12, feizhu:10, 
 var varCostMap = {eco:35, biz:55, mid:70, boutique:70, star:100, bnb:40, resort:80};
 // 房价区间 → 业态自动映射（AI智能填充）
 function adrToType(adr){
-  if(adr < 200) return "eco";
-  if(adr < 400) return "mid";
-  if(adr < 600) return "boutique";
+  if(adr < 160) return "eco";
+  if(adr < 230) return "bnb";
+  if(adr < 315) return "biz";
+  if(adr < 385) return "mid";
+  if(adr < 450) return "boutique";
+  if(adr < 590) return "resort";
   return "star";
 }
 // 业态 → 入住率 / 履约率 行业默认值
