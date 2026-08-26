@@ -274,39 +274,10 @@ h2{border-left:4px solid #2563eb}
 <h2>酒店投流目标测算-智能系统 <span style="font-size:14px;color:#dc2626;font-weight:800;background:#fee2e2;padding:2px 8px;border-radius:4px">v3.5 目标导向版 · 2026-08-26</span></h2>
 <div class="sub" id="subText">基于目标导向的收益管理模型，输入经营目标与现状数据，智能拆解所需投放预算、流量效率阈值及分阶段执行方案。</div>
 <div class="card" id="baseData">
-<div class="card-head"><div class="card-title">① 酒店基础信息</div><span class="req-badge">3 项必填</span></div>
-<div class="row">
-<label>酒店业态 <span style="color:red;">*</span> <span class="unit">自动识别 · 可手动改</span></label>
-<select id="type">
-<option value="eco">经济型/快捷</option>
-<option value="biz" selected>商务</option>
-<option value="mid">中端酒店</option>
-<option value="boutique">精品</option>
-<option value="star">星级</option>
-<option value="bnb">民宿/客栈</option>
-<option value="resort">度假/景区酒店</option>
-</select>
-<div class="hint">切换业态会自动更新变动成本与CPC基准值，最终以您填写的数据为准</div>
-<span class="field-error" id="errType" style="display:none"></span>
-</div>
-<div class="compact-row">
-<div class="field">
-<label>客房总数 <span style="color:red;">*</span> <span class="unit">间 · 必填</span></label>
-<input type="number" id="rooms" placeholder="例如：80">
-<span class="field-error" id="errRooms" style="display:none"></span>
-</div>
-<div class="field">
-<label>平均房价 <span style="color:red;">*</span> <span class="unit">元/间夜 · 必填</span></label>
-<input type="number" id="adr" placeholder="例如：300" oninput="autoMapByAdr()">
-<div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
-<span class="field-error" id="errAdr" style="display:none"></span>
-</div>
-</div>
-<div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
-<div class="adv-panel" id="advBase">
-<div class="compact-row">
+<div class="card-head"><div class="card-title">① 酒店基础信息</div><span class="req-badge">5 项必填</span></div>
+<div class="inline-row">
 <div class="field" id="cityTierField">
-<label>城市 <span style="color:#dc2626">*</span> <span class="unit">自动识别 · 可手动改</span></label>
+<label>城市 <span style="color:#dc2626">*</span> <span class="unit">必选 · 选城市自动识别层级</span></label>
 <select id="cityTier">
 <option value="">— 请选择城市 —</option>
 <optgroup label="一线城市（北上广深）">
@@ -417,7 +388,7 @@ h2{border-left:4px solid #2563eb}
 <div class="hint" id="tierHint">选城市后自动识别所属层级</div>
 <span class="field-error" id="errCityTier" style="display:none"></span>
 </div>
-<div class="field">
+<div class="field" id="locationField">
 <label>地理位置 <span class="unit">选填</span></label>
 <select id="location">
 <option value="">— 请选择 —</option>
@@ -430,13 +401,63 @@ h2{border-left:4px solid #2563eb}
 </select>
 <div class="hint">参与CPC联动计算</div>
 </div>
+</div>
+<div class="inline-row">
+<div class="field" id="roomsField">
+<label>客房总数 <span style="color:#dc2626">*</span> <span class="unit">间 · 必填</span></label>
+<input type="number" id="rooms" placeholder="例如：80">
+<span class="field-error" id="errRooms" style="display:none"></span>
+</div>
+<div class="field">
+<label>平均房价 <span style="color:#dc2626">*</span> <span class="unit">元/间夜 · 必填</span></label>
+<input type="number" id="adr" placeholder="例如：300" oninput="autoMapByAdr()">
+<div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
+<span class="field-error" id="errAdr" style="display:none"></span>
+</div>
+</div>
+<div class="inline-row">
+<div class="field" id="typeField">
+<label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">按平均房价自动识别 · 可手动改</span></label>
+<select id="type">
+<option value="eco">经济型/快捷</option>
+<option value="biz" selected>商务</option>
+<option value="mid">中端酒店</option>
+<option value="boutique">精品</option>
+<option value="star">星级</option>
+<option value="bnb">民宿/客栈</option>
+<option value="resort">度假/景区酒店</option>
+</select>
+<div class="hint">填写平均房价后自动匹配业态（经济/商务/中端/精品/星级/民宿/度假），可手动修改</div>
+<span class="field-error" id="errType" style="display:none"></span>
+</div>
+<div class="field">
+<label>时段/节假日 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<select id="seasonHoliday">
+<option value="">— 请选择 —</option>
+<option value="normal">平日</option>
+<option value="weekend">周末</option>
+<option value="small">小长假（中秋/清明/端午）</option>
+<option value="big">大长假（春节/国庆）</option>
+<option value="yearEnd">年末跨年</option>
+</select>
+<div class="hint">影响CPC与转化率基准，与收益测算口径一致</div>
+</div>
+</div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
+<div class="adv-panel" id="advBase">
+<div class="inline-row">
 <div class="field">
 <label>单房变动成本 <span class="unit">元/间夜</span></label>
 <input type="number" id="varCost" class="auto" value="55" placeholder="例如：55">
 <div class="hint">清洁+布草+洗漱易耗品+水电（客房专属部分），已按业态自动匹配</div>
 </div>
+<div class="field">
+<label>当前平均入住率 <span class="unit">%</span></label>
+<input type="number" id="occ" class="auto" value="60" step="0.1">
+<div class="hint">用于测算空房消化空间与提入住率场景</div>
 </div>
-<div class="compact-row">
+</div>
+<div class="inline-row">
 <div class="field">
 <label>纳税人类型 <span class="unit">必选</span></label>
 <select id="taxType">
@@ -452,25 +473,9 @@ h2{border-left:4px solid #2563eb}
 <div class="hint">住宿服务增值税及附加。按含税房价折算扣除（税费=收入×税率÷(1+税率)），佣金仍按含税收入口径计算</div>
 </div>
 </div>
-<div class="row">
-<label>时段/节假日 <span class="unit">必选</span></label>
-<select id="seasonHoliday">
-<option value="">— 请选择 —</option>
-<option value="normal">平日</option>
-<option value="weekend">周末</option>
-<option value="small">小长假（中秋/清明/端午）</option>
-<option value="big">大长假（春节/国庆）</option>
-<option value="yearEnd">年末跨年</option>
-</select>
-<div class="hint">影响CPC与转化率基准，与收益测算口径一致</div>
-</div>
-<div class="row">
-<label>当前平均入住率 <span class="unit">%</span></label>
-<input type="number" id="occ" class="auto" value="60" step="0.1">
-<div class="hint">用于测算空房消化空间与提入住率场景</div>
 </div>
 </div>
-</div>
+
 <div class="card" id="reverseOnly">
 <div class="card-head"><div class="card-title">② 经营目标</div><span class="req-badge">2 项必填</span></div>
 <div class="row">
