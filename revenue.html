@@ -198,6 +198,10 @@ td{color:#334155}
 .attr-green{border:1px solid #bbf7d0;background:#f0fdf4}
 .attr-title{font-size:14px;font-weight:700;margin-bottom:8px}
 .attr-desc{font-size:12px;color:#475569;line-height:1.8;margin-bottom:10px}
+.plan-step{font-size:13px;color:#334155;line-height:1.85;margin:8px 0;padding-left:2px}
+.plan-step b{color:#1e293b;font-weight:700}
+.attr-card .plan-step .plan-then{color:#166534;font-weight:600}
+.attr-card .plan-step .plan-els{color:#b91c1c;font-weight:600}
 .attr-reason{font-size:12px;color:#334155;line-height:1.8;margin:8px 0;padding:8px;background:#f8fafc;border-radius:8px}
 .attr-reason b{color:#1e293b}
 
@@ -1316,7 +1320,7 @@ var nightlyEmpty = Math.floor(rooms * (1 - occ/100));
 var baseCpc = calcBaseCpc();
 var attr = "";
 
-// ===== 模块④ 顾问诊断（按本单数据算出，每单不同） =====
+// ===== 模块④ 顾问诊断（数据联动 → 归因 → 落地方案，四段闭环） =====
 function fmt0(n){ return n !== undefined && !isNaN(n) ? n.toFixed(0) : "0"; }
 function fmt(n){ return n !== undefined && !isNaN(n) ? n.toLocaleString() : "0"; }
 function fmt1(n){ return n !== undefined && !isNaN(n) ? n.toFixed(1) : "0.0"; }
@@ -1331,30 +1335,39 @@ var nightlyEmpty = Math.floor(rooms * (1 - occ/100));
 
 var diagList = [];
 
+// ---- 联动基准值（后台自动判断，不在报告中展示公式） ----
+var theoryClicks = budget > 0 && dispCpc > 0 ? Math.round(budget / dispCpc) : 0;   // 预算÷CPC 理论点击上限
+var clickRateOk = clicks > 0 && theoryClicks > 0 ? (clicks >= theoryClicks * 0.6) : true;
+var clickNote = clickRateOk
+  ? '点击量 '+clicks.toLocaleString()+' 次与预算匹配，说明广告曝光与出价正常，能有效吸引用户点击。'
+  : '点击量仅 '+clicks.toLocaleString()+' 次，低于按预算应达到的曝光水平（约 '+theoryClicks.toLocaleString()+' 次），说明预算未能充分消耗，出价或定向范围可能过窄。';
+
 // D0a 容量不足
 if(capExceeded && profit < 0){
-  diagList.push({level:'red', tag:'P0', title:'容量不够还硬投，越投越亏',
-    desc:'空房容量只有 '+capacity+' 间夜，推广却算出 '+rawNights+' 间夜，装不下。当前已亏 ¥'+fmt0(Math.abs(profit))+'，继续投只会更亏。',
-    action:'总预算砍到容量能消化的范围（建议 ≤ ¥'+fmt0(Math.floor(capacity*marginPerRoom*0.5))+'），或延长投放周期到 '+Math.max(14, Math.ceil(days*rawNights/capacity))+' 天',
-    check:'推广间夜 ≤ 空房容量的80%（≤ '+Math.floor(capacity*0.8)+' 间夜）'});
+  diagList.push({level:'red', tag:'P0', title:'容量不足：空房装不下推广量，越投越亏',
+    diag:'空房容量 '+capacity+' 间夜，推广需求 '+rawNights+' 间夜，超出部分无法成交；当前预计亏损 ¥'+fmt0(Math.abs(profit))+'，继续投放只会扩大亏损。',
+    act:'将总预算压缩至容量可消化的范围（建议 ≤ ¥'+fmt0(Math.floor(capacity*marginPerRoom*0.5))+'），或延长投放周期至 '+Math.max(14, Math.ceil(days*rawNights/capacity))+' 天，确保每个推广间夜都能被消化。',
+    check:'重新测算后推广间夜 ≤ 空房容量的 80%（≤ '+Math.floor(capacity*0.8)+' 间夜），且投放净利润回正。',
+    then:'容量与推广量匹配，恢复标准投放节奏。',
+    els:'压缩预算后仍无法消化，说明自然流量入住率过低，需先提升基础入住率再考虑投放。'});
 }
 // D0b 定价灾难
 if(adr < floorPrice && floorPrice > 0){
-  diagList.push({level:'red', tag:'P0', title:'房价低于底价线 ¥'+fmt0(floorPrice)+'，卖一间亏一间',
-    desc:'当前房价 ¥'+fmt0(adr)+'，底价线 ¥'+fmt0(floorPrice)+'（按成本+税费+合理利润算出）。每卖一间都在亏，投流越多亏越多。',
-    action:'今天就把各平台价格提到 ¥'+fmt0(Math.ceil(floorPrice*1.1))+' 以上，关闭自动促销',
-    check:'连续2天无低于底价线成交',
-    then:'每间夜恢复盈利，再谈加投',
-    els:'还有渠道在低价卖，逐平台排查，把低于底价的房源下架'});
+  diagList.push({level:'red', tag:'P0', title:'定价低于底价线：卖一间亏一间',
+    diag:'当前房价 ¥'+fmt0(adr)+'，低于底价线 ¥'+fmt0(floorPrice)+'（按成本、税费与合理利润测算）。当前每成交一间都在亏损，投放量越大亏损越大。',
+    act:'今日起将各平台价格上调至 ¥'+fmt0(Math.ceil(floorPrice*1.1))+' 以上，并关闭自动促销、排查是否有低于底价的渠道在售。',
+    check:'连续 2 天无低于底价线的成交。',
+    then:'每间夜恢复盈利，再评估是否恢复投放。',
+    els:'若仍有渠道低价售卖，逐平台排查并下架低于底价的房源。'});
 }
 // D0c 高入住率
 if(occ >= 80){
-  diagList.push({level:'yellow', tag:'P1', title:'入住率已达 '+occ+'%，该提价了',
-    desc:'每晚空房只剩约 '+nightlyEmpty+' 间，投流填不满。策略从"填房"转向"提价"：平台统一提 5% 到 ¥'+fmt0(Math.ceil(adr*1.05))+'。',
-    action:'各平台统一上调 5% 至 ¥'+fmt0(Math.ceil(adr*1.05))+'，同步上调会员价、协议价',
-    check:'提价后3天入住率仍 ≥ '+Math.max(70, Math.floor(occ*0.9))+'%',
-    then:'提价成功，每间夜多赚，可再上探5%',
-    els:'需求撑不住，回调原价，把精力放回淡季引流'});
+  diagList.push({level:'yellow', tag:'P1', title:'入住率已达 '+occ+'%：当前应提价而非扩量',
+    diag:'每晚空房仅约 '+nightlyEmpty+' 间，投流可消化的增量有限；当前策略应从"填房"转向"提价"，把有限的空房卖出更高价格。',
+    act:'各平台统一上调 5% 至 ¥'+fmt0(Math.ceil(adr*1.05))+'，同步调整会员价与协议价。',
+    check:'提价后 3 天入住率仍 ≥ '+Math.max(70, Math.floor(occ*0.9))+'%。',
+    then:'提价被市场接受，每间夜收益提升，可再上探 5%。',
+    els:'需求不足以支撑提价，回调原价，将重心放回淡季引流。'});
 }
 // D1 平台预算错配
 if(activePlats.length >= 2 && platRois.length >= 2){
@@ -1363,12 +1376,12 @@ if(activePlats.length >= 2 && platRois.length >= 2){
     var moveAmt = Math.round(Math.min(bot.budget*0.3, bot.budget));
     var delta = moveAmt * (top.roi - bot.roi);
     var profitNew = profit + delta;
-    diagList.push({level:'red', tag:'P0', title:'预算错配：钱放错了平台（值¥'+fmt0(delta)+'/月）',
-      desc: top.name+'投了¥'+fmt0(top.budget)+'，赚回¥'+fmt0(top.profit)+'（ROI '+fmt2(top.roi)+'）；'+bot.name+'投了¥'+fmt0(bot.budget)+'，赚回¥'+fmt0(bot.profit)+'（ROI '+fmt2(bot.roi)+'）。同样一笔钱，'+top.name+'比'+bot.name+'多赚¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。把'+bot.name+'的预算砍¥'+fmt0(moveAmt)+'挪给'+top.name+'，其他不动，月净利预计从¥'+fmt0(profit)+'变¥'+fmt0(profitNew)+'。',
-      action:'今天就把'+bot.name+'预算从¥'+fmt0(bot.budget)+'调到¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'从¥'+fmt0(top.budget)+'调到¥'+fmt0(top.budget+moveAmt),
-      check:'7天后'+top.name+'实际ROI ≥ '+fmt2(top.roi*0.85)+'，总月净利 ≥ ¥'+fmt0(profitNew),
-      then:'钱开始流向对的平台，月净利兑现',
-      els:'说明不是平台问题，预算调回原样，回来重新诊断'});
+    diagList.push({level:'red', tag:'P0', title:'预算错配：资金流向低效平台',
+      diag: top.name+'投入 ¥'+fmt0(top.budget)+'、ROI '+fmt2(top.roi)+'，'+bot.name+'投入 ¥'+fmt0(bot.budget)+'、ROI 仅 '+fmt2(bot.roi)+'，单位预算产出相差 ¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。当前月净利 ¥'+fmt0(profit)+' 的薄利状态，直接源于预算向低效平台倾斜。',
+      act:'一次性调整：'+bot.name+'预算由 ¥'+fmt0(bot.budget)+' 降至 ¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'预算由 ¥'+fmt0(top.budget)+' 增至 ¥'+fmt0(top.budget+moveAmt)+'，其余配置不变。调整后 '+top.name+' ROI 可能小幅回落，属正常现象。',
+      check:'7 天后核查调整后的 '+top.name+'（¥'+fmt0(top.budget+moveAmt)+'）ROI 是否 ≥ '+fmt2(top.roi*0.85)+'，且总月净利 ≥ ¥'+fmt0(profitNew)+'。',
+      then:'本次调整正确，维持该分配不变继续投放，之后每 7 天对比一次各平台 ROI，再决定是否微调。',
+      els: top.name+'吃不下更多预算，将分配调回原样（'+top.name+' ¥'+fmt0(top.budget)+' / '+bot.name+' ¥'+fmt0(bot.budget)+'），问题转查转化率（见下一条诊断）。'});
   }
 }
 // D2 亏损缺口
@@ -1376,12 +1389,12 @@ if(profit < 0){
   var netC = marginPerRoom - costPerRoom;
   var shortN = netC > 0 ? Math.ceil(Math.abs(profit)/netC) : Math.ceil(Math.abs(profit)/Math.max(1, marginPerRoom*0.5));
   var perDay = days > 0 ? Math.max(1, Math.ceil(shortN/days)) : 1;
-  diagList.push({level:'red', tag:'P0', title:'亏损缺口：还差约'+shortN+'间夜才回本',
-    desc:'当前亏¥'+fmt0(Math.abs(profit))+'（ROI '+fmt2(roi)+'）。每间夜净贡献¥'+fmt1(netC)+'，还差约'+shortN+'间夜回本，相当于每天多'+perDay+'单。',
-    action:'先别加预算，按下方行动令把问题修好，间夜做上来再重新测算',
-    check:'修复后重新测算，投放回报 > 0',
-    then:'回本，恢复常规投放',
-    els:'问题没修好，继续排查成本与定价，不追加一分钱'});
+  diagList.push({level:'red', tag:'P0', title:'亏损缺口：当前投放亏损 ¥'+fmt0(Math.abs(profit)),
+    diag:'当前测算月亏损 ¥'+fmt0(Math.abs(profit))+'（ROI '+fmt2(roi)+'）。每间夜净贡献 ¥'+fmt1(netC)+'，需多成交约 '+shortN+' 间夜才能回本，相当于每天多 '+perDay+' 单。',
+    act:'立即暂停追加预算，按本报告其余落地方案逐项修复，修复后重新测算。',
+    check:'重新测算后投放回报 > 0。',
+    then:'恢复常规投放，并按修复后的参数重新制定预算。',
+    els:'修复后仍亏损，暂停投放，继续排查成本与定价，不追加一分钱预算。'});
 }
 // D3 点击成本
 if(costPerRoom > marginPerRoom * 0.8 && roomNights > 0){
@@ -1389,34 +1402,47 @@ if(costPerRoom > marginPerRoom * 0.8 && roomNights > 0){
   var newNet = marginPerRoom - newCost;
   var addP3 = roomNights * costPerRoom * 0.15;
   var newRoi = budget > 0 ? (profit + addP3) / budget : 0;
-  diagList.push({level:'red', tag:'P0', title:'点击成本偏高：利润被点击吃掉了（值¥'+fmt0(addP3)+'/月）',
-    desc:'单房推广成本¥'+fmt1(costPerRoom)+'，单房毛利¥'+fmt1(marginPerRoom)+'，每间夜只剩¥'+fmt1(marginPerRoom-costPerRoom)+'。CPC现在¥'+fmt2(dispCpc)+'，压到¥'+fmt2(Math.round(dispCpc*0.85*100)/100)+'（降15%），单房推广成本降到¥'+fmt1(newCost)+'，每间夜净贡献提到¥'+fmt1(newNet)+'，投放ROI预计从'+fmt2(roi)+'提到'+fmt2(newRoi)+'。',
-    action:'出价下调15%，暂停0:00-7:00低转化时段，定向缩到酒店周边3-5公里',
-    check:'3天后CPC ≤ ¥'+fmt2(Math.round(dispCpc*0.9*100)/100)+'，单房推广成本 ≤ ¥'+fmt1(newCost),
-    then:'每间夜净贡献回到 ¥'+fmt1(newNet)+'，ROI 提到 '+fmt2(newRoi)+'，省下的钱喂给好平台',
-    els:'说明不是出价问题，是素材或定向问题，换主图再试'});
+  diagList.push({level:'red', tag:'P0', title:'点击成本偏高：利润被推广成本侵蚀',
+    diag:'单房推广成本 ¥'+fmt1(costPerRoom)+'，单房毛利 ¥'+fmt1(marginPerRoom)+'，每间夜净贡献仅 ¥'+fmt1(marginPerRoom-costPerRoom)+'；当前 CPC ¥'+fmt2(dispCpc)+' 偏高，是利润偏薄的重要来源。',
+    act:'出价下调 15%，暂停 0:00-7:00 低转化时段，定向收窄至酒店周边 3-5 公里，先控制无效点击。',
+    check:'3 天后 CPC ≤ ¥'+fmt2(Math.round(dispCpc*0.9*100)/100)+'，单房推广成本 ≤ ¥'+fmt1(newCost)+'。',
+    then:'每间夜净贡献恢复至 ¥'+fmt1(newNet)+'，ROI 提升至约 '+fmt2(newRoi)+'，将省下的预算投向高产出平台。',
+    els:'说明瓶颈不在出价，而在素材或定向，更换主图后再评估。'});
 }
-// D4 转化率
+// D4 转化率（联动点击量：点击正常→点击后流失；点击不足→先解决曝光）
 if(dispRate < 3.5){
   var newRate = Math.round((dispRate + 0.5)*10)/10;
   var addRN = Math.floor(clicks * (newRate - dispRate)/100 * checkinRate/100);
   var addP4 = Math.round(addRN * marginPerRoom * 0.85);
-  diagList.push({level:'yellow', tag:'P1', title:'转化率偏低：有流量没订单（值¥'+fmt0(addP4)+'/月）',
-    desc:'转化率'+fmt1(dispRate)+'%，每100次点击只成'+fmt1(dispRate)+'单。提到'+fmt1(newRate)+'%，预计多'+addRN+'间夜，多赚约¥'+fmt0(addP4)+'。',
-    action:'换客房实拍主图，列表页与详情页价格对齐，取消政策放宽到入住前1天免费取消',
-    check:'3天后转化率 ≥ '+fmt1(newRate)+'%',
-    then:'每月多 '+addRN+' 间夜、多赚约 ¥'+fmt0(addP4)+'，流量开始变现',
-    els:'问题不在页面，是流量不精准，回来重新诊断'});
+  var convDiag = clickRateOk
+    ? '点击量 '+clicks.toLocaleString()+' 次处于正常区间，说明列表页展示具备吸引力，用户流失集中于点击后的决策环节。数据显示：'+orders.toLocaleString()+' 笔订单中仅 '+roomNights.toLocaleString()+' 间夜实际入住，'+(100-dispCheckin)+'% 订单在下单后取消，进一步印证该环节存在转化障碍。'
+    : '点击量仅 '+clicks.toLocaleString()+' 次，低于预算应有的曝光水平，当前转化率 '+fmt1(dispRate)+'% 同时偏低，需先确认流量是否精准，再优化转化。';
+  diagList.push({level:'yellow', tag:'P1', title:'转化率偏低：有点击、缺成交',
+    diag: convDiag,
+    act:'按序核查四项：① 主图展示的房型与详情页、实际入住房型是否一致，避免预期落差；② 详情页是否包含实拍图与房间面积说明，信息完整度直接影响下单信心；③ 列表页价格与详情页价格是否一致，价格跳涨会直接触发流失；④ 取消政策与同商圈竞品相比是否过于苛刻。',
+    check:'整改后 3 日复核转化率是否 ≥ '+fmt1(newRate)+'%。',
+    then:'转化环节疏通，每月预计新增约 '+addRN+' 间夜、增收约 ¥'+fmt0(addP4)+'；若此时投放回报 ≥ 0.3，可按 20%-30% 幅度追加预算，放大已验证的盈利模型。',
+    els:'说明问题不在页面端，下一步排查投放人群定向（城市、商圈、出行意图是否精准）。'});
 }
 // D5 佣金
 if(commission > 12){
   var saveC = Math.round(commFee * (commission - 12) / commission);
-  diagList.push({level:'yellow', tag:'P1', title:'佣金偏高：平台抽成吃利润（值¥'+fmt0(saveC)+'/月）',
-    desc:'综合佣金率'+fmt1(commission)+'%，这个月光佣金就付了¥'+fmt0(commFee)+'。综合佣金率压到12%的话，一个月省¥'+fmt0(saveC)+'。',
-    action:'查各平台佣金占比，预算往低佣平台倾斜（如美团10%）；再约平台经理谈降到12%',
-    check:'2周内综合佣金率 ≤ 12%',
-    then:'一个月省 ¥'+fmt0(saveC)+'，纯利直接增厚',
-    els:'谈不下来，就把预算持续压向低佣平台'});
+  diagList.push({level:'yellow', tag:'P1', title:'佣金偏高：平台抽成侵蚀利润',
+    diag:'综合佣金率 '+fmt1(commission)+'%，本月佣金支出约 ¥'+fmt0(commFee)+'；若压至 12%，每月可节省约 ¥'+fmt0(saveC)+'，直接增厚净利润。',
+    act:'核查各平台佣金占比，将预算向低佣金平台倾斜（如美团 10%）；同时约平台经理洽谈综合佣金率下调至 12%。',
+    check:'2 周内综合佣金率 ≤ 12%。',
+    then:'每月节省约 ¥'+fmt0(saveC)+'，纯利直接增厚。',
+    els:'洽谈未果，则持续将预算压向低佣金平台，控制综合抽成水平。'});
+}
+// D6 履约率偏低（下单后取消/未入住）
+if(dispCheckin < 80 && orders > 0){
+  var cancelN = Math.round(orders * (100 - dispCheckin) / 100);
+  diagList.push({level:'yellow', tag:'P1', title:'履约率偏低：订单流失在入住前',
+    diag:'下单 '+orders.toLocaleString()+' 单，实际入住仅 '+roomNights.toLocaleString()+' 间夜，履约率 '+dispCheckin+'%，约 '+cancelN+' 单在预订后取消或未入住。说明用户下单时对房间或政策存在犹豫，或到店环节出现落差。',
+    act:'重点核查：① 取消政策是否过于苛刻（不可取消、高额违约金会推高到店前取消）；② 详情页描述与实际情况是否一致，避免到店落差；③ 是否缺少到店保障（保留房、到店无房赔付等）。',
+    check:'2 周后履约率是否 ≥ 85%。',
+    then:'订单质量提升，间夜数与净利润同步改善。',
+    els:'若履约率仍低，说明客群出行确定性差，可收紧预订约束或调整投放人群。'});
 }
 
 // 最多取3条最值钱的诊断
@@ -1424,40 +1450,26 @@ var diagShow = diagList.slice(0,3);
 
 // 一句话判断
 var judge = "";
-if(profit < 0){ judge = '当前投放亏损¥'+fmt0(Math.abs(profit))+'（ROI '+fmt2(roi)+'），先别加钱，把下面诊断的问题修好再投。'; }
-else if(roi >= 0.3){ judge = '投放回报'+fmt2(roi)+'，模式跑通，按节奏放大即可。'; }
-else if(diagShow.length>0 && diagShow[0].title.indexOf('预算错配')>=0){ judge = '你不是亏，是钱放错地方了：'+platRois[0].name+' ROI '+fmt2(platRois[0].roi)+'、'+platRois[platRois.length-1].name+' ROI '+fmt2(platRois[platRois.length-1].roi)+'，把钱挪一挪就能多赚。'; }
-else if(roi > 0){ judge = '投放回报'+fmt2(roi)+'，能赚但赚得薄，先按诊断把利润做厚。'; }
-else { judge = '当前不赚不亏，先优化 CPC 或转化率再评估投放。'; }
+if(profit < 0){ judge = '当前投放亏损 ¥'+fmt0(Math.abs(profit))+'（ROI '+fmt2(roi)+'），先暂停加钱，按下方落地方案逐项修复再投。'; }
+else if(roi >= 0.3){ judge = '投放回报 '+fmt2(roi)+'，盈利模式已跑通，按落地方案优化后可持续放大。'; }
+else if(diagShow.length>0 && diagShow[0].title.indexOf('预算错配')>=0){ judge = '当前并非亏损，而是预算放错了平台：'+platRois[0].name+' ROI '+fmt2(platRois[0].roi)+'、'+platRois[platRois.length-1].name+' ROI '+fmt2(platRois[platRois.length-1].roi)+'，调整分配即可提升净利。'; }
+else if(roi > 0){ judge = '投放回报 '+fmt2(roi)+'，可盈利但利润偏薄，按落地方案把利润做厚。'; }
+else { judge = '当前处于盈亏平衡，先优化 CPC 或转化率，再评估是否加投。'; }
 
 attr += '<div class="plan-summary" style="margin-bottom:12px"><b>📌 一句话判断：</b>'+judge+'</div>';
 if(diagShow.length === 0){
-  attr += '<div class="attr-card attr-green"><div class="attr-title">✅ 各项指标正常</div><div class="attr-desc">投放回报'+fmt2(roi)+'，处于健康区间。想扩大收益：预算提升20%-30%，观察投放回报是否维持。</div></div>';
+  attr += '<div class="attr-card attr-green"><div class="attr-title">✅ 各项指标正常</div><div class="attr-desc">投放回报 '+fmt2(roi)+'，处于健康区间。想扩大收益：预算提升 20%-30%，观察投放回报是否维持。</div></div>';
 }
 diagShow.forEach(function(d){
   attr += '<div class="attr-card '+(d.level==='red'?'attr-red':'attr-yellow')+'">';
   attr += '<div class="attr-title">'+(d.level==='red'?'🔴 ':'🟡 ')+d.title+'</div>';
-  attr += '<div class="attr-desc">'+d.desc+'</div>';
+  attr += '<div class="plan-step"><b>1. 问题诊断：</b>'+d.diag+'</div>';
+  attr += '<div class="plan-step"><b>2. 执行动作：</b>'+d.act+'</div>';
+  attr += '<div class="plan-step"><b>3. 效果验收：</b>'+d.check+'</div>';
+  attr += '<div class="plan-step"><b>4. 后续路径：</b><span class="plan-then">达标 → '+d.then+'；</span><span class="plan-els">未达标 → '+d.els+'。</span></div>';
   attr += '</div>';
 });
-
-// ===== 模块⑤ 行动令（诊断的处方，按顺序执行） =====
-var plan = "";
-var planTitle = "行动令";
-
-var actList = [];
-diagShow.forEach(function(d, i){
-  actList.push({no:i+1, text:d.action, check:d.check, then:d.then, els:d.els});
-});
-
-if(actList.length > 0){
-  plan += '<div class="plan-summary"><b>📋 行动令（按顺序做，共'+actList.length+'件事，每件事都写明了"做到了/没做到"会怎样）：</b></div>';
-  actList.forEach(function(a){
-    plan += '<div class="plan-card plan-dense"><div class="plan-desc"><b>第'+a.no+'件事：</b>'+a.text+'。判断标准：'+a.check+'。<span class="plan-then">做到了 → '+a.then+'；</span><span class="plan-els">没做到 → '+a.els+'。</span></div></div>';
-  });
-} else {
-  plan += '<div class="plan-summary"><b>📋 行动令：</b>当前没有需要动手的事，保持投放节奏，14天后重新测算一次即可。</div>';
-}
+// 移除旧的模块⑤行动令（已合并进诊断卡）
 
 lastForecast = {clicks:clicks, orders:orders, roomNights:roomNights, budget:budget, profit:profit, roi:roi, margin:marginPerRoom, otherFee:otherFeeTotal, cpc:diagCpc, orderRate:diagRate, checkinRate:dispCheckin, adr:adr, taxRate:taxRate};
 
@@ -1639,7 +1651,7 @@ html += '每带来 1 位新客要花广告费约 ¥'+ltvCpa.toFixed(0)+'。按�
 html += '</div>';
 }
 if(profit > 0 && addBudget > 0 && addProfit > 0){
-html += '<div class="add-note" style="margin-top:10px"><b>追加参考：</b>当前可小额追加约 ¥'+addBudget.toFixed(0)+'（预计新增 '+addRN+' 间夜、多赚约 ¥'+addProfit.toFixed(0)+'）。追加节奏见下方⑤落地方案，建议实际投放回报 ≥ 0.3 后再加。</div>';
+html += '<div class="add-note" style="margin-top:10px"><b>追加参考：</b>当前可小额追加约 ¥'+addBudget.toFixed(0)+'（预计新增 '+addRN+' 间夜、多赚约 ¥'+addProfit.toFixed(0)+'）。追加节奏见下方④落地方案，建议实际投放回报 ≥ 0.3 后再加。</div>';
 }else if(profit > 0){
 html += '<div class="add-note" style="margin-top:10px"><b>追加参考：</b>当前边际收益不足以覆盖成本，暂不建议追加，先优化 CPC/转化率后再评估。</div>';
 }else if(profit === 0){
@@ -1649,13 +1661,12 @@ html += '<div class="warn" style="padding:12px;border-radius:10px;margin-top:10p
 }
 html += '</div>';
 
-// 模块④ 顾问诊断与行动令（归因+落地合并）
+// 模块④ 顾问诊断与落地方案（归因+方案合并，四段闭环）
 html += '<div class="sec">';
-html += '<div class="sec-title">④ 顾问诊断与行动令</div>';
-html += '<div class="tip" style="margin-bottom:12px"><b>📌 下面每条都是按你这份数据算出来的，先看诊断，再按行动令执行。</b></div>';
+html += '<div class="sec-title">④ 顾问诊断与落地方案</div>';
+html += '<div class="tip" style="margin-bottom:12px"><b>📌 以下每条均依据本单数据计算得出：先看问题诊断，再按执行动作操作，最后按效果验收确认结果。</b></div>';
 
 html += attr;
-html += plan;
 html += '</div>';
 
 // 模块⑥ 投后复盘（保持原样，仅序号⑦→⑥）
@@ -2237,26 +2248,318 @@ function copyReportText(){
   // 展开所有折叠内容，保证敏感度/过程数据完整复制
   var pbs = clone.querySelectorAll(".proc-body");
   for(var pi = 0; pi < pbs.length; pi++){ pbs[pi].style.display = "block"; }
-  // 按顶层模块分段拼接，模块之间保留空行（避免挤成一坨）
-  var parts = [];
-  var kids = clone.childNodes;
-  for(var ki = 0; ki < kids.length; ki++){
-    var nd = kids[ki];
-    if(nd.nodeType !== 1) continue;
-    var t = nd.innerText || nd.textContent || "";
-    t = t.replace(/[ \t]+\n/g, "\n").replace(/^\s+|\s+$/g, "");
-    if(t) parts.push(t);
-  }
-  var text = parts.join("\n\n").replace(/\n{3,}/g, "\n\n").replace(/^\s+|\s+$/g, "");
-  copyTextToClipboard(text);
+  // 同时生成富文本 HTML（保留格式）与纯文本（兜底）
+  var html = buildCopyHtml(clone);
+  var text = buildCopyText(clone);
+  copyRichText(html, text);
 }
+
+// 富文本复制：优先写入 text/html + text/plain，兼容 execCommand
 function copyTextToClipboard(text, onOk){
-  function ok(){ showToast("已复制，可粘贴到微信文件传输助手或直接发给需要的人"); }
+  function ok(){ showToast("已复制"); }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(function(){ ok(); if(onOk) onOk(); }, function(){ fallbackCopy(text, ok); });
   } else {
     fallbackCopy(text, ok);
   }
+}
+function copyRichText(html, text){
+  function ok(){ showToast("已复制，可直接粘贴到微信/文档（保留格式）"); }
+  function copyHtmlFallback(){
+    var holder = document.getElementById("copyHtmlHolder");
+    if(!holder){
+      holder = document.createElement("div");
+      holder.id = "copyHtmlHolder";
+      holder.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;";
+      document.body.appendChild(holder);
+    }
+    holder.innerHTML = html;
+    var range = document.createRange();
+    range.selectNodeContents(holder);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    try{
+      var done = document.execCommand("copy");
+      sel.removeAllRanges();
+      if(done){ ok(); } else { fallbackCopy(text, ok); }
+    }catch(e){
+      sel.removeAllRanges();
+      fallbackCopy(text, ok);
+    }
+  }
+  if(navigator.clipboard && window.ClipboardItem){
+    try{
+      var blobHtml = new Blob([html], {type: "text/html"});
+      var blobText = new Blob([text], {type: "text/plain"});
+      navigator.clipboard.write([new ClipboardItem({"text/html": blobHtml, "text/plain": blobText})]).then(function(){ ok(); }, function(){ copyHtmlFallback(); });
+    }catch(e){
+      copyHtmlFallback();
+    }
+  } else {
+    copyHtmlFallback();
+  }
+}
+
+// 把报告 clone 转成带内联样式的富文本 HTML（粘贴到微信/文档时格式不丢）
+function buildCopyHtml(root){
+  function esc(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function txt(el){ return (el.innerText || el.textContent || "").replace(/\s+/g," ").replace(/^\s+|\s+$/g,""); }
+  function secHtml(sec){
+    var h = "";
+    var tEl = sec.querySelector && sec.querySelector(".sec-title");
+    var t = tEl ? txt(tEl) : "";
+    h += '<div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px">'+esc(t)+'</div>';
+    var kids = sec.childNodes;
+    for(var i = 0; i < kids.length; i++){
+      var nd = kids[i];
+      if(nd.nodeType !== 1) continue;
+      var cls = nd.className || "";
+      if(/sec-title/.test(cls)) continue;
+      if(/proc-toggle/.test(cls)) continue;
+      if(/item/.test(cls)){
+        var kEl = nd.querySelector && nd.querySelector(".k");
+        var vEl = nd.querySelector && nd.querySelector(".v");
+        var k = kEl ? txt(kEl) : "";
+        var v = vEl ? txt(vEl) : "";
+        h += '<div style="margin:5px 0;line-height:1.6"><b>'+esc(k)+'：</b>'+esc(v)+'</div>';
+        continue;
+      }
+      if(/kpi-grid|kpi-col|tier-label|lights|decisionBox|decisionBox/.test(cls)){
+        h += innerHtml(nd);
+        continue;
+      }
+      if(/table/.test(cls) || nd.tagName === "TABLE"){
+        h += tableHtml(nd);
+        continue;
+      }
+      if(/attr-card|plan-card|plan-summary|one-liner|add-note|warn|hint|tip|danger/.test(cls)){
+        h += blockHtml(nd, cls);
+        continue;
+      }
+      h += innerHtml(nd);
+    }
+    return h;
+  }
+  function innerHtml(nd){
+    var h = "";
+    var kids = nd.childNodes;
+    for(var i = 0; i < kids.length; i++){
+      var c = kids[i];
+      if(c.nodeType === 3){
+        var t = c.nodeValue.replace(/\s+/g," ").replace(/^\s+|\s+$/g,"");
+        if(t) h += esc(t);
+        continue;
+      }
+      if(c.nodeType !== 1) continue;
+      var cls = c.className || "";
+      if(/sec-title/.test(cls)){ h += '<div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px">'+esc(txt(c))+'</div>'; continue; }
+      if(/proc-toggle/.test(cls)) continue;
+      if(/item/.test(cls)){
+        var kEl = c.querySelector && c.querySelector(".k");
+        var vEl = c.querySelector && c.querySelector(".v");
+        var k = kEl ? txt(kEl) : "";
+        var v = vEl ? txt(vEl) : "";
+        h += '<div style="margin:5px 0;line-height:1.6"><b>'+esc(k)+'：</b>'+esc(v)+'</div>';
+        continue;
+      }
+      if(/proc-body/.test(cls) || /kpi-grid|kpi-col|tier-label|lights|decisionBox/.test(cls)){ h += innerHtml(c); continue; }
+      if(c.tagName === "TABLE"){ h += tableHtml(c); continue; }
+      if(/attr-card/.test(cls)){
+        h += '<div style="border:1px solid #dde3ea;border-radius:8px;padding:10px 12px;margin:10px 0;background:#fafcfe">';
+        var at = c.querySelector && c.querySelector(".attr-title");
+        if(at) h += '<div style="font-size:14px;font-weight:700;margin-bottom:6px">'+esc(txt(at))+'</div>';
+        var steps = c.querySelectorAll ? c.querySelectorAll(".plan-step") : [];
+        for(var si2 = 0; si2 < steps.length; si2++){
+          var stepText = txt(steps[si2]);
+          var stB = steps[si2].querySelector && steps[si2].querySelector("b");
+          var prefix = stB ? txt(stB) : "";
+          var rest = stepText.replace(prefix, "").replace(/^：/, "");
+          var color = "";
+          var cls2 = steps[si2].className || "";
+          if(/plan-then/.test(cls2)) color = "#166534";
+          else if(/plan-els/.test(cls2)) color = "#b91c1c";
+          h += '<div style="margin:5px 0;line-height:1.7;color:'+(color||"#333")+'"><b>'+esc(prefix)+'：</b>'+esc(rest)+'</div>';
+        }
+        var descs = c.querySelectorAll ? c.querySelectorAll(".attr-desc") : [];
+        for(var di2 = 0; di2 < descs.length; di2++){
+          h += '<div style="margin:5px 0;line-height:1.7;color:#333">'+esc(txt(descs[di2]))+'</div>';
+        }
+        h += '</div>';
+        continue;
+      }
+      if(/plan-summary/.test(cls)){
+        h += '<div style="margin:10px 0;line-height:1.7;color:#1e40af;font-weight:600">'+esc(txt(c))+'</div>';
+        continue;
+      }
+      if(/one-liner/.test(cls)){
+        h += '<div style="margin:10px 0;line-height:1.7;color:#1e40af">'+esc(txt(c))+'</div>';
+        continue;
+      }
+      if(/add-note|warn|hint|tip|danger/.test(cls)){
+        h += '<div style="margin:8px 0;line-height:1.7;color:#444">'+esc(txt(c))+'</div>';
+        continue;
+      }
+      h += innerHtml(c);
+    }
+    return h;
+  }
+  function tableHtml(tb){
+    var h = '<table style="border-collapse:collapse;width:100%;margin:8px 0;font-size:13px">';
+    var rows = tb.rows || [];
+    for(var r = 0; r < rows.length; r++){
+      h += "<tr>";
+      var cells = rows[r].cells || [];
+      for(var c2 = 0; c2 < cells.length; c2++){
+        var tag = r === 0 ? "th" : "td";
+        var st = r === 0 ? 'style="border:1px solid #cbd5e1;padding:6px 8px;background:#f1f5f9;font-weight:700;text-align:left"' : 'style="border:1px solid #e2e8f0;padding:6px 8px"';
+        h += "<"+tag+" "+st+">"+esc(txt(cells[c2]))+"</"+tag+">";
+      }
+      h += "</tr>";
+    }
+    h += "</table>";
+    return h;
+  }
+  function blockHtml(nd, cls){
+    var h = "";
+    var kids = nd.childNodes;
+    for(var i = 0; i < kids.length; i++){
+      var c = kids[i];
+      if(c.nodeType !== 1) continue;
+      if(/attr-title/.test(c.className || "")){
+        h += '<div style="font-size:14px;font-weight:700;margin-bottom:6px">'+esc(txt(c))+'</div>';
+      } else if(/plan-step/.test(c.className || "")){
+        var stepText = txt(c);
+        var stB = c.querySelector && c.querySelector("b");
+        var prefix = stB ? txt(stB) : "";
+        var rest = stepText.replace(prefix, "").replace(/^：/, "");
+        var color = "";
+        if(/plan-then/.test(c.className)) color = "#166534";
+        else if(/plan-els/.test(c.className)) color = "#b91c1c";
+        h += '<div style="margin:5px 0;line-height:1.7;color:'+(color||"#333")+'"><b>'+esc(prefix)+'：</b>'+esc(rest)+'</div>';
+      } else if(/attr-desc/.test(c.className || "")){
+        h += '<div style="margin:5px 0;line-height:1.7;color:#333">'+esc(txt(c))+'</div>';
+      } else {
+        h += innerHtml(c);
+      }
+    }
+    return h;
+  }
+  var out = "";
+  var kids = root.childNodes;
+  for(var i = 0; i < kids.length; i++){
+    var nd = kids[i];
+    if(nd.nodeType !== 1) continue;
+    if(nd.tagName === "DIV" && /sec/.test(nd.className || "")){
+      out += secHtml(nd);
+    } else if(/report-head/.test(nd.className || "")){
+      out += '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:6px">'+esc(txt(nd))+'</div>';
+    } else if(/warn|one-liner|report-copy-bar/.test(nd.className || "")){
+      out += '<div style="margin:8px 0;line-height:1.7">'+esc(txt(nd))+'</div>';
+    } else {
+      out += innerHtml(nd);
+    }
+  }
+  return out;
+}
+
+// 纯文本兜底：分点清晰、不挤成一坨
+function buildCopyText(root){
+  var parts = [];
+  var kids = root.childNodes;
+  for(var i = 0; i < kids.length; i++){
+    var nd = kids[i];
+    if(nd.nodeType !== 1) continue;
+    if(nd.tagName === "DIV" && /sec/.test(nd.className || "")){
+      var block = [];
+      var secKids = nd.childNodes;
+      for(var j = 0; j < secKids.length; j++){
+        var c = secKids[j];
+        if(c.nodeType !== 1) continue;
+        var cls = c.className || "";
+        if(/sec-title/.test(cls)){
+          block.push("【"+((c.innerText||c.textContent||"").replace(/\s+/g," ").trim())+"】");
+        } else if(/proc-toggle/.test(cls)){
+          continue;
+        } else if(/item/.test(cls)){
+          var kEl = c.querySelector && c.querySelector(".k");
+          var vEl = c.querySelector && c.querySelector(".v");
+          var k = kEl ? (kEl.innerText||kEl.textContent||"").replace(/\s+/g," ").trim() : "";
+          var v = vEl ? (vEl.innerText||vEl.textContent||"").replace(/\s+/g," ").trim() : "";
+          if(k) block.push(k+"："+v);
+        } else if(/proc-body/.test(cls) || /kpi-grid|kpi-col|lights|decisionBox/.test(cls)){
+          block.push(txtBlock(c));
+        } else if(c.tagName === "TABLE"){
+          block.push(txtTable(c));
+        } else if(/attr-card/.test(cls)){
+          var lines = [];
+          var at = c.querySelector && c.querySelector(".attr-title");
+          if(at) lines.push("◆ "+(at.innerText||at.textContent||"").replace(/\s+/g," ").trim());
+          var steps = c.querySelectorAll ? c.querySelectorAll(".plan-step") : [];
+          for(var s2 = 0; s2 < steps.length; s2++){
+            lines.push((steps[s2].innerText||steps[s2].textContent||"").replace(/\s+/g," ").trim());
+          }
+          var descs = c.querySelectorAll ? c.querySelectorAll(".attr-desc") : [];
+          for(var d2 = 0; d2 < descs.length; d2++){
+            lines.push((descs[d2].innerText||descs[d2].textContent||"").replace(/\s+/g," ").trim());
+          }
+          block.push(lines.join("\n"));
+        } else if(/plan-summary|one-liner|add-note|warn|hint|tip|danger|report-head/.test(cls)){
+          block.push((c.innerText||c.textContent||"").replace(/\s+/g," ").trim());
+        } else {
+          block.push(txtBlock(c));
+        }
+      }
+      var merged = block.join("\n").replace(/\n{3,}/g, "\n\n").replace(/^\s+|\s+$/g, "");
+      if(merged) parts.push(merged);
+    } else {
+      var t = (nd.innerText || nd.textContent || "").replace(/[ \t]+\n/g,"\n").replace(/^\s+|\s+$/g,"");
+      if(t) parts.push(t);
+    }
+  }
+  return parts.join("\n\n").replace(/\n{3,}/g,"\n\n").replace(/^\s+|\s+$/g,"");
+}
+function txtBlock(el){
+  var h = "";
+  var kids = el.childNodes;
+  for(var i = 0; i < kids.length; i++){
+    var c = kids[i];
+    if(c.nodeType !== 1) continue;
+    var cls = c.className || "";
+    if(/proc-toggle/.test(cls)){
+      continue;
+    }
+    if(/item/.test(cls)){
+      var kEl = c.querySelector && c.querySelector(".k");
+      var vEl = c.querySelector && c.querySelector(".v");
+      var k = kEl ? (kEl.innerText||kEl.textContent||"").replace(/\s+/g," ").trim() : "";
+      var v = vEl ? (vEl.innerText||vEl.textContent||"").replace(/\s+/g," ").trim() : "";
+      if(k) h += k+"："+v+"\n";
+    } else if(/table/.test(cls) || c.tagName === "TABLE"){
+      h += txtTable(c) + "\n";
+    } else if(/plan-step/.test(cls)){
+      h += (c.innerText||c.textContent||"").replace(/\s+/g," ").trim() + "\n";
+    } else if(/proc-body|kpi-grid|kpi-col|lights|decisionBox|attr-card|plan-summary|one-liner|add-note|warn|hint|tip|danger/.test(cls)){
+      h += txtBlock(c);
+    } else {
+      var t = (c.innerText||c.textContent||"").replace(/\s+/g," ").trim();
+      if(t) h += t + "\n";
+    }
+  }
+  return h.replace(/\n{3,}/g,"\n\n");
+}
+function txtTable(tb){
+  var lines = [];
+  var rows = tb.rows || [];
+  for(var r = 0; r < rows.length; r++){
+    var cells = rows[r].cells || [];
+    var arr = [];
+    for(var c = 0; c < cells.length; c++){
+      arr.push((cells[c].innerText||cells[c].textContent||"").replace(/\s+/g," ").trim());
+    }
+    lines.push(arr.join(" | "));
+  }
+  return lines.join("\n");
 }
 function fallbackCopy(text, ok){
   var ta = document.getElementById("copyText");
