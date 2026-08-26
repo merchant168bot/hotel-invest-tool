@@ -1412,8 +1412,8 @@ if(costPerRoom > marginPerRoom * 0.8 && roomNights > 0){
 // D4 转化率（联动点击量：点击正常→点击后流失；点击不足→先解决曝光）
 if(dispRate < 3.5){
   var newRate = Math.round((dispRate + 0.5)*10)/10;
-  var addRN = Math.floor(clicks * (newRate - dispRate)/100 * checkinRate/100);
-  var addP4 = Math.round(addRN * marginPerRoom * 0.85);
+  var addRN4 = Math.floor(clicks * (newRate - dispRate)/100 * checkinRate/100);
+  var addP4 = Math.round(addRN4 * marginPerRoom * 0.85);
   var convDiag = clickRateOk
     ? '点击量 '+clicks.toLocaleString()+' 次处于正常区间，说明列表页展示具备吸引力，用户流失集中于点击后的决策环节。数据显示：'+orders.toLocaleString()+' 笔订单中仅 '+roomNights.toLocaleString()+' 间夜实际入住，'+(100-dispCheckin)+'% 订单在下单后取消，进一步印证该环节存在转化障碍。'
     : '点击量仅 '+clicks.toLocaleString()+' 次，低于预算应有的曝光水平，当前转化率 '+fmt1(dispRate)+'% 同时偏低，需先确认流量是否精准，再优化转化。';
@@ -1421,7 +1421,7 @@ if(dispRate < 3.5){
     diag: convDiag,
     act:'按序核查四项：① 主图展示的房型与详情页、实际入住房型是否一致，避免预期落差；② 详情页是否包含实拍图与房间面积说明，信息完整度直接影响下单信心；③ 列表页价格与详情页价格是否一致，价格跳涨会直接触发流失；④ 取消政策与同商圈竞品相比是否过于苛刻。',
     check:'整改后 3 日复核转化率是否 ≥ '+fmt1(newRate)+'%。',
-    then:'转化环节疏通，每月预计新增约 '+addRN+' 间夜、增收约 ¥'+fmt0(addP4)+'；若此时投放回报 ≥ 0.3，可按 20%-30% 幅度追加预算，放大已验证的盈利模型。',
+    then:'转化环节疏通，每月预计新增约 '+addRN4+' 间夜、增收约 ¥'+fmt0(addP4)+'；若此时投放回报 ≥ 0.3，可按 20%-30% 幅度追加预算，放大已验证的盈利模型。',
     els:'说明问题不在页面端，下一步排查投放人群定向（城市、商圈、出行意图是否精准）。'});
 }
 // D5 佣金
