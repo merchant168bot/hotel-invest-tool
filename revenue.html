@@ -500,7 +500,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div id="result"></div>
 <div class="brand-footer">
-<span id="brandFooterSupport" style="display:none">由 <span id="brandFooterName">酒店收益管理服务商</span> 提供技术支持</span> &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.2
+<span id="brandFooterSupport" style="display:none">由 <span id="brandFooterName">酒店投流管理服务商</span> 提供技术支持</span> &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.2
 </div>
 <div class="privacy-note">🔒 隐私说明：本工具所有数据仅保存在您本机浏览器（localStorage），不会上传任何服务器</div>
 </div>
@@ -1669,16 +1669,16 @@ html += '<div class="tip" style="margin-bottom:12px"><b>📌 以下每条均依�
 html += attr;
 html += '</div>';
 
-// 模块⑥ 投后复盘（保持原样，仅序号⑦→⑥）
+// 模块⑤ 投后复盘
 html += '<div class="sec">';
-html += '<div class="sec-title">⑥ 投后复盘（预测 vs 实际）</div>';
+html += '<div class="sec-title">⑤ 投后复盘（预测 vs 实际）</div>';
 html += '<div class="hint" style="margin-bottom:10px">投放结束后，填入平台后台的实际数据，系统自动对比偏差；点击"校准参数"可把预估值更新为实际值，重新测算会越来越准'+(activePlats.length>1?"（多平台投放时按汇总口径复盘；校准仅更新首个平台参数，多平台请分别录入实际值）":"")+'</div>';
 html += '<div class="inline-row"><div class="field"><label>实际消耗(元)</label><input type="number" id="rvCost" placeholder="平台后台实际扣费"></div><div class="field"><label>实际点击</label><input type="number" id="rvClicks" placeholder="实际点击次数"></div></div>';
 html += '<div class="inline-row"><div class="field"><label>实际订单</label><input type="number" id="rvOrders" placeholder="实际成交订单"></div><div class="field"><label>实际入住间夜</label><input type="number" id="rvNights" placeholder="实际入住间夜"></div></div>';
 html += '<div class="btn-group"><button onclick="runReview()">生成复盘对比</button><button onclick="calibrateParams()">用实际值校准预估参数</button></div>';
 html += '<div id="reviewResult"></div>';
 html += '</div>';
-html += makeDisclaimer("⑦");
+html += makeDisclaimer("⑥");
 
 document.getElementById("result").innerHTML = html;
 return true;
@@ -1904,7 +1904,7 @@ return el ? el.value.trim() : "";
 function updateBrand(){
 var n = getBrandName();
 var f = document.getElementById("brandFooterName");
-if(f) f.textContent = n || "酒店收益管理服务商";
+if(f) f.textContent = n || "酒店投流管理服务商";
 var fs = document.getElementById("brandFooterSupport");
 if(fs) fs.style.display = n ? "" : "none";
 var pb = document.getElementById("printBrand");
