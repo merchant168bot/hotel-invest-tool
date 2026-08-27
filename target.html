@@ -1345,30 +1345,42 @@ var actualNights = getVal("actualNights");
 var c = window._lastCalc;
 if(!c){ alert("请先执行测算生成报告"); return; }
 if(actualCost<=0 || actualClicks<=0 || actualOrders<=0 || actualNights<=0){
-alert("请填写全部实际数据"); return;
+alert("请完整填写四项实际数据（均需大于0）"); return;
 }
+if(actualOrders > actualClicks){ alert("实际订单数不能大于实际点击数，请核对"); return; }
+if(actualNights > actualOrders){ alert("实际入住间夜不能大于实际订单数，请核对"); return; }
 var actualCpc = actualCost / actualClicks;
 var actualOr = actualOrders / actualClicks * 100;
 var actualCir = actualNights / actualOrders * 100;
-
-var rows = [
-{label:"投放预算", est:c.needBudget, act:actualCost},
-{label:"点击量", est:c.needClicks, act:actualClicks},
-{label:"订单量", est:c.needOrders, act:actualOrders},
-{label:"间夜量", est:c.targetNights, act:actualNights},
-{label:"CPC", est:c.cpc, act:actualCpc},
-{label:"转化率", est:c.orderRate, act:actualOr},
-{label:"下单入住率", est:c.checkinRate, act:actualCir}
-];
-
-var html = '<table><tr><th>指标</th><th>模型预估</th><th>实际数据</th><th>偏差</th><th>偏差率</th><th>状态</th></tr>';
-rows.forEach(function(r){
-var diff = r.act - r.est;
-var diffRate = r.est != 0 ? (diff/r.est*100) : 0;
-var status = Math.abs(diffRate) <= 10 ? "🟢 正常" : Math.abs(diffRate) <= 30 ? "🟡 偏差" : "🔴 异常";
-html += '<tr><td>'+r.label+'</td><td>'+(r.est%1===0?r.est.toLocaleString():r.est.toFixed(2))+(r.label.indexOf("率")>=0||r.label==="转化率"?"%":"")+'</td><td>'+(r.act%1===0?r.act.toLocaleString():r.act.toFixed(2))+(r.label.indexOf("率")>=0||r.label==="转化率"?"%":"")+'</td><td>'+(diff>0?"+":"")+(diff%1===0?diff.toLocaleString():diff.toFixed(2))+'</td><td>'+(diffRate>0?"+":"")+diffRate.toFixed(1)+'%</td><td>'+status+'</td></tr>';
-});
+var adr = getVal("adr");
+var taxRate = getVal("taxRate");
+var aTax = taxRate > 0 ? actualNights * adr * taxRate / (100 + taxRate) : 0;
+var otherFee = (typeof getPlatformsData === "function") ? getPlatformsData().totalOtherFee : 0;
+var aProfit = actualNights * c.marginPerRoom - actualCost - otherFee - aTax;
+var aRoi = actualCost > 0 ? aProfit / actualCost : 0;
+function dev(a, p){
+if(p === 0) return "-";
+var d = (a - p) / Math.abs(p) * 100;
+return (d >= 0 ? "+" : "") + d.toFixed(0) + "%";
+}
+var html = '<table><tr><th>指标</th><th>模型预估</th><th>实际数据</th><th>偏差</th></tr>';
+html += '<tr><td>投放预算</td><td>¥'+c.needBudget.toLocaleString()+'</td><td>¥'+actualCost.toLocaleString()+'</td><td>'+dev(actualCost, c.needBudget)+'</td></tr>';
+html += '<tr><td>点击量</td><td>'+c.needClicks+'</td><td>'+actualClicks+'</td><td>'+dev(actualClicks, c.needClicks)+'</td></tr>';
+html += '<tr><td>订单量</td><td>'+c.needOrders+'</td><td>'+actualOrders+'</td><td>'+dev(actualOrders, c.needOrders)+'</td></tr>';
+html += '<tr><td>间夜量</td><td>'+c.targetNights+'</td><td>'+actualNights+'</td><td>'+dev(actualNights, c.targetNights)+'</td></tr>';
+html += '<tr><td>CPC</td><td>¥'+c.cpc.toFixed(2)+'</td><td>¥'+actualCpc.toFixed(2)+'</td><td>'+dev(actualCpc, c.cpc)+'</td></tr>';
+html += '<tr><td>转化率</td><td>'+c.orderRate.toFixed(2)+'%</td><td>'+actualOr.toFixed(2)+'%</td><td>'+dev(actualOr, c.orderRate)+'</td></tr>';
+html += '<tr><td>履约率</td><td>'+c.checkinRate.toFixed(1)+'%</td><td>'+actualCir.toFixed(1)+'%</td><td>'+dev(actualCir, c.checkinRate)+'</td></tr>';
+html += '<tr><td>ROI</td><td>'+c.vRoi.toFixed(2)+'</td><td>'+aRoi.toFixed(2)+'</td><td>'+dev(aRoi, c.vRoi)+'</td></tr>';
 html += '</table>';
+var concl = [];
+if(aRoi < 0) concl.push("实际ROI为负，投放亏损，建议暂停并核查CPC与转化漏斗");
+if(actualCpc > c.cpc * 1.2) concl.push("实际CPC明显高于预估，建议优化出价/关键词或更换投放时段");
+if(actualOr < c.orderRate * 0.8) concl.push("实际转化率明显低于预估，建议检查详情页、价格展示与取消政策");
+if(actualCir < c.checkinRate * 0.85) concl.push("实际履约率低于预估，关注No-show与订单取消情况");
+if(concl.length === 0) concl.push("实际数据与预测基本一致，模型参数可靠，可继续沿用当前参数测算");
+concl.push("可点击上方「校准参数」，把CPC/转化率/履约率更新为实际值后重新测算");
+html += '<div class="tip" style="margin-top:10px"><b>复盘结论：</b><br>' + concl.map(function(x, i){ return (i+1) + ". " + x; }).join("<br>") + '</div>';
 document.getElementById("reviewResult").innerHTML = html;
 }
 
@@ -1378,15 +1390,24 @@ var actualClicks = getVal("actualClicks");
 var actualOrders = getVal("actualOrders");
 var actualNights = getVal("actualNights");
 if(actualCost<=0 || actualClicks<=0 || actualOrders<=0 || actualNights<=0){
-alert("请填写全部实际数据"); return;
+alert("请先填写实际消耗、实际点击、实际订单（用于校准CPC、转化率、履约率）"); return;
+}
+if(actualOrders > actualClicks){ alert("实际订单数不能大于实际点击数，请核对"); return; }
+if(actualNights > actualOrders){ alert("实际入住间夜不能大于实际订单数，请核对"); return; }
+var pCount = (typeof getPlatformsData === "function") ? getPlatformsData().count : 1;
+if(pCount > 1){
+if(!confirm("检测到多平台投放，校准仅更新第 1 个平台的参数，其余平台请分别录入实际值后手动修改。是否继续校准第 1 个平台？")){ return; }
 }
 var actualCpc = actualCost / actualClicks;
 var actualOr = actualOrders / actualClicks * 100;
 var actualCir = actualNights / actualOrders * 100;
-setVal("revCpc", actualCpc.toFixed(2));
-setVal("revOrderRate", actualOr.toFixed(2));
-setVal("revCheckinRate", actualCir.toFixed(2));
-showToast("参数已校准，请重新生成报告");
+var cpcEl = document.getElementById("revCpc_0");
+var orEl = document.getElementById("revOrderRate_0");
+var ciEl = document.getElementById("revCheckinRate_0");
+if(cpcEl){ cpcEl.value = actualCpc.toFixed(2); cpcEl.classList.remove("auto"); }
+if(orEl){ orEl.value = actualOr.toFixed(2); orEl.classList.remove("auto"); }
+if(ciEl){ ciEl.value = actualCir.toFixed(1); ciEl.classList.remove("auto"); }
+showToast("参数已校准（第 1 个平台），请重新生成报告");
 }
 
 function generateReviewRepurchase(){
@@ -1395,14 +1416,22 @@ var actualCustomers = getVal("actualRecallCustomers");
 var actualNights = getVal("actualRepurchaseNights");
 var c = window._lastCalc;
 if(!c || c.mode !== "repurchase"){ alert("请先执行复购目标测算生成报告"); return; }
-if(actualCost<=0 || actualCustomers<=0 || actualNights<=0){ alert("请填写全部实际数据"); return; }
+if(actualCost<=0 || actualCustomers<=0 || actualNights<=0){ alert("请填写全部实际数据（均需大于0）"); return; }
+if(actualCustomers > 0 && actualNights > actualCustomers * 10){ alert("实际复购间夜明显大于召回人数，请核对（每人通常不超过10间夜）"); return; }
 var actualCostPerCustomer = actualCost / actualCustomers;
 var estCostPerCustomer = c.needCustomers>0 ? (c.needBudget/c.needCustomers) : 0;
+var adr = getVal("adr");
+var taxRate = getVal("taxRate");
+var aTax = taxRate > 0 ? actualNights * adr * taxRate / (100 + taxRate) : 0;
+var otherFee = (typeof getPlatformsData === "function") ? getPlatformsData().totalOtherFee : 0;
+var aProfit = actualNights * c.marginPerRoom - actualCost - otherFee - aTax;
+var aRoi = actualCost > 0 ? aProfit / actualCost : 0;
 var rows = [
 {label:"召回总成本", est:c.needBudget, act:actualCost, isRate:false},
 {label:"召回人数", est:c.needCustomers, act:actualCustomers, isRate:false},
 {label:"复购间夜", est:c.targetNights, act:actualNights, isRate:false},
-{label:"单客召回成本", est:estCostPerCustomer, act:actualCostPerCustomer, isRate:false}
+{label:"单客召回成本", est:estCostPerCustomer, act:actualCostPerCustomer, isRate:false},
+{label:"ROI", est:c.vRoi, act:aRoi, isRate:false}
 ];
 var html = '<table><tr><th>指标</th><th>模型预估</th><th>实际数据</th><th>偏差</th><th>偏差率</th><th>状态</th></tr>';
 rows.forEach(function(r){
@@ -1412,6 +1441,13 @@ var status = Math.abs(diffRate) <= 10 ? "🟢 正常" : Math.abs(diffRate) <= 30
 html += '<tr><td>'+r.label+'</td><td>'+(r.est%1===0?r.est.toLocaleString():r.est.toFixed(2))+'</td><td>'+(r.act%1===0?r.act.toLocaleString():r.act.toFixed(2))+'</td><td>'+(diff>0?"+":"")+(diff%1===0?diff.toLocaleString():diff.toFixed(2))+'</td><td>'+(diffRate>0?"+":"")+diffRate.toFixed(1)+'%</td><td>'+status+'</td></tr>';
 });
 html += '</table>';
+var concl = [];
+if(aRoi < 0) concl.push("实际ROI为负，召回亏损，建议暂停并核查召回渠道与话术");
+if(actualCostPerCustomer > estCostPerCustomer * 1.2) concl.push("实际单客召回成本明显高于预估，建议优化召回人群与触达方式");
+if(actualNights < c.targetNights * 0.85) concl.push("实际复购间夜低于预估目标，建议加大二次触达与权益刺激");
+if(concl.length === 0) concl.push("实际数据与预测基本一致，模型参数可靠，可继续沿用当前参数测算");
+concl.push("可点击上方「校准参数」，把单客召回成本更新为实际值后重新测算");
+html += '<div class="tip" style="margin-top:10px"><b>复盘结论：</b><br>' + concl.map(function(x, i){ return (i+1) + ". " + x; }).join("<br>") + '</div>';
 document.getElementById("reviewResult").innerHTML = html;
 }
 
@@ -1867,10 +1903,13 @@ var breakEvenNightsH = marginPerRoom > 0 ? Math.ceil((needBudget + otherFee + vT
 html += '<div class="reverse-highlight">';
 html += '<div class="item"><span class="k">达成目标总投入（'+period+'天逐步投放）</span><span class="v big blue">¥'+needBudget.toLocaleString()+'</span></div>';
 html += '<div class="item"><span class="k">日均投入</span><span class="v">¥'+dailyBudget.toFixed(0)+' / 天</span></div>';
-html += '<div class="item"><span class="k">目标带来收入（未扣佣）</span><span class="v">¥'+vRevenue.toLocaleString()+'</span></div>';
-html += '<div class="item"><span class="k">预计净利润</span><span class="v big '+(vProfit>=0?"green":"red")+'">'+(vProfit>=0?"¥":"-¥")+Math.abs(vProfit).toFixed(0).toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">目标带来收入（营业额，未扣费用）</span><span class="v">¥'+vRevenue.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">其中：佣金（'+commission.toFixed(1)+'%）</span><span class="v">-¥'+vComm.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">其中：变动成本</span><span class="v">-¥'+vVar.toLocaleString()+'</span></div>';
+if(taxRate > 0){ html += '<div class="item"><span class="k">其中：税费（税率'+taxRate+'%）</span><span class="v">-¥'+Math.round(vTax).toLocaleString()+'</span></div>'; }
+html += '<div class="item"><span class="k">预计净利润（佣金/成本/税费/推广全扣）</span><span class="v big '+(vProfit>=0?"green":"red")+'">'+(vProfit>=0?"¥":"-¥")+Math.abs(Math.round(vProfit)).toLocaleString()+'</span></div>';
 html += '<div class="item"><span class="k">每达成1间夜需推广</span><span class="v">¥'+vCostPerRoom.toFixed(1)+'</span></div>';
-html += '<div class="item"><span class="k">每间夜毛利（未扣推广费）</span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
+html += '<div class="item"><span class="k">每间夜毛利（已扣佣金/成本/税）</span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
 html += '<div class="item"><span class="k">每间夜净赚</span><span class="v '+(profitPerRoom>=0?"green":"red")+'">'+(profitPerRoom>=0?"¥":"-¥")+Math.abs(profitPerRoom).toFixed(1)+'</span></div>';
 html += '<div class="item"><span class="k">收入/投入比（营收倍数）</span><span class="v">'+incomeRoi.toFixed(2)+'</span></div>';
 html += '<div class="item"><span class="k">投放净利ROI</span><span class="v big '+(vRoi>0?"green":vRoi<0?"red":"orange")+'">'+vRoi.toFixed(2)+(vRoi>0?"赚":vRoi<0?"亏":"平")+'</span></div>';
@@ -1881,7 +1920,7 @@ html += '<div class="item"><span class="k">投放平台</span><span class="v">'+
 html += '<div class="item"><span class="k">保本间夜</span><span class="v">'+breakEvenNightsH+' 间夜</span></div>';
 html += '<div class="item"><span class="k">盈亏红线</span><span class="v '+(vCostPerRoom < marginPerRoom?"green":"red")+'">'+(vCostPerRoom < marginPerRoom?"✅ 每间夜推广成本 < 毛利，投放可盈利":"⚠️ 每间夜推广成本 ≥ 毛利，投放将亏损")+'</span></div>';
 html += '</div>';
-html += '<div class="tip" style="margin-top:10px;">💡 <b>这笔钱怎么理解：</b>总投入 ¥'+needBudget.toLocaleString()+' 不是一次性掏空，而是 '+period+' 天按节奏逐步投放（日均 ¥'+dailyBudget.toFixed(0)+'）；每达成 1 间夜目标，推广成本 ¥'+vCostPerRoom.toFixed(1)+'，低于单房毛利 ¥'+marginPerRoom.toFixed(1)+'，还能净赚 ¥'+profitPerRoom.toFixed(1)+'。以上为测算预估，实际以投放结果为准，投后可复盘校准。</div>';
+html += '<div class="tip" style="margin-top:10px;">💡 <b>这笔钱怎么理解：</b>总投入 ¥'+needBudget.toLocaleString()+' 不是一次性掏空，而是 '+period+' 天按节奏逐步投放（日均 ¥'+dailyBudget.toFixed(0)+'）；每达成 1 间夜目标，推广成本 ¥'+vCostPerRoom.toFixed(1)+'，低于单房毛利 ¥'+marginPerRoom.toFixed(1)+'，还能净赚 ¥'+profitPerRoom.toFixed(1)+'。上面的净利润 ¥'+Math.abs(vProfit).toFixed(0)+' 已扣完佣金、变动成本、税费和推广费，是真正落袋的钱。以上为测算预估，实际以投放结果为准，投后可复盘校准。</div>';
 html += '</div>';
 
 var testDays = Math.min(7, period);
@@ -1897,15 +1936,30 @@ var stableNights = targetNights - testNights - scaleNights;
 html += '<div class="sec">';
 html += '<div class="sec-title">P3. 执行节奏</div>';
 html += '<table><tr><th>阶段</th><th>时间</th><th>预算</th><th>目标间夜</th><th>关键动作</th></tr>';
-html += '<tr><td>测试期</td><td>第1-'+testDays+'天</td><td>¥'+Math.floor(testBudget).toLocaleString()+'</td><td>'+testNights+' 间夜</td><td>小额测试、素材优化、出价试探</td></tr>';
+html += '<tr><td>测试期</td><td>第1-'+testDays+'天</td><td>¥'+Math.floor(testBudget).toLocaleString()+'</td><td>'+testNights+' 间夜</td><td>小额试跑：建计划、测素材出价、验证转化</td></tr>';
 if(scaleDays > 0){
-html += '<tr><td>放量期</td><td>第'+(testDays+1)+'-'+Math.min(testDays+scaleDays,period)+'天</td><td>¥'+Math.floor(scaleBudget).toLocaleString()+'</td><td>'+scaleNights+' 间夜</td><td>加大投入、监控转化、及时调整</td></tr>';
+html += '<tr><td>放量期</td><td>第'+(testDays+1)+'-'+Math.min(testDays+scaleDays,period)+'天</td><td>¥'+Math.floor(scaleBudget).toLocaleString()+'</td><td>'+scaleNights+' 间夜</td><td>预算加码、保留跑赢素材、及时调价</td></tr>';
 }
 if(stableDays > 0){
-html += '<tr><td>稳定期</td><td>第'+(testDays+scaleDays+1)+'-'+period+'天</td><td>¥'+Math.floor(stableBudget).toLocaleString()+'</td><td>'+stableNights+' 间夜</td><td>维持投放、动态调价、数据复盘</td></tr>';
+html += '<tr><td>稳定期</td><td>第'+(testDays+scaleDays+1)+'-'+period+'天</td><td>¥'+Math.floor(stableBudget).toLocaleString()+'</td><td>'+stableNights+' 间夜</td><td>稳定投放、动态优化、每周复盘</td></tr>';
 }
 html += '</table>';
 html += '<div style="margin-top:12px;font-size:13px;color:#475569"><b>每日必看监控指标：</b>点击量、订单量、实际入住率。若连续3天实际入住率低于 '+checkinRate+'%，需检查取消政策或房源信息准确性。</div>';
+var platNameMap = {meituan:'美团', xiecheng:'携程', tongcheng:'同程', qunaer:'去哪儿', feizhu:'飞猪', douyin:'抖音'};
+var platDispArr = [];
+(pData.platforms || []).forEach(function(pp){ var nm = platNameMap[pp.platform] || pp.platform; if(platDispArr.indexOf(nm) < 0) platDispArr.push(nm); });
+var platDisp = platDispArr.join('、') || '各平台';
+var dailyTestB = testDays>0 ? Math.round(testBudget/testDays) : 0;
+var dailyScaleB = scaleDays>0 ? Math.round(scaleBudget/scaleDays) : 0;
+var dailyStableB = stableDays>0 ? Math.round(stableBudget/stableDays) : 0;
+var warnOr = (orderRate*0.8).toFixed(1);
+var execHtml = '<div style="margin-top:14px;padding:14px;border:1px solid #dbeafe;border-radius:10px;background:#f8fafc;font-size:13px;line-height:2;color:#1e293b"><b>📋 执行清单：拿到报告照着做</b><br>';
+execHtml += '① <b>测试期（第1-'+testDays+'天）</b>：每天预算 ¥'+dailyTestB.toLocaleString()+'，'+platDisp+'各投一半，出价按 CPC ¥'+cpc+' 起。前3天盯转化率：≥ '+orderRate+'% 说明素材OK，低于 '+warnOr+'% 就换素材或降出价。第'+testDays+'天看累计是否达成 '+testNights+' 间夜——达成进②，差得远先优化再放量。<br>';
+if(scaleDays > 0){ execHtml += '② <b>放量期（第'+(testDays+1)+'-'+(testDays+scaleDays)+'天）</b>：每天预算加到 ¥'+dailyScaleB.toLocaleString()+'，保留测试期跑赢的素材和出价。连续2天转化率下滑就暂停加码、查原因。第'+(testDays+scaleDays)+'天累计达成 '+(testNights+scaleNights)+' 间夜 → 进③。<br>'; }
+if(stableDays > 0){ execHtml += '③ <b>稳定期（第'+(testDays+scaleDays+1)+'-'+period+'天）</b>：每天预算 ¥'+dailyStableB.toLocaleString()+'，只优化不换方向；每周复盘 ROI 和间夜达成率，最后3天总结数据存档，为下月投放留底。<br>'; }
+execHtml += '每天起床看3个数：点击量、订单量、实际入住率。';
+execHtml += '</div>';
+html += execHtml;
 html += '</div>';
 
 html += '<div class="sec">';
