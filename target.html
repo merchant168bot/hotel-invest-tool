@@ -1549,6 +1549,7 @@ targetNights = Math.floor(newRepurchaseCustomers * avgRepurchaseNights);
 var totalRecallCost = newRepurchaseCustomers * recallCost;
 var repurchaseGrossRevenue = targetNights * adr;
 var repurchaseTax = taxOf(repurchaseGrossRevenue);
+var repurchaseComm = repurchaseGrossRevenue * commission/100;
 var repurchaseRevenue = repurchaseGrossRevenue * (1 - commission/100);
 var repurchaseVarCost = targetNights * varCost;
 var repurchaseProfit = repurchaseRevenue - repurchaseVarCost - totalRecallCost - otherFee - repurchaseTax;
@@ -1639,20 +1640,21 @@ html += '<div class="sec-title">P2. 投入与回报</div>';
 html += '<div class="reverse-highlight">';
 html += '<div class="item"><span class="k">达成目标总投入（'+period+'天逐步投放）</span><span class="v big blue">¥'+totalRecallCost.toLocaleString()+'</span></div>';
 html += '<div class="item"><span class="k">日均投入</span><span class="v">¥'+(period>0?(totalRecallCost/period).toFixed(0):"-")+' / 天</span></div>';
-html += '<div class="item"><span class="k">复购带来收入（扣佣后）</span><span class="v">¥'+repurchaseRevenue.toLocaleString()+'</span></div>';
-html += '<div class="item"><span class="k">复购变动成本</span><span class="v">-¥'+repurchaseVarCost.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">复购带来收入（营业额，未扣费用）</span><span class="v">¥'+repurchaseGrossRevenue.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">其中：佣金（'+commission.toFixed(1)+'%）</span><span class="v">-¥'+Math.round(repurchaseComm).toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">其中：变动成本</span><span class="v">-¥'+repurchaseVarCost.toLocaleString()+'</span></div>';
 if(taxRate > 0){
-html += '<div class="item"><span class="k">税费扣除（税率'+taxRate+'%）</span><span class="v">-¥'+repurchaseTax.toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">其中：税费（税率'+taxRate+'%）</span><span class="v">-¥'+Math.round(repurchaseTax).toLocaleString()+'</span></div>';
 }
-html += '<div class="item"><span class="k">预计净利润</span><span class="v big '+(repurchaseProfit>=0?"green":"red")+'">'+(repurchaseProfit>=0?"¥":"-¥")+Math.abs(repurchaseProfit).toFixed(0).toLocaleString()+'</span></div>';
+html += '<div class="item"><span class="k">预计净利润（佣金/成本/税费/推广全扣）</span><span class="v big '+(repurchaseProfit>=0?"green":"red")+'">'+(repurchaseProfit>=0?"¥":"-¥")+Math.abs(Math.round(repurchaseProfit)).toLocaleString()+'</span></div>';
 html += '<div class="item"><span class="k">单客召回成本</span><span class="v">¥'+recallCost+'</span></div>';
 html += '<div class="item"><span class="k">每间夜召回成本</span><span class="v">¥'+(targetNights>0?(totalRecallCost/targetNights).toFixed(1):"-")+'</span></div>';
-html += '<div class="item"><span class="k">每间夜毛利（未扣推广费）</span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
+html += '<div class="item"><span class="k">每间夜毛利（已扣佣金/成本/税）</span><span class="v">¥'+marginPerRoom.toFixed(1)+'</span></div>';
 html += '<div class="item"><span class="k">投放净利ROI</span><span class="v big '+(repurchaseRoi>0?"green":repurchaseRoi<0?"red":"orange")+'">'+repurchaseRoi.toFixed(2)+(repurchaseRoi>0?"赚":repurchaseRoi<0?"亏":"平")+'</span></div>';
 html += '<div class="item"><span class="k">核销平台</span><span class="v">'+pData.count+'个（平均佣金率'+pData.avgCommission.toFixed(1)+'%）</span></div>';
 html += '<div class="item"><span class="k">盈亏红线</span><span class="v '+(targetNights>0 && totalRecallCost/targetNights < marginPerRoom?"green":"red")+'">'+(targetNights>0 && totalRecallCost/targetNights < marginPerRoom?"✅ 每间夜召回成本 < 毛利，可盈利":"⚠️ 每间夜召回成本 ≥ 毛利，将亏损")+'</span></div>';
 html += '</div>';
-html += '<div class="tip" style="margin-top:10px;">💡 <b>这笔钱怎么理解：</b>总投入 ¥'+totalRecallCost.toLocaleString()+' 不是一次性掏空，而是 '+period+' 天按节奏逐步投放（日均 ¥'+(period>0?(totalRecallCost/period).toFixed(0):"-")+'）；每达成 1 间夜目标，召回成本 ¥'+(targetNights>0?(totalRecallCost/targetNights).toFixed(1):"-")+'，低于单房毛利 ¥'+marginPerRoom.toFixed(1)+'。以上为测算预估，实际以投放结果为准，投后可复盘校准。</div>';
+html += '<div class="tip" style="margin-top:10px;">💡 <b>这笔钱怎么理解：</b>总投入 ¥'+totalRecallCost.toLocaleString()+' 不是一次性掏空，而是 '+period+' 天按节奏逐步投放（日均 ¥'+(period>0?(totalRecallCost/period).toFixed(0):"-")+'）；每达成 1 间夜目标，召回成本 ¥'+(targetNights>0?(totalRecallCost/targetNights).toFixed(1):"-")+'，低于单房毛利 ¥'+marginPerRoom.toFixed(1)+'。上面的净利润 ¥'+Math.abs(Math.round(repurchaseProfit)).toLocaleString()+' 已扣完佣金、变动成本、税费和召回推广费，是真正落袋的钱。以上为测算预估，实际以投放结果为准，投后可复盘校准。</div>';
 html += '</div>';
 
 html += '<div class="sec">';
@@ -1669,7 +1671,17 @@ if(stableDaysR > 0){
 html += '<tr><td>稳定期</td><td>第'+(testDaysR+scaleDaysR+1)+'-'+period+'天</td><td>¥'+Math.floor(totalRecallCost*0.5).toLocaleString()+'</td><td>'+(newRepurchaseCustomers-Math.floor(newRepurchaseCustomers*0.2)-Math.floor(newRepurchaseCustomers*0.3))+'人</td><td>持续监控、二次召回</td></tr>';
 }
 html += '</table>';
-html += '<div style="margin-top:12px;font-size:13px;color:#475569"><b>每日必看监控指标：</b>召回打开率、领券率、实际复购间夜。</div>';
+html += '<div style="margin-top:12px;font-size:13px;color:#475569"><b>每日必看监控指标：</b>召回打开率、领券率、实际复购间夜。若连续3天实际复购间夜低于目标50%，需检查触达人群质量或权益力度。</div>';
+var dailyTestBR = testDaysR>0 ? Math.round(totalRecallCost*0.2/testDaysR) : 0;
+var dailyScaleBR = scaleDaysR>0 ? Math.round(totalRecallCost*0.3/scaleDaysR) : 0;
+var dailyStableBR = stableDaysR>0 ? Math.round(totalRecallCost*0.5/stableDaysR) : 0;
+var execHtmlR = '<div style="margin-top:14px;padding:14px;border:1px solid #dbeafe;border-radius:10px;background:#f8fafc;font-size:13px;line-height:2;color:#1e293b"><b>📋 执行清单：拿到报告照着做</b><br>';
+execHtmlR += '① <b>测试期（第1-'+testDaysR+'天）</b>：每天预算 ¥'+dailyTestBR.toLocaleString()+'，筛选高价值老客 '+Math.floor(newRepurchaseCustomers*0.2)+' 人，测试召回文案和权益力度。前3天盯打开率和领券率：打开率偏低就换触达渠道，领券率偏低就加大权益。第'+testDaysR+'天看是否新增 '+Math.floor(newRepurchaseCustomers*0.2)+' 位复购客户——达成进②，差得远先优化再放量。<br>';
+if(scaleDaysR > 0){ execHtmlR += '② <b>放量期（第'+(testDaysR+1)+'-'+(testDaysR+scaleDaysR)+'天）</b>：每天预算加到 ¥'+dailyScaleBR.toLocaleString()+'，全量触达老客 '+Math.floor(newRepurchaseCustomers*0.3)+' 人，保留测试期跑赢的文案和权益。连续2天复购转化下滑就暂停加码、查原因。第'+(testDaysR+scaleDaysR)+'天累计新增 '+(Math.floor(newRepurchaseCustomers*0.2)+Math.floor(newRepurchaseCustomers*0.3))+' 位 → 进③。<br>'; }
+if(stableDaysR > 0){ execHtmlR += '③ <b>稳定期（第'+(testDaysR+scaleDaysR+1)+'-'+period+'天）</b>：每天预算 ¥'+dailyStableBR.toLocaleString()+'，触达剩余 '+(newRepurchaseCustomers-Math.floor(newRepurchaseCustomers*0.2)-Math.floor(newRepurchaseCustomers*0.3))+' 位老客，对已领券未下单的做二次召回；每周复盘 ROI 和复购间夜达成率，最后3天总结数据存档，为下月复购留存底。<br>'; }
+execHtmlR += '每天起床看3个数：召回打开率、领券率、实际复购间夜。';
+execHtmlR += '</div>';
+html += execHtmlR;
 html += '</div>';
 
 html += '<div class="sec">';
