@@ -469,7 +469,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div class="row" id="typeField">
 <label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">按平均房价自动识别 · 可手动改</span></label>
-<select id="type">
+<select id="type" class="auto">
 <option value="eco">经济型/快捷酒店</option>
 <option value="biz" selected>商务酒店</option>
 <option value="mid">中端酒店</option>
@@ -899,7 +899,7 @@ if(taxVal !== undefined) setAuto("taxRate", taxVal);
 }
 }
 
-// ===== 活动方案库：每类目标 10 套打法（方案库扩充版 40 套） =====
+// ===== 达成方案库：每类目标 10 套打法（方案库扩充版 40 套） =====
 var PLAN_LIB = {
   newGuest: [
     {key:"1", name:"OTA金牌认证+活动专辑曝光", desc:"平台认证+活动位，抢曝光权重", theme:"「OTA金牌认证+活动专辑」", content:"完成美团/携程/同程三家金牌商家认证，优化房源头图与评分标签；报名\"连住3晚8折\"\"周末提前7天减50\"\"学生凭证减30\"等平台专属活动，进入活动专辑页获取额外曝光", audience:"新店冷启动或OTA曝光严重不足的门店", channel:"OTA金牌认证资源位 + 平台活动专辑 + 搜索流量加权", reason:"目标缺的是新客量，平台认证和活动专辑是曝光权重最高的免费杠杆，先把新客进来的入口流量做大，再谈转化和留存"},
@@ -952,28 +952,66 @@ var PLAN_LIB = {
 };
 var currentRevPlan = '1';
 
+function safeValNum(id){ var el = document.getElementById(id); if(!el) return 0; var n = parseFloat(el.value); return isNaN(n) ? 0 : n; }
+function rankPlans(goal){
+  var lib = PLAN_LIB[goal] || PLAN_LIB.newGuest;
+  var cpc = safeValNum("cpc") || safeValNum("revCpc");
+  var occNow = safeValNum("occ");
+  var roomsNow = safeValNum("rooms");
+  var adrNow = safeValNum("adr");
+  var pool = safeValNum("revCustomerPool");
+  var budgetLimit = safeValNum("revBudgetLimit");
+  if(!budgetLimit){ try{ var plats = getPlatformsData(); budgetLimit = plats.totalBudget || 0; }catch(e){} }
+  var scores = {};
+  lib.forEach(function(p){
+    var s = (lib.length - parseInt(p.key)) * 0.5;
+    var text = (p.name + p.desc + p.theme + p.reason + p.channel + p.audience);
+    if(goal === "newGuest" || goal === "revenue"){
+      if(budgetLimit > 0 && /免费|自然流量|口碑|裂变|转介绍|低成本|私域/.test(text)) s += 2;
+      if(budgetLimit > 0 && /平台|补贴|金牌|认证|流量专辑|曝光权重/.test(text)) s -= 1;
+      if(cpc > 3 && /免费|自然流量|口碑|曝光/.test(text)) s += 1.5;
+      if(adrNow >= 300 && /商务|协议|高净值|高客单/.test(text)) s += 1;
+    }
+    if(goal === "occupancy"){
+      if(/本地|社区|居民|包月|协议|会议/.test(text)) s += 2;
+      if(/OTA|平台|金牌/.test(text)) s += 0.5;
+    }
+    if(goal === "repurchase"){
+      if(pool >= 1000 && /私域|企微|会员|分层/.test(text)) s += 2;
+      if(/唤醒|召回|沉睡/.test(text)) s += 1;
+      if(/协议|B端|企业/.test(text)) s += 1;
+    }
+    scores[p.key] = s;
+  });
+  return lib.map(function(p){ return p.key; }).sort(function(a,b){ return scores[b] - scores[a]; });
+}
 function renderRevPlan(goal){
   var box = document.getElementById("revPlanSelector");
   if(!box) return;
   var lib = PLAN_LIB[goal] || PLAN_LIB.newGuest;
+  var rank = rankPlans(goal);
+  if(rank.indexOf(currentRevPlan) < 0) currentRevPlan = rank[0];
+  var cur = null;
+  lib.forEach(function(p){ if(p.key === currentRevPlan) cur = p; });
+  if(!cur){ cur = lib[0]; currentRevPlan = cur.key; }
   var ph = "";
   ph += '<div class="plan-selector">';
-  ph += '<span class="plan-label">活动方案 <span style="color:#dc2626">*</span> <span class="unit">'+lib.length+' 选 1 · 已选方案'+currentRevPlan+'</span></span>';
-  ph += '<div class="plan-opts">';
-  lib.forEach(function(p){
-    ph += '<button type="button" class="plan-btn'+(p.key===currentRevPlan?' active':'')+'" onclick="setRevPlan(\''+p.key+'\')">';
-    ph += '<span class="p-name">方案'+p.key+' · '+p.name+'</span><span class="p-desc">'+p.desc+'</span>';
-    ph += '</button>';
-  });
-  ph += '</div>';
-  var cur = null;
-  lib.forEach(function(p){ if(p.key===currentRevPlan) cur = p; });
-  if(cur){
-    ph += '<div class="plan-tip"><b>方案'+cur.key+' · '+cur.name+'：</b>'+cur.theme+'。'+cur.reason+'</div>';
-    ph += '<div class="plan-tip plan-tip-sub"><b>适合人群：</b>'+cur.audience+'<br><b>投放渠道：</b>'+cur.channel+'</div>';
-  }
+  ph += '<span class="plan-label">达成方案（系统已按你的数据推最优）</span>';
+  ph += '<div class="plan-tip"><b>推荐方案 '+cur.key+' · '+cur.name+'：</b>'+cur.theme+'。'+cur.reason+'</div>';
+  ph += '<div class="plan-tip plan-tip-sub"><b>适合人群：</b>'+cur.audience+'<br><b>投放渠道：</b>'+cur.channel+'</div>';
+  ph += '<div style="margin-top:8px"><button type="button" class="plan-btn" onclick="nextRevPlan(\''+goal+'\')" style="width:100%;text-align:center"><span class="p-name">换一套（当前第 '+cur.key+' 套 / 共 '+lib.length+' 套）</span><span class="p-desc">对这套不满意？系统按你的数据继续推下一套</span></button></div>';
   ph += '</div>';
   box.innerHTML = ph;
+  updateBtnState();
+}
+function nextRevPlan(goal){
+  var lib = PLAN_LIB[goal] || PLAN_LIB.newGuest;
+  var rank = rankPlans(goal);
+  var idx = rank.indexOf(currentRevPlan);
+  if(idx < 0) idx = 0;
+  currentRevPlan = rank[(idx + 1) % rank.length];
+  renderRevPlan(goal);
+  if(typeof isResultVisible !== "undefined" && isResultVisible && typeof doReverseCalculate === "function") doReverseCalculate();
 }
 function setRevPlan(key){
   currentRevPlan = key;
@@ -1733,7 +1771,7 @@ if(repurchaseRoi < 0){
 html += '<div class="one-liner">💬 '+oneLineH2+'</div>';
 // 报告顶部：复制整份报告
 html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制整份报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div>';
-// ===== 复购活动主题（按所选方案动态） =====
+// ===== 复购达成主题（按所选方案动态） =====
 var planR = null;
 (PLAN_LIB.repurchase || []).forEach(function(p){ if(p.key === currentRevPlan) planR = p; });
 if(!planR) planR = PLAN_LIB.repurchase[0];
@@ -1744,15 +1782,15 @@ var actChannelR = planR.channel;
 var actReasonR = planR.reason;
 
 html += '<div class="sec">';
-html += '<div class="sec-title">① 活动目标</div>';
+html += '<div class="sec-title">① 目标</div>';
 html += '<div class="path-box"><b>目标：</b>复购率从 '+currentRepurchase+'% 提升至 '+targetRepurchase+'%（'+period+'天），新增 '+newRepurchaseCustomers.toLocaleString()+' 位复购客户、'+targetNights.toLocaleString()+' 间夜</div>';
-html += '<div class="tip" style="margin-top:8px;">达成链路：<b>'+targetNights.toLocaleString()+' 间夜 ← '+newRepurchaseCustomers.toLocaleString()+' 位老客复购 ← '+customerPool.toLocaleString()+' 人老客池 × 提升 '+Math.round((targetRepurchase-currentRepurchase)*10)/10+' 个百分点</b>。目标已锁定，按下面活动方案展开。</div>';
+html += '<div class="tip" style="margin-top:8px;">达成链路：<b>'+targetNights.toLocaleString()+' 间夜 ← '+newRepurchaseCustomers.toLocaleString()+' 位老客复购 ← '+customerPool.toLocaleString()+' 人老客池 × 提升 '+Math.round((targetRepurchase-currentRepurchase)*10)/10+' 个百分点</b>。目标已锁定，按下面达成方案展开。</div>';
 html += '</div>';
 
 html += '<div class="sec">';
-html += '<div class="sec-title">② 活动主题与内容</div>';
-html += '<div class="path-box"><b>活动主题（方案'+planR.key+' · '+planR.name+'）：</b>'+actThemeR+'</div>';
-html += '<div class="tip" style="margin-top:8px;"><b>活动内容：</b>'+actContentR+'。<br><b>打法说明：</b>'+actReasonR+'。先小范围测试召回文案和权益力度，验证响应后再全量放量，避免一上来全量触达浪费预算。</div>';
+html += '<div class="sec-title">② 达成主题与打法</div>';
+html += '<div class="path-box"><b>达成主题（方案'+planR.key+' · '+planR.name+'）：</b>'+actThemeR+'</div>';
+html += '<div class="tip" style="margin-top:8px;"><b>达成内容：</b>'+actContentR+'。<br><b>打法说明：</b>'+actReasonR+'。先小范围测试召回文案和权益力度，验证响应后再全量放量，避免一上来全量触达浪费预算。</div>';
 html += '</div>';
 
 html += '<div class="sec">';
@@ -1785,13 +1823,13 @@ html += '<div class="metric"><div class="m-label">日均花费</div><div class="
 html += '<div class="metric"><div class="m-label">单客召回成本</div><div class="m-value">¥'+recallCost+'</div><div class="m-sub">召回1位老客要花的钱</div></div>';
 html += '<div class="metric"><div class="m-label">预期投入产出比 ROI</div><div class="m-value '+(repurchaseRoi>=0.3?"green":repurchaseRoi>0?"orange":"red")+'">'+repurchaseRoi.toFixed(2)+'</div><div class="m-sub">净利/投放预算，≥0.3 较优</div></div>';
 html += '</div>';
-html += '<div class="fold">';
-html += '<div class="fold-bar" onclick="toggleFold(this)">指标明细（客户/间夜/净利）<span class="fold-arrow">▾</span></div>';
-html += '<div class="fold-body">';
-html += '<table><tr><th>复购客户</th><th>复购间夜</th><th>复购营收</th><th>投放净利</th><th>净利ROI</th></tr>';
-html += '<tr><td>'+newRepurchaseCustomers.toLocaleString()+'</td><td>'+targetNights.toLocaleString()+'</td><td>¥'+repurchaseRevenue.toLocaleString()+'</td><td>¥'+repurchaseProfit.toFixed(0)+'</td><td>'+repurchaseRoi.toFixed(2)+'</td></tr>';
-html += '</table>';
-html += '</div></div>';
+html += '<div class="metric-row">';
+html += '<div class="metric"><div class="m-label">复购客户</div><div class="m-value blue">'+newRepurchaseCustomers.toLocaleString()+'</div><div class="m-sub">'+customerPool.toLocaleString()+' 人客户池 × 提升 '+(targetRepurchase-currentRepurchase).toFixed(1)+'pp</div></div>';
+html += '<div class="metric"><div class="m-label">复购间夜</div><div class="m-value">'+targetNights.toLocaleString()+'</div><div class="m-sub">'+newRepurchaseCustomers.toLocaleString()+' 人 × 人均 '+avgRepurchaseNights+' 间夜</div></div>';
+html += '<div class="metric"><div class="m-label">复购营收</div><div class="m-value">¥'+repurchaseRevenue.toLocaleString()+'</div><div class="m-sub">'+targetNights.toLocaleString()+' 间夜 × 均价 ¥'+adr.toFixed(0)+'（扣佣'+commission.toFixed(1)+'%）</div></div>';
+html += '<div class="metric"><div class="m-label">投放净利</div><div class="m-value '+(repurchaseProfit>=0?"green":"red")+'">'+(repurchaseProfit>=0?"¥":"-¥")+Math.abs(repurchaseProfit).toFixed(0)+'</div><div class="m-sub">营收 - 召回成本 - 变动成本 - 税</div></div>';
+html += '<div class="metric"><div class="m-label">净利ROI</div><div class="m-value '+(repurchaseRoi>=0.3?"green":repurchaseRoi>0?"orange":"red")+'">'+repurchaseRoi.toFixed(2)+'</div><div class="m-sub">净利 ÷ 召回成本，≥0.3 较优</div></div>';
+html += '</div>';
 html += '</div>';
 
 html += '<div class="sec">';
@@ -1802,7 +1840,7 @@ html += '<div class="big-card"><div class="label">新增复购人数</div><div c
 html += '<div class="big-card"><div class="label">复购率提升</div><div class="num">'+(targetRepurchase-currentRepurchase).toFixed(1)+'%</div></div>';
 html += '<div class="big-card"><div class="label">客户池覆盖率</div><div class="num">'+(customerPool>0?(newRepurchaseCustomers/customerPool*100).toFixed(1):0)+'%</div></div>';
 html += '</div>';
-html += '<div class="tip"><b>✅ 容量评估：</b>复购带来间夜同样占用房间，'+period+'天空房容量 <b>'+totalEmptyCapacity2.toLocaleString()+'</b> 间夜，目标 '+targetNights.toLocaleString()+' 间夜'+(targetNights>totalEmptyCapacity2?'，<span style="color:#dc2626">已超出空房容量 '+(targetNights-totalEmptyCapacity2).toLocaleString()+' 间夜，可能出现满房或排挤自然客，建议下调复购目标或延长周期</span>':'，空间充裕')+'。</div>';
+html += '<div class="tip"><b>✅ 容量评估：</b>复购带来间夜同样占用房间，'+period+'天空房容量 <b>'+totalEmptyCapacity2.toLocaleString()+'</b> 间夜（= '+rooms+' 间 × 空置 '+(100-occ)+'% × '+period+' 天），目标 '+targetNights.toLocaleString()+' 间夜'+(targetNights>totalEmptyCapacity2?'，<span style="color:#dc2626">已超出空房容量 '+(targetNights-totalEmptyCapacity2).toLocaleString()+' 间夜，可能出现满房或排挤自然客，建议下调复购目标或延长周期</span>':'，空间充裕')+'。</div>';
 if(budgetLimit <= 0){
 html += '<div class="tip" style="margin-top:8px;"><b>预算上限：</b>未设置预算上限，按总预算 ¥'+totalRecallCost.toLocaleString()+' 执行即可。</div>';
 } else if(totalRecallCost <= budgetLimit){
@@ -1813,7 +1851,7 @@ var maxRepurchaseCustomers = recallCost > 0 ? Math.floor(budgetLimit / recallCos
 var maxRepurchaseNights = maxRepurchaseCustomers * avgRepurchaseNights;
 var repShortNights = targetNights - maxRepurchaseNights;
 html += '<div class="danger" style="margin-top:8px;padding:12px;border-radius:10px;">';
-html += '<b>⚠️ 预算不够用：</b>完成活动需总预算 <b>¥'+totalRecallCost.toLocaleString()+'</b>，超出预算上限（¥'+budgetLimit.toLocaleString()+'）<b>¥'+(totalRecallCost-budgetLimit).toLocaleString()+'</b>。<br><br>';
+html += '<b>⚠️ 预算不够用：</b>达成目标需总预算 <b>¥'+totalRecallCost.toLocaleString()+'</b>，超出预算上限（¥'+budgetLimit.toLocaleString()+'）<b>¥'+(totalRecallCost-budgetLimit).toLocaleString()+'</b>。<br><br>';
 html += '<b>两条路（二选一）：</b><br>';
 html += '• <b>路径A（保人数、压单客成本）：</b>单客召回成本需从 ¥'+recallCost+' 降至 <span style="color:#dc2626;font-weight:bold">¥'+needRecallCost.toFixed(1)+'</span>（降幅 '+((1-needRecallCost/recallCost)*100).toFixed(0)+'%）'+(needRecallCost<1?'（目标成本极低，实操难度大）':'')+'<br>';
 html += '• <b>路径B（保成本、下调目标）：</b>预算内最多新增 <b>'+maxRepurchaseCustomers+'</b> 位复购客户、达成 <b>'+maxRepurchaseNights.toLocaleString()+'</b> 间夜，目标需从 '+targetNights.toLocaleString()+' 下调至 '+maxRepurchaseNights.toLocaleString()+' 间夜（缺口 '+repShortNights.toLocaleString()+' 间夜）<br><br>';
@@ -1824,7 +1862,7 @@ html += '</div>';
 
 html += '<div class="sec">';
 html += '<div class="sec-title">⑦ 止损红线</div>';
-html += '<div class="danger" style="margin-top:10px;padding:12px;border-radius:10px;"><b>🛑 止损红线（任一触发即停）</b><br>• 实际投入产出比（ROI）低于预期 ROI（'+repurchaseRoi.toFixed(2)+'）的50%，即实际 ROI < '+(repurchaseRoi*0.5).toFixed(2)+' 时先暂停排查，连续亏损（ROI ≤ 0）立即停投<br>• 实际复购间夜连续3天低于目标的50%<br>• 单房召回成本 > 单房毛利（¥'+marginPerRoom.toFixed(1)+'）</div>';
+html += '<div class="danger" style="margin-top:10px;padding:10px 14px;border-radius:10px;font-size:12px;line-height:2;"><b>🛑 止损红线（任一触发即停）</b><br><span>① ROI 跌破 '+(repurchaseRoi*0.5).toFixed(2)+'（预期 '+repurchaseRoi.toFixed(2)+' 的 50%）→ 先暂停排查；ROI ≤ 0 → 立即停投</span><br><span>② 复购间夜连续 3 天低于目标 50% → 停投复盘</span><br><span>③ 单房召回成本 > 单房毛利 ¥'+marginPerRoom.toFixed(1)+' → 停投压成本</span></div>';
 html += '<div class="fold">';
 html += '<div class="fold-bar" onclick="toggleFold(this)">敏感性测算（召回成本 / 响应率波动）<span class="fold-arrow">▾</span></div>';
 html += '<div class="fold-body">';
@@ -1855,7 +1893,7 @@ html += '</div>';
 
 html += '<div class="sec">';
 html += '<div class="sec-title">⑧ 投后复盘</div>';
-html += '<p style="font-size:12px;color:#64748b;margin-bottom:10px">活动结束后填入实际数据，系统自动对比偏差；点击"校准参数"可将单客召回成本更新为实际值，重新测算会越来越准。</p>';
+html += '<p style="font-size:12px;color:#64748b;margin-bottom:10px">投放结束后填入实际数据，系统自动对比偏差；点击"校准参数"可将单客召回成本更新为实际值，重新测算会越来越准。</p>';
 html += '<div class="review-inputs"><div class="inline-row">';
 html += '<div class="field"><label>实际召回成本(元)</label><input type="number" id="actualRecallCost" placeholder="0"></div>';
 html += '<div class="field"><label>实际召回人数</label><input type="number" id="actualRecallCustomers" placeholder="0"></div>';
@@ -1975,7 +2013,7 @@ if(vRoi < 0){
 html += '<div class="one-liner">💬 '+oneLineH+'</div>';
 // 报告顶部：复制整份报告
 html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制整份报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div>';
-// ===== 活动主题与打法（按所选方案动态） =====
+// ===== 达成主题与打法（按所选方案动态） =====
 var actTheme = "";
 var actContent = "";
 var actAudience = "";
@@ -1991,15 +2029,15 @@ actChannel = planP.channel;
 actReason = planP.reason;
 
 html += '<div class="sec">';
-html += '<div class="sec-title">① 活动目标</div>';
+html += '<div class="sec-title">① 目标</div>';
 html += '<div class="path-box"><b>目标：</b>'+goalDesc+'</div>';
-html += '<div class="tip" style="margin-top:8px;">达成链路：<b>'+targetNights.toLocaleString()+' 间夜 ← '+needOrders.toLocaleString()+' 单订单 ← '+needClicks.toLocaleString()+' 次点击</b>。目标已锁定，按下面活动方案展开。</div>';
+html += '<div class="tip" style="margin-top:8px;">达成链路：<b>'+targetNights.toLocaleString()+' 间夜 ← '+needOrders.toLocaleString()+' 单订单 ← '+needClicks.toLocaleString()+' 次点击</b>。目标已锁定，按下面达成方案展开。</div>';
 html += '</div>';
 
 html += '<div class="sec">';
-html += '<div class="sec-title">② 活动主题与内容</div>';
-html += '<div class="path-box"><b>活动主题（方案'+planP.key+' · '+planP.name+'）：</b>'+actTheme+'</div>';
-html += '<div class="tip" style="margin-top:8px;"><b>活动内容：</b>'+actContent+'。<br><b>打法说明：</b>'+actReason+'。</div>';
+html += '<div class="sec-title">② 达成主题与打法</div>';
+html += '<div class="path-box"><b>达成主题（方案'+planP.key+' · '+planP.name+'）：</b>'+actTheme+'</div>';
+html += '<div class="tip" style="margin-top:8px;"><b>达成内容：</b>'+actContent+'。<br><b>打法说明：</b>'+actReason+'。</div>';
 html += '</div>';
 
 html += '<div class="sec">';
@@ -2037,13 +2075,14 @@ html += '<div class="metric"><div class="m-label">日均花费</div><div class="
 html += '<div class="metric"><div class="m-label">每间夜推广成本</div><div class="m-value '+(vCostPerRoom < marginPerRoom?"green":"red")+'">¥'+vCostPerRoom.toFixed(1)+'</div><div class="m-sub">单房毛利 ¥'+marginPerRoom.toFixed(1)+'，超过就走不通</div></div>';
 html += '<div class="metric"><div class="m-label">预期投入产出比 ROI</div><div class="m-value '+(vRoi>=0.3?"green":vRoi>0?"orange":"red")+'">'+vRoi.toFixed(2)+'</div><div class="m-sub">净利/投放预算，≥0.3 较优</div></div>';
 html += '</div>';
-html += '<div class="fold">';
-html += '<div class="fold-bar" onclick="toggleFold(this)">指标明细（点击/订单/间夜/净利）<span class="fold-arrow">▾</span></div>';
-html += '<div class="fold-body">';
-html += '<table><tr><th>点击</th><th>订单</th><th>间夜</th><th>营收</th><th>投放净利</th><th>净利ROI</th></tr>';
-html += '<tr><td>'+needClicks.toLocaleString()+'</td><td>'+needOrders.toLocaleString()+'</td><td>'+vNights.toLocaleString()+'</td><td>¥'+vRevenue.toLocaleString()+'</td><td>¥'+vProfit.toFixed(0)+'</td><td>'+vRoi.toFixed(2)+'</td></tr>';
-html += '</table>';
-html += '</div></div>';
+html += '<div class="metric-row">';
+html += '<div class="metric"><div class="m-label">需要点击</div><div class="m-value blue">'+needClicks.toLocaleString()+'</div><div class="m-sub">目标 '+targetNights.toLocaleString()+' 间夜 ÷ 履约 '+checkinRate+'% ÷ 转化 '+orderRate+'%</div></div>';
+html += '<div class="metric"><div class="m-label">需要订单</div><div class="m-value">'+needOrders.toLocaleString()+'</div><div class="m-sub">'+needClicks.toLocaleString()+' 点击 × 转化率 '+orderRate+'%</div></div>';
+html += '<div class="metric"><div class="m-label">实际可达成间夜</div><div class="m-value">'+vNights.toLocaleString()+'</div><div class="m-sub">按预算 ¥'+needBudget.toLocaleString()+' 倒推：预算÷CPC→点击→订单→间夜</div></div>';
+html += '<div class="metric"><div class="m-label">预期营收</div><div class="m-value">¥'+vRevenue.toLocaleString()+'</div><div class="m-sub">'+vNights.toLocaleString()+' 间夜 × 均价 ¥'+adr.toFixed(0)+'（扣佣'+commission.toFixed(1)+'%）</div></div>';
+html += '<div class="metric"><div class="m-label">投放净利</div><div class="m-value '+(vProfit>=0?"green":"red")+'">'+(vProfit>=0?"¥":"-¥")+Math.abs(vProfit).toFixed(0)+'</div><div class="m-sub">营收 - 广告费 - 变动成本 - 税</div></div>';
+html += '<div class="metric"><div class="m-label">净利ROI</div><div class="m-value '+(vRoi>=0.3?"green":vRoi>0?"orange":"red")+'">'+vRoi.toFixed(2)+'</div><div class="m-sub">净利 ÷ 广告预算，≥0.3 较优</div></div>';
+html += '</div>';
 html += '</div>';
 
 html += '<div class="sec">';
@@ -2051,12 +2090,12 @@ html += '<div class="sec-title">⑥ 可行性评估</div>';
 var targetOccupyRate = totalEmptyCapacity > 0 ? (targetNights / totalEmptyCapacity * 100) : 0;
 html += '<div class="big-cards">';
 html += '<div class="big-card"><div class="label">目标间夜</div><div class="num">'+targetNights.toLocaleString()+'</div></div>';
-html += '<div class="big-card"><div class="label">空房容量</div><div class="num">'+totalEmptyCapacity.toLocaleString()+'</div></div>';
-html += '<div class="big-card"><div class="label">空房消化率</div><div class="num '+(targetOccupyRate>100?"red":targetOccupyRate>80?"orange":"green")+'">'+targetOccupyRate.toFixed(1)+'%</div></div>';
-html += '<div class="big-card"><div class="label">入住率提升</div><div class="num">'+occIncrease.toFixed(1)+'%</div></div>';
+html += '<div class="big-card"><div class="label">空房容量</div><div class="num">'+totalEmptyCapacity.toLocaleString()+'</div><div style="font-size:11px;color:#94a3b8;margin-top:4px">= '+rooms+' 间 × 空置 '+(100-occ)+'% × '+period+' 天</div></div>';
+html += '<div class="big-card"><div class="label">空房消化率</div><div class="num '+(targetOccupyRate>100?"red":targetOccupyRate>80?"orange":"green")+'">'+targetOccupyRate.toFixed(1)+'%</div><div style="font-size:11px;color:#94a3b8;margin-top:4px">= 目标间夜 ÷ 空房容量</div></div>';
+html += '<div class="big-card"><div class="label">入住率提升</div><div class="num">'+occIncrease.toFixed(1)+'%</div><div style="font-size:11px;color:#94a3b8;margin-top:4px">目标与当前入住率的差值</div></div>';
 html += '</div>';
 if(!capacityEnough){
-html += '<div class="danger" style="margin-top:10px;padding:12px;border-radius:10px;"><b>🛑 容量不足：不可行</b><br>即使所有空房都被推广填满，'+period+'天内最多只能消化 '+totalEmptyCapacity+' 间夜，距离目标 '+targetNights+' 间夜还差 '+(targetNights-totalEmptyCapacity)+' 间夜。<br><br>建议：<br>• 延长活动周期<br>• 或同步提升自然流量入住率（优化详情页、价格竞争力）<br>• 或降低目标入住率预期</div>';
+html += '<div class="danger" style="margin-top:10px;padding:12px;border-radius:10px;"><b>🛑 容量不足：不可行</b><br>即使所有空房都被推广填满，'+period+'天内最多只能消化 '+totalEmptyCapacity+' 间夜，距离目标 '+targetNights+' 间夜还差 '+(targetNights-totalEmptyCapacity)+' 间夜。<br><br>建议：<br>• 延长投放周期<br>• 或同步提升自然流量入住率（优化详情页、价格竞争力）<br>• 或降低目标入住率预期</div>';
 } else {
 html += '<div class="tip" style="margin-top:10px;"><b>✅ 容量够：</b>'+period+'天内空房容量 '+totalEmptyCapacity+' 间夜，目标 '+targetNights+' 间夜，空间充裕。日均需消化 '+dailyNights.toFixed(1)+' 间夜，当前日均空房 '+dailyEmptyRooms.toFixed(1)+' 间。</div>';
 html += '<div class="tip" style="margin-top:6px;"><b>模型验证：</b>按倒推漏斗（点击→订单→入住）验算，实际可达成 <b>'+vNights.toLocaleString()+'</b> 间夜，与目标差 '+(targetNights-vNights).toLocaleString()+' 间夜（取整损耗）；若需精确达成目标，可将目标间夜上调 1-2 间。</div>';
@@ -2074,7 +2113,7 @@ var needOrderRateC = needOrders / needClicksC * 100;
 var pathAFeasible = needOrderRateA <= 100;
 var pathCFeasible = needOrderRateC <= 100;
 html += '<div class="danger" style="padding:12px;border-radius:10px;">';
-html += '<b>⚠️ 预算不够，方案不可行</b><br>按当前数据，完成活动需要 <b>¥'+needBudget.toLocaleString()+'</b>，超出你的预算上限（¥'+budgetLimit.toLocaleString()+'）<b>¥'+(needBudget-budgetLimit).toLocaleString()+'</b>。<br><br>';
+html += '<b>⚠️ 预算不够，方案不可行</b><br>按当前数据，达成目标需要 <b>¥'+needBudget.toLocaleString()+'</b>，超出你的预算上限（¥'+budgetLimit.toLocaleString()+'）<b>¥'+(needBudget-budgetLimit).toLocaleString()+'</b>。<br><br>';
 html += '<b>优化路径（三选一）：</b><br>';
 if(pathAFeasible){
 html += '• <b>路径A（保广告点击成本提下单转化率）：</b>保持CPC=¥'+cpc+'，下单转化率需从 '+orderRate+'% 提升至 <span style="color:#dc2626;font-weight:bold">'+needOrderRateA.toFixed(2)+'%</span>（提升 '+(needOrderRateA-orderRate).toFixed(2)+' 个百分点）<br>';
@@ -2120,7 +2159,7 @@ html += '<div class="tip" style="margin-top:6px;">底价线暂无法计算（佣
 }
 html += '</div></div>';
 
-html += '<div class="danger" style="padding:12px;border-radius:10px;"><b>🛑 止损红线（任一触发即停）</b><br>• 实际投入产出比（ROI）低于预期 ROI（'+vRoi.toFixed(2)+'）的50%，即实际 ROI < '+(vRoi*0.5).toFixed(2)+' 时先暂停排查，连续亏损（ROI ≤ 0）立即停投<br>• 实际间夜连续3天低于目标间夜的50%<br>• 单房推广成本 > 单房毛利（¥'+marginPerRoom.toFixed(1)+'）</div>';
+html += '<div class="danger" style="padding:10px 14px;border-radius:10px;font-size:12px;line-height:2;"><b>🛑 止损红线（任一触发即停）</b><br><span>① ROI 跌破 '+(vRoi*0.5).toFixed(2)+'（预期 '+vRoi.toFixed(2)+' 的 50%）→ 先暂停排查；ROI ≤ 0 → 立即停投</span><br><span>② 实际间夜连续 3 天低于目标 50% → 停投复盘</span><br><span>③ 单房推广成本 > 单房毛利 ¥'+marginPerRoom.toFixed(1)+' → 停投压成本</span></div>';
 html += '<div class="fold">';
 html += '<div class="fold-bar" onclick="toggleFold(this)">敏感性测算（CPC / 转化率波动）<span class="fold-arrow">▾</span></div>';
 html += '<div class="fold-body">';
@@ -2151,7 +2190,7 @@ html += '</div>';
 
 html += '<div class="sec">';
 html += '<div class="sec-title">⑧ 投后复盘</div>';
-html += '<p style="font-size:12px;color:#64748b;margin-bottom:10px">活动结束后填入实际数据，系统自动对比偏差；点击"校准参数"可把预估值更新为实际值，重新测算会越来越准。</p>';
+html += '<p style="font-size:12px;color:#64748b;margin-bottom:10px">投放结束后填入实际数据，系统自动对比偏差；点击"校准参数"可把预估值更新为实际值，重新测算会越来越准。</p>';
 html += '<div class="review-inputs"><div class="inline-row">';
 html += '<div class="field"><label>实际消耗(元)</label><input type="number" id="actualCost" placeholder="0"></div>';
 html += '<div class="field"><label>实际点击</label><input type="number" id="actualClicks" placeholder="0"></div>';
@@ -2323,11 +2362,16 @@ saveDraft();
 }
 })();
 
-// 业态联动变动成本与CPC默认值
+// 业态联动：手动选业态 → 标记业态为手动；房价未手改则自动带出基准房价，再带出变动成本/CPC等
 (function(){
 var typeEl = document.getElementById("type");
 if(typeEl){
 typeEl.addEventListener("change", function(){
+typeEl.classList.remove("auto");
+var adrEl = document.getElementById("adr");
+if(adrEl && adrEl.classList.contains("auto") && typeAdrMap[this.value] !== undefined){
+setAuto("adr", typeAdrMap[this.value]);
+}
 applyTypeAuto(this.value);
 saveDraft();
 });
