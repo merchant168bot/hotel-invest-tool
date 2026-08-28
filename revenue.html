@@ -393,14 +393,14 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div class="field">
 <label>平均房价 <span style="color:#dc2626">*</span> <span class="unit">元/间夜 · 必填</span></label>
-<input type="number" id="adr" placeholder="例如：300" oninput="autoMapByAdr()">
+<input type="number" id="adr" class="auto" placeholder="例如：300" oninput="autoMapByAdr()">
 <div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
 <span class="field-error" id="errAdr" style="display:none"></span>
 </div>
 </div>
 <div class="row" id="typeField">
 <label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">自动识别 · 可手动改</span></label>
-<select id="type">
+<select id="type" class="auto">
 <option value="eco">经济型/快捷酒店</option>
 <option value="biz" selected>商务酒店</option>
 <option value="mid">中端酒店</option>
@@ -581,18 +581,23 @@ function adrToType(adr){
 // 业态 → 入住率 / 履约率 行业默认值
 var occMap = {eco:65, biz:60, mid:65, boutique:60, star:55, bnb:50, resort:55};
 var checkinMap = {eco:88, biz:85, mid:85, boutique:82, star:80, bnb:75, resort:78};
+// 业态是否被用户手动改过（手动改过后，填房价不再覆盖业态；刷新页面后恢复联动）
+var typeManuallySet = false;
 // 填平均房价 → 自动映射业态并带出参数
 function autoMapByAdr(){
   var adrEl = document.getElementById("adr");
   if(!adrEl) return;
   var v = parseFloat(adrEl.value);
   if(!v || v <= 0) return;
+  adrEl.classList.remove("auto");
+  if(typeManuallySet) return;
   var typeEl = document.getElementById("type");
   if(!typeEl) return;
   var t = adrToType(v);
   if(typeEl.value !== t){
     typeEl.value = t;
     applyTypeAuto(t);
+    saveDraft();
   }
 }
 // 业态 → 自动带出高级参数（变动成本/入住率/CPC/履约率）
@@ -2076,7 +2081,14 @@ var locationEl = document.getElementById("location");
 var seasonEl = document.getElementById("seasonHoliday");
 if(typeEl){
 typeEl.addEventListener("change", function(){
+typeManuallySet = true;
+typeEl.classList.remove("auto");
+var adrEl = document.getElementById("adr");
+if(adrEl && adrEl.classList.contains("auto") && adrBaseMap[this.value] !== undefined){
+setAuto("adr", adrBaseMap[this.value]);
+}
 applyTypeAuto(this.value);
+saveDraft();
 });
 }
 if(cityTierEl){
