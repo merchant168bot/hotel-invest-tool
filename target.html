@@ -462,7 +462,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div class="field">
 <label>平均房价 <span style="color:#dc2626">*</span> <span class="unit">元/间夜 · 必填</span></label>
-<input type="number" id="adr" placeholder="例如：300" oninput="autoMapByAdr()">
+<input type="number" id="adr" class="auto" placeholder="例如：300" oninput="autoMapByAdr()">
 <div class="hint">客人实付的一晚总价，未扣除任何平台费用</div>
 <span class="field-error" id="errAdr" style="display:none"></span>
 </div>
@@ -710,6 +710,8 @@ var occMap = {eco:65, biz:60, mid:65, boutique:60, star:55, bnb:50, resort:55};
 var checkinMap = {eco:88, biz:85, mid:85, boutique:82, star:80, bnb:75, resort:78};
 // 业态 → 基准房价（与 adrToType 区间对齐，供选业态时自动带出房价）
 var typeAdrMap = {eco:150, bnb:200, biz:300, mid:350, boutique:420, resort:500, star:600};
+// 业态是否被用户手动改过（手动改过后，填房价不再覆盖业态；刷新页面后恢复联动）
+var typeManuallySet = false;
 // 填平均房价 → 自动映射业态并带出参数（仅当业态未被手动改过才联动）
 function autoMapByAdr(){
   var adrEl = document.getElementById("adr");
@@ -717,12 +719,14 @@ function autoMapByAdr(){
   var v = parseFloat(adrEl.value);
   if(!v || v <= 0) return;
   adrEl.classList.remove("auto");
+  if(typeManuallySet) return;
   var typeEl = document.getElementById("type");
-  if(!typeEl || !typeEl.classList.contains("auto")) return;
+  if(!typeEl) return;
   var t = adrToType(v);
   if(typeEl.value !== t){
     typeEl.value = t;
     applyTypeAuto(t);
+    saveDraft();
   }
 }
 // 业态 → 自动带出高级参数（变动成本/入住率/CPC/转化率/履约率）
@@ -2365,6 +2369,7 @@ saveDraft();
 var typeEl = document.getElementById("type");
 if(typeEl){
 typeEl.addEventListener("change", function(){
+typeManuallySet = true;
 typeEl.classList.remove("auto");
 var adrEl = document.getElementById("adr");
 if(adrEl && adrEl.classList.contains("auto") && typeAdrMap[this.value] !== undefined){
