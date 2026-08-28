@@ -1388,14 +1388,38 @@ if(activePlats.length >= 2 && platRois.length >= 2 && !keyExcluded('D1')){
   var top = platRois[0], bot = platRois[platRois.length-1];
   if(top.roi > 0 && top.roi - bot.roi >= 0.05){
     var moveAmt = Math.round(Math.min(bot.budget*0.3, bot.budget));
-    var delta = moveAmt * (top.roi - bot.roi);
-    var profitNew = profit + delta;
-    diagList.push({key:'D1', level:'red', tag:'P0', title:'预算错配：资金流向低效平台',
-      diag: top.name+'投入 ¥'+fmt0(top.budget)+'、ROI '+fmt2(top.roi)+'，'+bot.name+'投入 ¥'+fmt0(bot.budget)+'、ROI 仅 '+fmt2(bot.roi)+'，同样一笔钱放'+top.name+'比放'+bot.name+'多赚 ¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。当前月净利 ¥'+fmt0(profit)+' 的薄利状态，直接源于预算向低效平台倾斜。',
-      act:'一次性调整：'+bot.name+'预算由 ¥'+fmt0(bot.budget)+' 降至 ¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'预算由 ¥'+fmt0(top.budget)+' 增至 ¥'+fmt0(top.budget+moveAmt)+'，其余配置不变。调整后，'+top.name+' ROI 可能小幅回落，属正常现象。',
-      check:'7 天后核查调整后的'+top.name+'（¥'+fmt0(top.budget+moveAmt)+'）ROI 是否 ≥ '+fmt2(top.roi*0.85)+'，且总月净利 ≥ ¥'+fmt0(profitNew)+'。',
-      then:'本次调整正确，维持该分配不变继续投放，之后每 7 天对比一次各平台 ROI，再决定是否微调。',
-      els: top.name+'吃不下更多预算，将分配调回原样（'+top.name+' ¥'+fmt0(top.budget)+' / '+bot.name+' ¥'+fmt0(bot.budget)+'），问题转查转化率（见下一条诊断）。'});
+    // D1修复：用真实平台参数模拟调整后产出，替代线性外推，避免取整截断导致"建议越调越亏"
+    function simPlatProfit(bud, p){
+      var cpc = p.cpc, rate = (p.orderRate !== undefined ? p.orderRate : p.rate);
+      var chk = (p.checkinRate !== undefined ? p.checkinRate : p.checkin);
+      var comm = p.commission;
+      var cl = Math.floor(bud / cpc);
+      var od = Math.floor(cl * rate / 100);
+      var rn = Math.floor(od * chk / 100);
+      var mg = adr * (1 - comm / 100) - varCost;
+      return {rn: rn, profit: rn * mg - bud, revenue: rn * adr};
+    }
+    var simTop = simPlatProfit(top.budget + moveAmt, top);
+    var simBot = simPlatProfit(bot.budget - moveAmt, bot);
+    var simOtherProfit = 0, simOtherRev = 0;
+    activePlats.forEach(function(p){
+      if(p.name === top.name || p.name === bot.name) return;
+      var s = simPlatProfit(p.budget, p);
+      simOtherProfit += s.profit; simOtherRev += s.revenue;
+    });
+    var simProfitNoTax = simTop.profit + simBot.profit + simOtherProfit - otherFeeTotal;
+    var simRevenue = simTop.revenue + simBot.revenue + simOtherRev;
+    var simTax = taxRate > 0 ? simRevenue * taxRate / (100 + taxRate) : 0;
+    var profitNewReal = simProfitNoTax - simTax;
+    var gainReal = profitNewReal - profit;
+    if(gainReal > 0){
+      diagList.push({key:'D1', level:'red', tag:'P0', title:'预算错配：资金流向低效平台',
+        diag: top.name+'投入 ¥'+fmt0(top.budget)+'、ROI '+fmt2(top.roi)+'，'+bot.name+'投入 ¥'+fmt0(bot.budget)+'、ROI 仅 '+fmt2(bot.roi)+'，同样一笔钱放'+top.name+'比放'+bot.name+'多赚 ¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。按模型模拟将预算调整后，月净利可从 ¥'+fmt0(profit)+' 提升至约 ¥'+fmt0(profitNewReal)+'。',
+        act:'一次性调整：'+bot.name+'预算由 ¥'+fmt0(bot.budget)+' 降至 ¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'预算由 ¥'+fmt0(top.budget)+' 增至 ¥'+fmt0(top.budget+moveAmt)+'，其余配置不变。调整后，'+top.name+' ROI 可能小幅回落，属正常现象。',
+        check:'7 天后核查调整后的'+top.name+'（¥'+fmt0(top.budget+moveAmt)+'）ROI 是否 ≥ '+fmt2(top.roi*0.85)+'，且总月净利 ≥ ¥'+fmt0(profitNewReal)+'。',
+        then:'本次调整正确，维持该分配不变继续投放，之后每 7 天对比一次各平台 ROI，再决定是否微调。',
+        els: top.name+'吃不下更多预算，将分配调回原样（'+top.name+' ¥'+fmt0(top.budget)+' / '+bot.name+' ¥'+fmt0(bot.budget)+'），问题转查转化率（见下一条诊断）。'});
+    }
   }
 }
 // D2 亏损缺口
@@ -1800,7 +1824,7 @@ html += '每带来 1 位新客要花广告费约 ¥'+ltvCpa.toFixed(0)+'。按�
 html += '</div>';
 }
 if(profit > 0 && addBudget > 0 && addProfit > 0){
-html += '<div class="add-note" style="margin-top:10px"><b>追加参考：</b>当前可小额追加约 ¥'+addBudget.toFixed(0)+'（预计新增 '+addRN+' 间夜、多赚约 ¥'+addProfit.toFixed(0)+'）。追加节奏见下方④落地方案，建议实际投放回报 ≥ 0.3 后再加。</div>';
+html += '<div class="add-note" style="margin-top:10px"><b>追加参考：</b>当前可小额追加约 ¥'+addBudget.toFixed(0)+'（预计新增 '+addRN+' 间夜、多赚约 ¥'+addProfit.toFixed(0)+'，边际回报约 '+Math.round(addBudget>0?addProfit/addBudget*100:0)+'%，高于当前整体回报 '+fmt2(roi)+'）。小额试投验证实际回报为正后，可按 20%-30% 幅度继续追加；试投回报 ≥ 0.3 说明盈利模式跑通，可放大至 30%。</div>';
 }else if(profit > 0){
 html += '<div class="add-note" style="margin-top:10px"><b>追加参考：</b>当前边际收益不足以覆盖成本，暂不建议追加，先优化 CPC/转化率后再评估。</div>';
 }else if(profit === 0){
