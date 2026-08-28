@@ -519,7 +519,7 @@ h2{border-left:4px solid #2563eb}
 <div class="row">
 <label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
 <select id="revGoal" onchange="onRevGoalChange()">
-<option value="newGuest">拉新 — 冲间夜量</option>
+<option value="newGuest">拉新 — 新增新客</option>
 <option value="revenue">冲营收</option>
 <option value="occupancy">提入住率</option>
 <option value="repurchase">提复购</option>
@@ -709,7 +709,7 @@ function adrToType(adr){
 var occMap = {eco:65, biz:60, mid:65, boutique:60, star:55, bnb:50, resort:55};
 var checkinMap = {eco:88, biz:85, mid:85, boutique:82, star:80, bnb:75, resort:78};
 // 业态 → 基准房价（与 adrToType 区间对齐，供选业态时自动带出房价）
-var typeAdrMap = {eco:150, bnb:200, biz:300, mid:350, boutique:450, resort:500, star:600};
+var typeAdrMap = {eco:150, bnb:200, biz:300, mid:350, boutique:420, resort:500, star:600};
 // 填平均房价 → 自动映射业态并带出参数（仅当业态未被手动改过才联动）
 function autoMapByAdr(){
   var adrEl = document.getElementById("adr");
@@ -755,7 +755,7 @@ var seasonRateMap = {normal:3.0, weekend:3.5, small:4.5, big:5.0, yearEnd:4.0};
 var STORAGE_KEY = "hotel_profit_target_history_v3";
 var DRAFT_KEY_REV = "hotel_profit_draft_target_v3";
 var MAX_HISTORY = 20;
-var DYN_IDS = ["revTargetNights","revTargetRevenue","revCurrentRevenue","revTargetOccInput","revCurrentRepurchase","revTargetRepurchase","revCustomerPool","revAvgRepurchaseNights","revRecallCost","revAdPeriod"];
+var DYN_IDS = ["revTargetNights","revAvgNewNights","revTargetRevenue","revCurrentRevenue","revTargetOccInput","revCurrentRepurchase","revTargetRepurchase","revCustomerPool","revAvgRepurchaseNights","revRecallCost","revAdPeriod"];
 var platformCounter = 0;
 
 function getVal(id){
@@ -918,12 +918,12 @@ var PLAN_LIB = {
   revenue: [
     {key:"1", name:"房型+X套餐溢价", desc:"房+餐/接机/门票，抬客单价", theme:"「房型+X套餐溢价」", content:"基础房型绑增值服务——\"大床房+双早\"\"亲子房+儿童乐园票\"\"商务房+接送机\"；携程配接送机、美团配餐饮券做平台差异化，提升价值感带动客单价", audience:"客单价偏低、需提升RevPAR且不依赖纯降价的酒店", channel:"房+X套餐设计 + OTA平台差异化资源位 + 增值服务打包", reason:"目标缺的是营收额，套餐把单一房价变成组合价值，实测下单转化7%→14%，不靠降价也能拉高单房产出"},
     {key:"2", name:"AI动态定价+收益管理埋价", desc:"RMS定价+提前埋价，价量双升", theme:"「AI动态定价+埋价」", content:"接入RMS（如尚客优AI经营管家）实时抓竞品价+本店OCC+历史数据给定价建议；按5%出租率增长触发调价，节假日提前3个月预埋价格", audience:"价格波动大、人工调价滞后的酒店", channel:"RMS定价系统 + 竞品价监控 + 节假日提前埋价 + 出租率触发调价", reason:"目标缺的是营收额，动态定价让每间房都卖在当下最优价，实测OCC+10%~15%、ADR+5~12元，价量双升直接冲营收"},
-    {key:"3", name:"阶梯取消政策+今夜特价", desc:"阶梯取消减损失，尾房变营收", theme:"「阶梯取消+今夜特价」", content:"按提前取消天数设阶梯取消规则减noshow损失；每日保留5%房源设\"今夜特价\"快速清当日剩余库存，把本会浪费的房量变成营收", audience:"临时取消率高、尾房浪费严重的酒店", channel:"阶梯取消政策 + 每日今夜特价 + 自动接单防漏单", reason:"目标缺的是营收额，noshow和尾房是纯损失项，阶梯取消挡住损失、今夜特价把尾房卖成增量，双向止血"},
+    {key:"3", name:"阶梯取消政策+可控超卖", desc:"阶梯取消减损失，超卖防跑空", theme:"「阶梯取消+可控超卖」", content:"按提前取消天数设阶梯取消规则减noshow损失；旺季对高需求房型做可控超卖（超卖比例≤5%）并用免费升房消化，把取消跑空的房量补成实收营收", audience:"临时取消率高、旺季跑空损失大的酒店", channel:"阶梯取消政策 + 可控超卖 + 免费升房消化", reason:"目标缺的是营收额，noshow和取消是纯损失项，阶梯取消挡住损失、可控超卖把取消房量补成实收，守住营收不靠清库存"},
     {key:"4", name:"高需求期关低价房保排名", desc:"满房关低价房，排名收益双保", theme:"「高需求期关低价房」", content:"满房时关闭低价房型而非全房型，设\"连住3晚可订\"保搜索排名与收益；通过RMS自动关低价渠道入口，优先开放高利润分销渠道", audience:"旺季/大事件期房量紧张、怕丢排名的酒店", channel:"房态开关策略 + 连住可订设置 + 渠道优先级管理", reason:"目标缺的是营收额，旺季房量就是稀缺资产，关低价房型保高价成交，排名不丢、收益更高"},
     {key:"5", name:"Upselling/Cross-selling增量收入", desc:"升舱+加售，把到店客价值做大", theme:"「升舱+加售增量」", content:"鼓励升舱（湖景/套房/阳台）、加售早餐/机场接送/SPA/tours；免费WiFi停车拆为可选项，基础房低价引流、增值服务提整体收益", audience:"到店转化与客单提升空间大的酒店", channel:"前台升舱话术 + 增值服务菜单化 + 非房收入项", reason:"目标缺的是营收额，到店客人是零获客成本的存量，升舱和加售把单客消费额拉高，同时优化收入结构"},
     {key:"6", name:"淡季直播团购+内容溢价", desc:"淡季内容造需求，逆势涨价", theme:"「淡季直播团购+内容溢价」", content:"淡季用抖音直播卖券（69元夜泡引流），以内容场景（冰海奇境/冰雪装置）激活需求；国庆/双12借囤货心智逆势上调房价，促进犹豫下单", audience:"传统淡季空房多、想跳出低价内卷的酒店", channel:"抖音淡季直播团购 + 内容场景包装 + 节点逆势定价", reason:"目标缺的是营收额，内容是定价权的来源，淡季靠内容场景造需求、节点靠囤货心智逆势涨价，案例淡季团购环比+114%"},
     {key:"7", name:"直订官网最优价保证", desc:"官网最优价，佣金省成利润", theme:"「直订最优价保证」", content:"官网/小程序推\"最优价格保证\"+积分加倍+免费取消，引导客从高佣金OTA转直订；直订佣金5%-10%远低于OTA15%-20%，省下的佣金就是营收", audience:"OTA占比过高（>60%）、净利被佣金蚕食的酒店", channel:"官网/小程序直订 + 最优价保证 + 会员积分加倍 + 免费取消", reason:"目标缺的是营收额，渠道结构优化比拉新更直接，把OTA佣金省下来就是净利润，首季把OTA占比压到50%以内现实可行"},
-    {key:"8", name:"企业/协议客户批量锁收", desc:"团建+协议价，锁住B端大单", theme:"「企业协议客户锁收」", content:"列周边3公里企业名单主动拜访，推\"8人团建3999元（住宿+2正1早+体验）\"等专属产品；给企业HR签协议价+月结+快速通道，锁稳定订单", audience:"工作日空置、需稳定B端基础订单的酒店", channel:"企业拜访 + 团建专属产品 + 协议价/月结 + 快速通道", reason:"目标缺的是营收额，协议客户是稳定批量订单，一次签约锁全年，案例协议客占比达50%，工作日OCC+15pct"},
+    {key:"8", name:"房型价差杠杆重构", desc:"拉大房型价差，引导主动升档", theme:"「房型价差杠杆」", content:"重构房型定价：基础房微降引流（保持搜索竞争力），中高端房拉大价差溢价（+30%~50%）；OTA/官网展示\"升一档多花XX元、多享XX权益\"阶梯提示，引导预订时直接选高房型，客单价整体上移", audience:"房型价差扁平、客人普遍订基础房的酒店", channel:"房型价差重构 + 升档权益提示 + 搜索竞争力保持", reason:"目标缺的是营收额，价差杠杆让客人自选升档，不靠话术也抬客单价；基础房保流量、高房型赚利润，整体RevPAR上移"},
     {key:"9", name:"节日/店庆大促拉满GMV", desc:"节点大促+预售，冲阶段性营收", theme:"「节日/店庆大促」", content:"法定假日主题房+早鸟预售；暑期亲子套票/长住折扣；店庆限时秒杀/老客回馈；同步电商节点同城大促，集中冲GMV", audience:"节点流量集中、需冲阶段性营收的酒店", channel:"节日主题房 + 早鸟预售 + 店庆秒杀 + 平台大促资源位", reason:"目标缺的是营收额，节点流量是全年最肥的集中爆发期，早鸟预售提前锁现金流，套餐组合避免单纯打折伤ADR"},
     {key:"10", name:"非房收入场景化拓展", desc:"公区变利润中心，收入多元化", theme:"「非房收入场景化」", content:"大堂植入共享办公/社交咖啡吧/灵活会议空间变利润中心；开发公区零售、特色餐饮、会员商城、跨界联名商品，提升非房收入占比", audience:"公区坪效低、想优化收入结构的酒店", channel:"公区空间复用 + 零售/餐饮/会议产品线 + 会员商城", reason:"目标缺的是营收额，非房收入不依赖房态、抗风险强，把空置公区变成第二利润曲线，坪效翻倍"}
   ],
@@ -949,7 +949,7 @@ var PLAN_LIB = {
     {key:"7", name:"离店评价引导+差评1小时响应", desc:"好评引导+差评快处，口碑促复购", theme:"「评价引导+差评快处」", content:"退房礼貌邀好评、差评1小时内联系（道歉+解决+补偿）并公开真诚回复；住后1小时推\"晒图领积分\"；一条差评毁10个订单，回复质量可见影响转化", audience:"口碑波动大、差评影响复购的酒店", channel:"好评引导话术 + 差评1小时响应机制 + 晒图积分", reason:"目标缺的是复购率，评价是下次预订的信任开关，差评快处保住复购基数，好评沉淀拉高转化"},
     {key:"8", name:"企业协议客户专属维护", desc:"HR关系维护，锁长期复住", theme:"「协议客户专属维护」", content:"给企业HR/联系人定期回访送礼品、专属客户经理+优先场地预订权；提供月结/灵活结算锁长期复住；协议客零佣金且稳定", audience:"B端协议客占比目标高的酒店", channel:"客户经理制 + 定期回访 + 月结结算 + 优先预订权", reason:"目标缺的是复购率，协议客是零佣金且稳定的复购来源，关系维护防被竞对挖角，一次签约长期复住"},
     {key:"9", name:"会员日/生日特权情感绑定", desc:"会员日+生日特权，情感留客", theme:"「会员日/生日特权」", content:"设会员日促销、生日房券/专属布置；用欢迎礼/免费升房/特色体验让会员感\"被特殊对待\"；情感账户运营替代骚扰式营销", audience:"会员基数已有、需提粘性的酒店", channel:"会员日促销 + 生日特权 + 欢迎礼/升房体验", reason:"目标缺的是复购率，情感绑定比优惠券更持久，被特殊对待的体验让老客主动回来，特权需可感知可执行"},
-    {key:"10", name:"私域闪促+连住复购钩子", desc:"淡季私域激活，给下次预订理由", theme:"「私域闪促+连住钩子」", content:"淡季向私域推\"连住优惠/企业协议价/淡季特价\"激活复购；用\"住宿+早餐/下午茶\"组合套餐增强下次预订理由；激活靠价值感而非频率", audience:"复购周期长、需周期性激活的酒店", channel:"私域闪促 + 连住优惠 + 套餐组合钩子", reason:"目标缺的是复购率，周期性激活把淡季变成复购窗口，连住优惠和套餐组合同时拉高OCC与客单"}
+    {key:"10", name:"离店7天唤醒+专属预约特权", desc:"离店即埋下次预约，抓回头窗口", theme:"「离店7天唤醒+专属预约」", content:"离店当天发\"7天内预订下次入住享老客专属价+延迟退房\"唤醒券；同步开放专属预约通道（优先选房/免费升房名额），趁体验热度期把满意客拉回预订", audience:"复购周期长、离店即流失的酒店", channel:"离店7天唤醒券 + 专属预约通道 + 老客专属价", reason:"目标缺的是复购率，离店后7天是复购黄金窗口，趁体验记忆热时给专属理由预订，比冷启动召回成本更低"}
   ]
 };
 var currentRevPlan = '1';
@@ -1019,8 +1019,9 @@ var container = document.getElementById("revGoalInputs");
 var html = "";
 if(goal === "newGuest"){
 html += '<div class="row">';
-html += '<label>目标新增间夜数 <span style="color:red;">*</span> <span class="unit">间夜 · 必填</span></label><input type="number" id="revTargetNights" placeholder="例如：150"><div class="hint">你计划通过推广新增多少间夜入住</div>';
+html += '<label>目标新增新客数 <span style="color:red;">*</span> <span class="unit">人 · 必填</span></label><input type="number" id="revTargetNights" placeholder="例如：100"><div class="hint">从未入住过的新客户数量（拉新只认新客）</div>';
 html += '<span class="field-error" id="errRevTargetNights" style="display:none"></span>';
+html += '<label>人均间夜 <span class="unit">间夜/人</span></label><input type="number" id="revAvgNewNights" class="auto" placeholder="例如：1.2" value="1.2" step="0.1"><div class="hint">新客平均每人住几晚（住1晚填1，住2~3晚填2或3）</div>';
 html += '</div>';
 } else if(goal === "revenue"){
 html += '<div class="compact-row">';
@@ -1061,7 +1062,7 @@ missingMsg = "";
 if(!filled("rooms") || !filled("adr")){
 missingMsg = "请先填写酒店基础信息（客房总数、平均房价）";
 } else if(goalMissing()){
-missingMsg = "请完成经营目标（目标间夜数/目标营收/目标入住率/复购目标）";
+missingMsg = "请完成经营目标（新增新客数/目标营收/目标入住率/复购目标）";
 } else if(!filled("revAdPeriod")){
 missingMsg = "请填写投放周期";
 } else if(!filled("revPlatform")){
@@ -1664,10 +1665,12 @@ var goalDesc = "";
 var occIncrease = 0;
 
 if(goal === "newGuest"){
-targetNights = getVal("revTargetNights");
-if(targetNights <= 0) empty.push("目标新增间夜数");
-goalTitle = "拉新 — 冲间夜量";
-goalDesc = "新增 "+targetNights+" 间夜（"+period+"天内）";
+var newGuests = getVal("revTargetNights");
+var avgNewNights = getVal("revAvgNewNights") || 1.2;
+if(newGuests <= 0) empty.push("目标新增新客数");
+targetNights = Math.ceil(newGuests * avgNewNights);
+goalTitle = "拉新 — 新增新客";
+goalDesc = "新增 "+newGuests+" 位新客（人均 "+avgNewNights+" 间夜，共 "+targetNights+" 间夜，"+period+"天内）";
 occIncrease = rooms > 0 ? (targetNights / (rooms * period) * 100) : 0;
 }
 else if(goal === "revenue"){
