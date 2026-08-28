@@ -567,7 +567,8 @@ var platformOptions = [
 {value:"douyin",label:"抖音本地"}
 ];
 var varCostMap = {eco:35, biz:55, mid:70, boutique:70, star:100, bnb:40, resort:80};
-var adrBaseMap = {eco:140, biz:280, mid:350, boutique:420, star:700, bnb:180, resort:480};
+// 锚点基准价：与目标版统一口径(150/200/300/350/420/500/600)，改动必须两版同步
+var adrBaseMap = {eco:150, bnb:200, biz:300, mid:350, boutique:420, resort:500, star:600};
 // 房价区间 → 业态自动映射（AI智能填充）
 function adrToType(adr){
   if(adr < 160) return "eco";
