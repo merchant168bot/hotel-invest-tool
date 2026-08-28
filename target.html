@@ -527,7 +527,6 @@ h2{border-left:4px solid #2563eb}
 <div class="hint">选择你要达成的经营目标，系统将反向推导所需预算</div>
 </div>
 <div class="goal-inputs" id="revGoalInputs"></div>
-<div id="revPlanSelector"></div>
 <div class="inline-row">
 <div class="field">
 <label>投放时段类型 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
@@ -709,14 +708,17 @@ function adrToType(adr){
 // 业态 → 入住率 / 履约率 行业默认值
 var occMap = {eco:65, biz:60, mid:65, boutique:60, star:55, bnb:50, resort:55};
 var checkinMap = {eco:88, biz:85, mid:85, boutique:82, star:80, bnb:75, resort:78};
-// 填平均房价 → 自动映射业态并带出参数
+// 业态 → 基准房价（与 adrToType 区间对齐，供选业态时自动带出房价）
+var typeAdrMap = {eco:150, bnb:200, biz:300, mid:350, boutique:450, resort:500, star:600};
+// 填平均房价 → 自动映射业态并带出参数（仅当业态未被手动改过才联动）
 function autoMapByAdr(){
   var adrEl = document.getElementById("adr");
   if(!adrEl) return;
   var v = parseFloat(adrEl.value);
   if(!v || v <= 0) return;
+  adrEl.classList.remove("auto");
   var typeEl = document.getElementById("type");
-  if(!typeEl) return;
+  if(!typeEl || !typeEl.classList.contains("auto")) return;
   var t = adrToType(v);
   if(typeEl.value !== t){
     typeEl.value = t;
@@ -935,7 +937,7 @@ var PLAN_LIB = {
     {key:"7", name:"动态开关房态+MLOS保高峰", desc:"房态阈值+最短住期，高峰卖满", theme:"「动态房态+MLOS」", content:"按OCC阈值动态开关房态；事件期（演唱会/会议）设最短住期(MLOS)防周末碎片化，保高峰日历完整；事件官宣即涨（案例音乐节1小时+40%）", audience:"节假日/事件期房态混乱、碎片化严重的酒店", channel:"房态阈值开关 + 最短住期MLOS + 事件期预埋", reason:"目标缺的是入住率，事件期是入住率爆发窗口，MLOS防碎片化把高峰日卖满，同时把事件流量变现"},
     {key:"8", name:"职人号矩阵高频直播", desc:"7个职人号90场直播，内容补位", theme:"「职人号矩阵直播」", content:"搭建7个职人账号矩阵，30天员工直播90场高频互动建消费信任，弥补地理位置竞争短板；直播转化率可A/B测从1.2%→3.8%", audience:"位置偏、需内容补位流量的酒店", channel:"职人账号矩阵 + 高频直播 + 员工激励", reason:"目标缺的是入住率，位置偏就用内容把流量补回来，高频直播建立消费信任，案例淡季搜索交易额+60%"},
     {key:"9", name:"跨界套餐（酒店+景区/餐饮）", desc:"联名套餐共享目的地流量", theme:"「跨界联名套餐」", content:"与景区/餐厅联名推联合套餐（住宿+门票/餐饮券），借城市智慧旅游/目的地推广共享流量红利；相互导流降单方获客成本", audience:"位于旅游目的地周边、有合作资源的酒店", channel:"景区/餐饮联名套餐 + 目的地推广 + 相互导流", reason:"目标缺的是入住率，联合套餐把酒店变成目的地行程的一环，借合作方流量把客人带进来"},
-    {key:"10", name:"Walk-in门面转化+直订优惠", desc:"散客专属价截住比价流失", theme:"「Walk-in门面转化」", content:"确保门面整洁、给线下散客专属优惠（≤OTA现付价）鼓励直接下单，避免客人比价转OTA流失；同步引导加会员转长期资产", audience:"临街有自然客流的酒店", channel:"门面形象 + 直订专属价 + 前台话术 + 会员引导", reason:"目标缺的是入住率，Walk-in客就在门口，零佣金即时成交，专属价把比价流失截住，同步沉淀会员"}
+    {key:"10", name:"钟点房/时段房激活", desc:"把白天闲置时段也卖出去", theme:"「钟点房/时段房激活」", content:"推出钟点房（4小时）、午休房、机场中转休息房等时段产品，把白天/凌晨闲置时段变成入住率增量；OTA与前台同步展示，承接中转、陪护、午休等短时需求", audience:"白天闲置时段多、仅靠过夜房出租率低的酒店", channel:"钟点房产品线 + OTA时段房类目 + 前台即时售卖", reason:"目标缺的是入住率，时段房把一天24小时都变成可售库存，不挤占过夜房价格体系，盘活白天闲置时段"}
   ],
   repurchase: [
     {key:"1", name:"企微私域分层运营", desc:"标签建群+专属福利，私域复购35%", theme:"「企微私域分层」", content:"到店引导加企微返10元券，按\"年轻/亲子/团建\"标签建群；每周发1次私域专属福利（房券/体验名额/伴手礼），私域复购目标≥35%", audience:"已有到店客流、缺留存手段的酒店", channel:"企微标签分层建群 + 每周专属福利 + 私域专属价", reason:"目标缺的是复购率，私域是复购主阵地，分层运营避免一刀切；核心是\"私域比OTA更划算更贴心\"，严禁价格倒挂"},
@@ -986,22 +988,13 @@ function rankPlans(goal){
   return lib.map(function(p){ return p.key; }).sort(function(a,b){ return scores[b] - scores[a]; });
 }
 function renderRevPlan(goal){
-  var box = document.getElementById("revPlanSelector");
-  if(!box) return;
+  // 方案选择区已移至决策报告内展示，此处仅保留后台推荐逻辑（推最优 + 记录当前方案）
   var lib = PLAN_LIB[goal] || PLAN_LIB.newGuest;
   var rank = rankPlans(goal);
   if(rank.indexOf(currentRevPlan) < 0) currentRevPlan = rank[0];
   var cur = null;
   lib.forEach(function(p){ if(p.key === currentRevPlan) cur = p; });
   if(!cur){ cur = lib[0]; currentRevPlan = cur.key; }
-  var ph = "";
-  ph += '<div class="plan-selector">';
-  ph += '<span class="plan-label">达成方案（系统已按你的数据推最优）</span>';
-  ph += '<div class="plan-tip"><b>推荐方案 '+cur.key+' · '+cur.name+'：</b>'+cur.theme+'。'+cur.reason+'</div>';
-  ph += '<div class="plan-tip plan-tip-sub"><b>适合人群：</b>'+cur.audience+'<br><b>投放渠道：</b>'+cur.channel+'</div>';
-  ph += '<div style="margin-top:8px"><button type="button" class="plan-btn" onclick="nextRevPlan(\''+goal+'\')" style="width:100%;text-align:center"><span class="p-name">换一套（当前第 '+cur.key+' 套 / 共 '+lib.length+' 套）</span><span class="p-desc">对这套不满意？系统按你的数据继续推下一套</span></button></div>';
-  ph += '</div>';
-  box.innerHTML = ph;
   updateBtnState();
 }
 function nextRevPlan(goal){
@@ -1791,6 +1784,8 @@ html += '<div class="sec">';
 html += '<div class="sec-title">② 达成主题与打法</div>';
 html += '<div class="path-box"><b>达成主题（方案'+planR.key+' · '+planR.name+'）：</b>'+actThemeR+'</div>';
 html += '<div class="tip" style="margin-top:8px;"><b>达成内容：</b>'+actContentR+'。<br><b>打法说明：</b>'+actReasonR+'。先小范围测试召回文案和权益力度，验证响应后再全量放量，避免一上来全量触达浪费预算。</div>';
+html += '<div class="plan-tip" style="margin-top:8px;"><b>适合人群：</b>'+planR.audience+'<br><b>投放渠道：</b>'+planR.channel+'</div>';
+html += '<div style="margin-top:8px"><button type="button" class="plan-btn" onclick="nextRevPlan(\''+goal+'\')" style="width:100%;text-align:center"><span class="p-name">换一套（当前第 '+planR.key+' 套 / 共 '+((PLAN_LIB.repurchase||PLAN_LIB.newGuest).length)+' 套）</span><span class="p-desc">对这套不满意？系统按你的数据继续推下一套</span></button></div>';
 html += '</div>';
 
 html += '<div class="sec">';
