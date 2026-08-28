@@ -693,7 +693,7 @@ if(!used[platformOptions[i].value]) return platformOptions[i].value;
 return "xiecheng";
 }
 
-function addPlatform(data){
+function addPlatform(data, skipCalc){
 if(platforms.length >= platformOptions.length){
 showToast("最多同时选择 "+platformOptions.length+" 个平台，无需重复添加");
 return null;
@@ -712,7 +712,7 @@ checkinRate: (data && data.checkinRate !== undefined) ? data.checkinRate : (chec
 };
 platforms.push(p);
 renderPlatforms();
-onCpcFactorChange();
+if(!skipCalc){ onCpcFactorChange(); }
 updateBudgetSummary();
 saveDraft();
 return id;
@@ -1039,12 +1039,16 @@ function initDefaultValues(){
 var typeEl = document.getElementById("type");
 if(typeEl){
 var t = typeEl.value;
-if(varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
+// 修复：仅当变动成本为空时才带出业态默认值，避免覆盖草稿恢复的用户手改值
+var vEl = document.getElementById("varCost");
+if(vEl && !vEl.value && varCostMap[t] !== undefined) setAuto("varCost", varCostMap[t]);
 }
 var taxTypeEl = document.getElementById("taxType");
 if(taxTypeEl){
 var taxVal = taxTypeMap[taxTypeEl.value];
-if(taxVal !== undefined) setAuto("taxRate", taxVal);
+// 修复：仅当税率为空时才带出纳税人类型默认值
+var tEl = document.getElementById("taxRate");
+if(tEl && !tEl.value && taxVal !== undefined) setAuto("taxRate", taxVal);
 }
 // 确保所有平台行CPC有值
 var cpc = getDefaultCpc();
@@ -1053,6 +1057,7 @@ if(!p.cpc || p.cpc === 0) p.cpc = cpc;
 if(!p.commission || p.commission === 0) p.commission = getDefaultCommission(p.platform);
 });
 renderPlatforms();
+applyManualFlags();
 }
 
 var missingMsg = "";
@@ -1913,6 +1918,20 @@ var el = document.getElementById(id);
 if(el) data[id] = el.value;
 });
 
+// 记录手动修改字段（有auto能力但当前非auto），草稿恢复后保持手改状态，避免联动覆盖
+var manualFields = [];
+["varCost","taxRate","occ","adr","type","fwdPeriod","ltvRate","ltvNights"].forEach(function(id){
+var el = document.getElementById(id);
+if(el && el.classList && !el.classList.contains("auto")) manualFields.push(id);
+});
+platforms.forEach(function(p){
+["platCpc_","platCommission_","platOrderRate_","platCheckinRate_","platOtherFee_"].forEach(function(prefix){
+var el = document.getElementById(prefix + p.id);
+if(el && el.classList && !el.classList.contains("auto")) manualFields.push(prefix + p.id);
+});
+});
+data._manual = manualFields;
+
 // 保存平台列表
 data._platforms = platforms.map(function(p){
 var budgetEl = document.getElementById("platBudget_"+p.id);
@@ -1948,7 +1967,7 @@ platforms = [];
 platIdCounter = 0;
 if(data._platforms && Array.isArray(data._platforms) && data._platforms.length > 0){
 data._platforms.forEach(function(pd){
-addPlatform(pd);
+addPlatform(pd, true);
 });
 } else {
 // 兼容旧数据：尝试从旧字段恢复
@@ -1959,7 +1978,7 @@ var mainOrderRate = data.orderRate || 3;
 var mainCommission = data.commission || getDefaultCommission(mainPlatform);
 var mainOtherFee = data.otherFee || 0;
 var mainCheckinRate = data.checkinRate || 85;
-addPlatform({platform:mainPlatform, budget:mainBudget, cpc:mainCpc, orderRate:mainOrderRate, commission:mainCommission, otherFee:mainOtherFee, checkinRate:mainCheckinRate});
+addPlatform({platform:mainPlatform, budget:mainBudget, cpc:mainCpc, orderRate:mainOrderRate, commission:mainCommission, otherFee:mainOtherFee, checkinRate:mainCheckinRate}, true);
 // 旧的多平台
 ["mp1","mp2"].forEach(function(prefix){
 var b = data[prefix+"Budget"];
@@ -1972,13 +1991,29 @@ orderRate: data[prefix+"Rate"] || 3,
 commission: data[prefix+"Commission"] || getDefaultCommission(data[prefix+"Platform"] || "meituan"),
 otherFee: 0,
 checkinRate: mainCheckinRate
+}, true);
+}
 });
 }
+// 恢复手动修改标记：这些字段不参与后续自动联动覆盖
+if(data._manual && Array.isArray(data._manual)){
+_manualFields = data._manual.slice();
+_manualFields.forEach(function(id){
+var el = document.getElementById(id);
+if(el && el.classList) el.classList.remove("auto");
 });
 }
 updateBrand();
 updateBtnState();
 updateTierHint();
+}
+// 手动修改标记全局存储（供渲染后恢复）
+var _manualFields = [];
+function applyManualFlags(){
+_manualFields.forEach(function(id){
+var el = document.getElementById(id);
+if(el && el.classList) el.classList.remove("auto");
+});
 }
 
 
