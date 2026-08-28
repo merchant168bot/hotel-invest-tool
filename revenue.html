@@ -6,7 +6,7 @@
 <meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>酒店投流损益-智能系统（收益测算版 v3.3 · CPC联动已修复）</title>
+<title>酒店投流收益测算-智能系统</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;padding:16px;font-size:14px;color:#333}
@@ -252,7 +252,7 @@ h2{border-left:4px solid #2563eb}
 <div class="box">
 <a class="back-link" href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;color:#2563eb;text-decoration:none;font-weight:600">← 返回工具选择</a>
 <div class="print-brand" id="printBrand"></div>
-<h2>酒店投流损益-智能系统 <span style="font-size:14px;color:#dc2626;font-weight:800;background:#fee2e2;padding:2px 8px;border-radius:4px">v3.4 AI智能版 · 2026-08-25</span></h2>
+<h2>酒店投流收益测算-智能系统</h2>
 
 <div class="sub" id="subText">基于酒店收益管理（Revenue Management）模型，输入预算及经营参数，自动推演推广盈亏平衡点、底价红线及追加策略。</div>
 <div class="card" id="baseData">
@@ -501,7 +501,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div id="result"></div>
 <div class="brand-footer">
-<span id="brandFooterSupport" style="display:none">由 <span id="brandFooterName">流量增长服务商</span> 提供技术支持</span> &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 3.2
+<span id="brandFooterSupport" style="display:none">由 <span id="brandFooterName">流量增长服务商</span> 提供技术支持</span> &nbsp;|&nbsp; 工具仅供参考，请以实际经营数据为准 &nbsp;|&nbsp; 版本 1.0
 </div>
 <div class="privacy-note">🔒 隐私说明：本工具所有数据仅保存在您本机浏览器（localStorage），不会上传任何服务器</div>
 </div>
@@ -1335,6 +1335,8 @@ platRois.sort(function(a,b){ return b.roi - a.roi; });
 var nightlyEmpty = Math.floor(rooms * (1 - occ/100));
 
 var diagList = [];
+var excludedKeys = (typeof window !== "undefined" && window._excludedDiagKeys) ? window._excludedDiagKeys : [];
+function keyExcluded(k){ return excludedKeys.indexOf(k) >= 0; }
 
 // ---- 联动基准值（后台自动判断，不在报告中展示公式） ----
 var theoryClicks = budget > 0 && dispCpc > 0 ? Math.round(budget / dispCpc) : 0;   // 预算÷CPC 理论点击上限
@@ -1344,8 +1346,8 @@ var clickNote = clickRateOk
   : '点击量仅 '+clicks.toLocaleString()+' 次，低于按预算应达到的曝光水平（约 '+theoryClicks.toLocaleString()+' 次），说明预算未能充分消耗，出价或定向范围可能过窄。';
 
 // D0a 容量不足
-if(capExceeded && profit < 0){
-  diagList.push({level:'red', tag:'P0', title:'容量不足：空房装不下推广量，越投越亏',
+if(capExceeded && profit < 0 && !keyExcluded('D0a')){
+  diagList.push({key:'D0a', level:'red', tag:'P0', title:'容量不足：空房装不下推广量，越投越亏',
     diag:'空房容量 '+capacity+' 间夜，推广需求 '+rawNights+' 间夜，超出部分无法成交；当前预计亏损 ¥'+fmt0(Math.abs(profit))+'，继续投放只会扩大亏损。',
     act:'将总预算压缩至容量可消化的范围（建议 ≤ ¥'+fmt0(Math.floor(capacity*marginPerRoom*0.5))+'），或延长投放周期至 '+Math.max(14, Math.ceil(days*rawNights/capacity))+' 天，确保每个推广间夜都能被消化。',
     check:'重新测算后推广间夜 ≤ 空房容量的 80%（≤ '+Math.floor(capacity*0.8)+' 间夜），且投放净利润回正。',
@@ -1353,8 +1355,8 @@ if(capExceeded && profit < 0){
     els:'压缩预算后仍无法消化，说明自然流量入住率过低，需先提升基础入住率再考虑投放。'});
 }
 // D0b 定价灾难
-if(adr < floorPrice && floorPrice > 0){
-  diagList.push({level:'red', tag:'P0', title:'定价低于底价线：卖一间亏一间',
+if(adr < floorPrice && floorPrice > 0 && !keyExcluded('D0b')){
+  diagList.push({key:'D0b', level:'red', tag:'P0', title:'定价低于底价线：卖一间亏一间',
     diag:'当前房价 ¥'+fmt0(adr)+'，低于底价线 ¥'+fmt0(floorPrice)+'（按成本、税费与合理利润测算）。当前每成交一间都在亏损，投放量越大亏损越大。',
     act:'今日起将各平台价格上调至 ¥'+fmt0(Math.ceil(floorPrice*1.1))+' 以上，并关闭自动促销、排查是否有低于底价的渠道在售。',
     check:'连续 2 天无低于底价线的成交。',
@@ -1362,8 +1364,8 @@ if(adr < floorPrice && floorPrice > 0){
     els:'若仍有渠道低价售卖，逐平台排查并下架低于底价的房源。'});
 }
 // D0c 高入住率
-if(occ >= 80){
-  diagList.push({level:'yellow', tag:'P1', title:'入住率已达 '+occ+'%：当前应提价而非扩量',
+if(occ >= 80 && !keyExcluded('D0c')){
+  diagList.push({key:'D0c', level:'yellow', tag:'P1', title:'入住率已达 '+occ+'%：当前应提价而非扩量',
     diag:'每晚空房仅约 '+nightlyEmpty+' 间，投流可消化的增量有限；当前策略应从"填房"转向"提价"，把有限的空房卖出更高价格。',
     act:'各平台统一上调 5% 至 ¥'+fmt0(Math.ceil(adr*1.05))+'，同步调整会员价与协议价。',
     check:'提价后 3 天入住率仍 ≥ '+Math.max(70, Math.floor(occ*0.9))+'%。',
@@ -1371,13 +1373,13 @@ if(occ >= 80){
     els:'需求不足以支撑提价，回调原价，将重心放回淡季引流。'});
 }
 // D1 平台预算错配
-if(activePlats.length >= 2 && platRois.length >= 2){
+if(activePlats.length >= 2 && platRois.length >= 2 && !keyExcluded('D1')){
   var top = platRois[0], bot = platRois[platRois.length-1];
   if(top.roi > 0 && top.roi - bot.roi >= 0.05){
     var moveAmt = Math.round(Math.min(bot.budget*0.3, bot.budget));
     var delta = moveAmt * (top.roi - bot.roi);
     var profitNew = profit + delta;
-    diagList.push({level:'red', tag:'P0', title:'预算错配：资金流向低效平台',
+    diagList.push({key:'D1', level:'red', tag:'P0', title:'预算错配：资金流向低效平台',
       diag: top.name+'投入 ¥'+fmt0(top.budget)+'、ROI '+fmt2(top.roi)+'，'+bot.name+'投入 ¥'+fmt0(bot.budget)+'、ROI 仅 '+fmt2(bot.roi)+'，同样一笔钱放'+top.name+'比放'+bot.name+'多赚 ¥'+fmt0(Math.round(bot.budget*(top.roi-bot.roi)))+'。当前月净利 ¥'+fmt0(profit)+' 的薄利状态，直接源于预算向低效平台倾斜。',
       act:'一次性调整：'+bot.name+'预算由 ¥'+fmt0(bot.budget)+' 降至 ¥'+fmt0(Math.max(0, bot.budget-moveAmt))+'，'+top.name+'预算由 ¥'+fmt0(top.budget)+' 增至 ¥'+fmt0(top.budget+moveAmt)+'，其余配置不变。调整后，'+top.name+' ROI 可能小幅回落，属正常现象。',
       check:'7 天后核查调整后的'+top.name+'（¥'+fmt0(top.budget+moveAmt)+'）ROI 是否 ≥ '+fmt2(top.roi*0.85)+'，且总月净利 ≥ ¥'+fmt0(profitNew)+'。',
@@ -1386,11 +1388,11 @@ if(activePlats.length >= 2 && platRois.length >= 2){
   }
 }
 // D2 亏损缺口
-if(profit < 0){
+if(profit < 0 && !keyExcluded('D2')){
   var netC = marginPerRoom - costPerRoom;
   var shortN = netC > 0 ? Math.ceil(Math.abs(profit)/netC) : Math.ceil(Math.abs(profit)/Math.max(1, marginPerRoom*0.5));
   var perDay = days > 0 ? Math.max(1, Math.ceil(shortN/days)) : 1;
-  diagList.push({level:'red', tag:'P0', title:'亏损缺口：当前投放亏损 ¥'+fmt0(Math.abs(profit)),
+  diagList.push({key:'D2', level:'red', tag:'P0', title:'亏损缺口：当前投放亏损 ¥'+fmt0(Math.abs(profit)),
     diag:'当前测算月亏损 ¥'+fmt0(Math.abs(profit))+'（ROI '+fmt2(roi)+'）。每间夜净贡献 ¥'+fmt1(netC)+'，需多成交约 '+shortN+' 间夜才能回本，相当于每天多 '+perDay+' 单。',
     act:'立即暂停追加预算，按本报告其余落地方案逐项修复，修复后重新测算。',
     check:'重新测算后投放回报 > 0。',
@@ -1398,12 +1400,12 @@ if(profit < 0){
     els:'修复后仍亏损，暂停投放，继续排查成本与定价，不追加一分钱预算。'});
 }
 // D3 点击成本
-if(costPerRoom > marginPerRoom * 0.8 && roomNights > 0){
+if(costPerRoom > marginPerRoom * 0.8 && roomNights > 0 && !keyExcluded('D3')){
   var newCost = costPerRoom * 0.85;
   var newNet = marginPerRoom - newCost;
   var addP3 = roomNights * costPerRoom * 0.15;
   var newRoi = budget > 0 ? (profit + addP3) / budget : 0;
-  diagList.push({level:'red', tag:'P0', title:'点击成本偏高：利润被推广成本侵蚀',
+  diagList.push({key:'D3', level:'red', tag:'P0', title:'点击成本偏高：利润被推广成本侵蚀',
     diag:'单房推广成本 ¥'+fmt1(costPerRoom)+'，单房毛利 ¥'+fmt1(marginPerRoom)+'，每间夜净贡献仅 ¥'+fmt1(marginPerRoom-costPerRoom)+'；当前 CPC ¥'+fmt2(dispCpc)+' 偏高，是利润偏薄的重要来源。',
     act:'出价下调 15%，暂停 0:00-7:00 低转化时段，定向收窄至酒店周边 3-5 公里，先控制无效点击。',
     check:'3 天后 CPC ≤ ¥'+fmt2(Math.round(dispCpc*0.9*100)/100)+'，单房推广成本 ≤ ¥'+fmt1(newCost)+'。',
@@ -1411,14 +1413,14 @@ if(costPerRoom > marginPerRoom * 0.8 && roomNights > 0){
     els:'说明瓶颈不在出价，而在素材或定向，更换主图后再评估。'});
 }
 // D4 转化率（联动点击量：点击正常→点击后流失；点击不足→先解决曝光）
-if(dispRate < 3.5){
+if(dispRate < 3.5 && !keyExcluded('D4')){
   var newRate = Math.round((dispRate + 0.5)*10)/10;
   var addRN4 = Math.floor(clicks * (newRate - dispRate)/100 * checkinRate/100);
   var addP4 = Math.round(addRN4 * marginPerRoom * 0.85);
   var convDiag = clickRateOk
     ? '点击量 '+clicks.toLocaleString()+' 次处于正常区间，说明列表页展示具备吸引力，用户流失集中于点击后的决策环节。数据显示：'+orders.toLocaleString()+' 笔订单中仅 '+roomNights.toLocaleString()+' 间夜实际入住，'+(100-dispCheckin)+'% 订单在下单后取消，进一步印证该环节存在转化障碍。'
     : '点击量仅 '+clicks.toLocaleString()+' 次，低于预算应有的曝光水平，当前转化率 '+fmt1(dispRate)+'% 同时偏低，需先确认流量是否精准，再优化转化。';
-  diagList.push({level:'yellow', tag:'P1', title:'转化率偏低：有点击、缺成交',
+  diagList.push({key:'D4', level:'yellow', tag:'P1', title:'转化率偏低：有点击、缺成交',
     diag: convDiag,
     act:'按序核查四项：① 主图展示的房型与详情页、实际入住房型是否一致，避免预期落差；② 详情页是否包含实拍图与房间面积说明，信息完整度直接影响下单信心；③ 列表页价格与详情页价格是否一致，价格跳涨会直接触发流失；④ 取消政策与同商圈竞品相比是否过于苛刻。',
     check:'整改后 3 日复核转化率是否 ≥ '+fmt1(newRate)+'%。',
@@ -1426,9 +1428,9 @@ if(dispRate < 3.5){
     els:'说明问题不在页面端，下一步排查投放人群定向（城市、商圈、出行意图是否精准）。'});
 }
 // D5 佣金
-if(commission > 12){
+if(commission > 12 && !keyExcluded('D5')){
   var saveC = Math.round(commFee * (commission - 12) / commission);
-  diagList.push({level:'yellow', tag:'P1', title:'佣金偏高：平台抽成侵蚀利润',
+  diagList.push({key:'D5', level:'yellow', tag:'P1', title:'佣金偏高：平台抽成侵蚀利润',
     diag:'综合佣金率 '+fmt1(commission)+'%，本月佣金支出约 ¥'+fmt0(commFee)+'；若压至 12%，每月可节省约 ¥'+fmt0(saveC)+'，直接增厚净利润。',
     act:'核查各平台佣金占比，将预算向低佣金平台倾斜（如美团 10%）；同时约平台经理洽谈综合佣金率下调至 12%。',
     check:'2 周内综合佣金率 ≤ 12%。',
@@ -1436,18 +1438,136 @@ if(commission > 12){
     els:'洽谈未果，则持续将预算压向低佣金平台，控制综合抽成水平。'});
 }
 // D6 履约率偏低（下单后取消/未入住）
-if(dispCheckin < 80 && orders > 0){
+if(dispCheckin < 80 && orders > 0 && !keyExcluded('D6')){
   var cancelN = Math.round(orders * (100 - dispCheckin) / 100);
-  diagList.push({level:'yellow', tag:'P1', title:'履约率偏低：订单流失在入住前',
+  diagList.push({key:'D6', level:'yellow', tag:'P1', title:'履约率偏低：订单流失在入住前',
     diag:'下单 '+orders.toLocaleString()+' 单，实际入住仅 '+roomNights.toLocaleString()+' 间夜，履约率 '+dispCheckin+'%，约 '+cancelN+' 单在预订后取消或未入住。说明用户下单时对房间或政策存在犹豫，或到店环节出现落差。',
     act:'重点核查：① 取消政策是否过于苛刻（不可取消、高额违约金会推高到店前取消）；② 详情页描述与实际情况是否一致，避免到店落差；③ 是否缺少到店保障（保留房、到店无房赔付等）。',
     check:'2 周后履约率是否 ≥ 85%。',
     then:'订单质量提升，间夜数与净利润同步改善。',
     els:'若履约率仍低，说明客群出行确定性差，可收紧预订约束或调整投放人群。'});
 }
+// D7 曝光/点击不足：预算花不出去，先查流量端
+if(!clickRateOk && budget > 0 && !keyExcluded('D7')){
+  var liftClicks = Math.round(theoryClicks * 0.85);
+  var liftRN = Math.floor((liftClicks - clicks) * dispRate/100 * dispCheckin/100);
+  diagList.push({key:'D7', level:'yellow', tag:'P1', title:'预算花不完：曝光不足或点击率低，钱没买到量',
+    diag:'预算 ¥'+fmt0(budget)+' 按当前 CPC ¥'+fmt2(dispCpc)+' 理论上可获约 '+fmt0(theoryClicks)+' 次点击，实际仅 '+clicks.toLocaleString()+' 次，说明曝光不足或点击率低，预算未充分消耗。常见原因：出价低于商圈门槛、定向过窄、主图/起价无竞争力。',
+    act:'冷启动期用"高出价低预算"抢占前排测点击率（建议出价上浮 20%，日预算先小额）；同步优化主图与起价，清理过窄定向；日预算从低到高阶梯提升，忌频繁调价（每日 ≤ 20 次）。',
+    check:'3 天后点击量 ≥ '+fmt0(liftClicks)+' 次（理论值的 85%），预算可正常消耗。',
+    then:'流量端跑通，回到转化与利润优化。',
+    els:'点击仍不足，说明该商圈竞争激烈或门店综合分低，先补评分/销量再投。'});
+}
+// D8 详情页承接弱：点击正常但转化低，逐层排查（核心场景：流量端强、承接端弱）
+if(clickRateOk && dispRate < 3.5 && orders > 0 && !keyExcluded('D8')){
+  diagList.push({key:'D8', level:'yellow', tag:'P1', title:'点击高、转化低：流量端没问题，问题在详情页没接住',
+    diag:'点击量 '+clicks.toLocaleString()+' 次与预算匹配（说明图/价/排名能吸引点击），但下单转化率仅 '+fmt1(dispRate)+'%，'+orders.toLocaleString()+' 笔订单又流失 '+(100-dispCheckin)+'% 于入住前。用户被吸引点进来，却在详情页或下单环节流失——问题从"吸引"转移到"承接"。',
+    act:'按漏斗逐层排查：① 首图/价格是否"标题党"，与实际房型不符会立刻流失；② 详情页首屏 8 秒内能否看到核心卖点（实拍图、面积、设施、评分）；③ 差评是否有针对性回复（点评分 < 4.5 会被平台过滤）；④ 是否有"立即确认"、支付方式是否齐全；⑤ 取消政策是否比竞对苛刻。',
+    check:'整改后 3 日复核：详情页停留 ≥ 30 秒、下单转化率 ≥ '+fmt1(Math.min(7, dispRate+1))+'%。',
+    then:'承接端疏通，转化率回升，间夜与利润同步放大。',
+    els:'页面端没问题，则排查人群定向是否精准（来了但不对口的人多）。'});
+}
+// D9 复购/LTV 不足
+if(ltvRateVal > 0 && ltvRateVal < 20 && orders > 0 && !keyExcluded('D9')){
+  diagList.push({key:'D9', level:'yellow', tag:'P1', title:'复购率低：投流拉新贵，老客没接住',
+    diag:'复购率仅 '+fmt1(ltvRateVal)+'%（健康参考 ≥ 20%），每带来 1 位新客广告成本约 ¥'+fmt0(ltvCpa)+'，若老客不回头，这笔获客费只赚一单，长期 LTV 撑不起投放。',
+    act:'获客即导入私域（企微/会员/储值），加微信送欢迎礼或延迟退房；报名平台积分联盟（约 95 折）提复购；按客群标签做 7 天/30 天短信召回。',
+    check:'2 个月后复购率 ≥ '+fmt1(Math.min(30, ltvRateVal+10))+'%。',
+    then:'老客贡献占比上升，获客成本摊薄，投放 ROI 放大。',
+    els:'复购仍低，说明产品体验或客群错配，先解决到店体验再谈召回。'});
+}
+// D10 人工排查-图片/详情页质量（数据算不出，供逐层排除使用）
+if(!keyExcluded('M1')){
+  diagList.push({key:'M1', level:'yellow', tag:'人工', title:'人工排查①：图片与详情页信息完整度',
+    diag:'此环节无法从投放数据直接判定，需登录平台后台人工核对。参考基准：详情页停留 ≥ 30 秒（优秀 90 秒）；下单转化率参考 7%-14%；图片完整度提升 20% 可使曝光率平均增长 35%。',
+    act:'按 8 类（外观/餐饮/休闲/公区/周边/商务/亲子）各拍 ≥ 10 张，每房型 ≥ 4 张含实景与尺寸；删除模糊/失真图，首图用最优房型全景；详情页首屏放"核心卖点+价格锚点+评分背书"。',
+    check:'图片完整度达标后，下单转化率周环比是否提升。',
+    then:'确认图片端无问题，继续排下一项。',
+    els:'图片确实差，按上述动作整改后再看转化。'});
+}
+// D11 人工排查-点评分与口碑
+if(!keyExcluded('M2')){
+  diagList.push({key:'M2', level:'yellow', tag:'人工', title:'人工排查②：点评分与差评回复',
+    diag:'需人工核对平台点评分。参考基准：点评分 ≥ 4.5 才不被筛选页过滤，低于 4.5 会直接损失曝光与点击质量。',
+    act:'若评分 < 4.5：在店期主动收集意见、即时处理客诉；整理近 1 年差评优先解决高频问题；3 分以下差评按"道歉+解释+解决"公式 100% 回复；问答区全部维护并自设种草问题。',
+    check:'点评分回升至 ≥ 4.5，差评回复率 100%。',
+    then:'口碑端无问题，继续排下一项。',
+    els:'评分确实低，按动作整改，评分回升前谨慎加大投放。'});
+}
+// D12 人工排查-房型与价格结构
+if(!keyExcluded('M3')){
+  diagList.push({key:'M3', level:'yellow', tag:'人工', title:'人工排查③：房型命名与价格梯度',
+    diag:'需人工核对房型列表。参考基准：低阶房型价格 < 高阶；房型名能看出差异；同房型含早/无早价差合理（单早 10%、双早 20%）。',
+    act:'统一房型命名风格并融入特色（星空/海景/亲子）；按客人视角校验各房型价格合理性，避免"低阶比高阶贵"；补全早餐选项覆盖（大床：无早/单早/双早）。',
+    check:'房型价格梯度符合"低阶 < 高阶"，命名可理解，含早覆盖 100%。',
+    then:'价格结构无问题，继续排下一项。',
+    els:'价格乱，按动作修正后再观察转化。'});
+}
+// D13 人工排查-促销与紧迫感
+if(!keyExcluded('M4')){
+  diagList.push({key:'M4', level:'yellow', tag:'人工', title:'人工排查④：促销配置与紧迫感',
+    diag:'需人工核对后台促销。参考基准：用户拖延不决策常因缺限时/早鸟/连住/套餐等紧迫感设计；促销期下单转化应可量化提升。',
+    act:'配置限时秒杀、满减、"最后 5 间"紧迫感提示；热卖房型搭早餐/套餐；评估每活动成本收益，效果差及时停，避免多活动成本叠加失控。',
+    check:'促销期下单转化提升且整体 ROI 为正。',
+    then:'促销端无问题，继续排下一项。',
+    els:'促销配置不合理，调整后再观察。'});
+}
+// D14 人工排查-取消政策与支付
+if(!keyExcluded('M5')){
+  diagList.push({key:'M5', level:'yellow', tag:'人工', title:'人工排查⑤：取消政策与支付方式',
+    diag:'需人工核对政策设置。参考基准：取消政策比竞对严苛会直接推高流失；无"立即确认"标签、仅单一支付方式都会降下单。',
+    act:'对标竞对放宽同类房型取消政策（淡季放宽、旺季收紧）；后台加保留房拿"立即确认"标；房型覆盖到店付 + 在线付。',
+    check:'订单取消率下降，"立即确认"覆盖主力房型，支付成功率提升。',
+    then:'政策端无问题，继续排下一项。',
+    els:'政策确有阻力，调整后再观察。'});
+}
+// D15 人工排查-广告模式选型（CPC vs CPS）
+if(!keyExcluded('M6')){
+  diagList.push({key:'M6', level:'yellow', tag:'人工', title:'人工排查⑥：广告模式选型（CPC 烧钱 vs CPS 零浪费）',
+    diag:'需人工评估当前广告模式。参考基准：CPC 模式点击不下单也扣费；评论差/转化弱的店用 CPC 盲投基本亏；稳定走量可切 CPS（成交出行才加佣、取消不扣）。',
+    act:'若转化弱：先别投 CPC，优先用 CPS 模式（携程云梯/飞猪全网通，上浮佣金 1.1-1.5 倍换流量加权、零无效消耗）；新品用直通车破零 + 超级推荐拉潜客 + 全网通做分销增量。',
+    check:'切换后无效消耗趋零，CPS 模式 ROI 为正。',
+    then:'模式选型正确，按新模式规划预算。',
+    els:'模式无问题，继续排下一项。'});
+}
+// D16 人工排查-淡旺季与投放节奏错配
+if(!keyExcluded('M7')){
+  diagList.push({key:'M7', level:'yellow', tag:'人工', title:'人工排查⑦：淡旺季错配与投放节奏',
+    diag:'需人工评估当前处于淡季还是旺季。参考基准：淡季价格弹性低、CPC 却常被炒高，硬投基本亏；旺季流量贵但转化快，适合加大预算抢量。',
+    act:'旺季：提前 2-4 周锁量（连住优惠/早鸟价），预算上浮 20%-30% 抢转化；淡季：砍 CPC 预算，转投周边游/商务差旅长尾词，用 CPS 兜底；同步做 7 天/30 天蓄客活动（周末连住、错峰晚场）。',
+    check:'旺季 ROI ≥ 0.3 且间夜 ≥ 容量 90%；淡季不亏损即达标。',
+    then:'节奏匹配市场，收益稳定。',
+    els:'季节判断无误但 ROI 仍低，回查前几项。'});
+}
+// D17 人工排查-竞品对比与商圈定价锚点
+if(!keyExcluded('M8')){
+  diagList.push({key:'M8', level:'yellow', tag:'人工', title:'人工排查⑧：竞品对标与商圈定价锚点',
+    diag:'需人工对比同商圈 3-5 家同级竞品。参考基准：同商圈同级酒店均价 ±10% 内属于正常竞争区间；明显高于竞品且无差异化卖点时，转化会被价格锚点压制。',
+    act:'拉取同商圈 3-5 家竞品的房型/价格/评分/销量；若自身起价高于竞品 15% 以上，设置 1-2 间引流房型（起价略低于竞品）引流量，再靠高配房型提收益；同步把差异化卖点写进标题（新开业/景观/亲子/免停车）。',
+    check:'引流房型点击率提升，整体转化率回升。',
+    then:'定价锚点合理，进入常规优化。',
+    els:'竞品对标无异常，继续排下一项。'});
+}
+// D18 人工排查-流量人群错配（来了不对口的人）
+if(!keyExcluded('M9')){
+  diagList.push({key:'M9', level:'yellow', tag:'人工', title:'人工排查⑨：人群定向错配（流量来错人）',
+    diag:'需人工核对后台人群画像。参考基准：若点击人群多为外地异地、出行意图标签不符，转化率会被结构性压低——不是页面问题，是流量本身不对口。',
+    act:'核对后台人群画像（城市分布/出行意图/性别年龄）；将定向收敛到门店周边 10-30 公里商旅/出游人群；预算重点给高意向人群包（商务出行、亲子出游标签），剔除纯闲逛流量。',
+    check:'调整后点击转化率提升、异地无意义点击占比下降。',
+    then:'人群对口，流量质量提升。',
+    els:'人群无问题，回查前面各项，或接受当前转化水平。'});
+}
 
-// 最多取3条最值钱的诊断
-var diagShow = diagList.slice(0,3);
+// 排序：红（P0）优先于黄（P1），同级别保持加入顺序；人工排查项恒排最后
+diagList.sort(function(a,b){
+  var ra = a.level === 'red' ? 0 : 1, rb = b.level === 'red' ? 0 : 1;
+  if(ra !== rb) return ra - rb;
+  return 0;
+});
+// 每次只推 1 条最可能的诊断（不堆叠）
+var diagShow = diagList.length > 0 ? [diagList[0]] : [];
+var remainCount = diagList.length;
+var allExhausted = diagList.length === 0;
 
 // 一句话判断
 var judge = "";
@@ -1459,7 +1579,12 @@ else { judge = '当前处于盈亏平衡，先优化 CPC 或转化率，再评�
 
 attr += '<div class="plan-summary" style="margin-bottom:12px"><b>📌 一句话判断：</b>'+judge+'</div>';
 if(diagShow.length === 0){
-  attr += '<div class="attr-card attr-green"><div class="attr-title">✅ 各项指标正常</div><div class="attr-desc">投放回报 '+fmt2(roi)+'，处于健康区间。想扩大收益：预算提升 20%-30%，观察投放回报是否维持。</div></div>';
+  if(allExhausted){
+    attr += '<div class="attr-card attr-green"><div class="attr-title">✅ 已排查全部方向</div><div class="attr-desc">当前输入参数下所有可排查的归因方向均已排除，说明投放基本面健康（回报 '+fmt2(roi)+'）。想扩大收益：预算提升 20%-30%，观察投放回报是否维持。如需重新排查，点击下方"重置排查"。</div></div>';
+    attr += '<div style="margin:8px 0"><button onclick="resetDiagExclude()" style="padding:8px 14px;border-radius:8px;border:1px solid #bfdbfe;background:#eff6ff;color:#1e40af;font-size:12px;cursor:pointer">↺ 重置排查</button></div>';
+  } else {
+    attr += '<div class="attr-card attr-green"><div class="attr-title">✅ 各项指标正常</div><div class="attr-desc">投放回报 '+fmt2(roi)+'，处于健康区间。想扩大收益：预算提升 20%-30%，观察投放回报是否维持。</div></div>';
+  }
 }
 diagShow.forEach(function(d){
   attr += '<div class="attr-card '+(d.level==='red'?'attr-red':'attr-yellow')+'">';
@@ -1471,6 +1596,18 @@ diagShow.forEach(function(d){
   attr += '<div class="plan-step"><b>4. 后续路径：</b><span class="plan-then">达标 → '+trimDot(d.then)+'；</span><span class="plan-els">未达标 → '+trimDot(d.els)+'。</span></div>';
   attr += '</div>';
 });
+// 排除交互：只推1条 → 排除此因 → 换下一条（不重输数据）
+if(diagShow.length > 0){
+  var curKey = diagShow[0].key;
+  var totalPool = diagList.length + excludedKeys.length;
+  attr += '<div class="diag-ui" style="margin:6px 0 4px;padding:10px 14px;border:1px dashed #cbd5e1;border-radius:10px;background:#f8fafc;font-size:12px;color:#475569;line-height:1.7">';
+  attr += '<b style="color:#1e293b">🎯 逐条排查模式：</b>当前优先推荐 <b>'+(totalPool-excludedKeys.length)+'/'+totalPool+'</b> 条中的第 1 条。若你排查后确认<b>不是这个原因</b>，点击下方按钮排除此因，系统立即换下一条方案（已填数据无需重输）。';
+  attr += '</div>';
+  attr += '<div class="diag-ui" style="margin:10px 0"><button onclick="excludeDiag(\''+curKey+'\')" style="padding:10px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,0.25)">排除此因，换一套方案</button></div>';
+}
+if(excludedKeys.length > 0){
+  attr += '<div class="diag-ui" style="margin:10px 0;padding:8px 12px;border-radius:8px;background:#f1f5f9;font-size:12px;color:#64748b">已排除（'+excludedKeys.length+'）：'+excludedKeys.join(' → ')+'　<button onclick="resetDiagExclude()" style="margin-left:6px;padding:2px 10px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:11px;cursor:pointer">↺ 重置</button></div>';
+}
 // 移除旧的模块⑤行动令（已合并进诊断卡）
 
 lastForecast = {clicks:clicks, orders:orders, roomNights:roomNights, budget:budget, profit:profit, roi:roi, margin:marginPerRoom, otherFee:otherFeeTotal, cpc:diagCpc, orderRate:diagRate, checkinRate:dispCheckin, adr:adr, taxRate:taxRate};
@@ -1663,9 +1800,9 @@ html += '<div class="warn" style="padding:12px;border-radius:10px;margin-top:10p
 html += '</div>';
 
 // 模块④ 顾问诊断与落地方案（归因+方案合并，四段闭环）
-html += '<div class="sec">';
+html += '<div class="sec" id="secDiag">';
 html += '<div class="sec-title">④ 顾问诊断与落地方案</div>';
-html += '<div class="tip" style="margin-bottom:12px"><b>📌 以下每条均依据本单数据计算得出：先看问题诊断，再按执行动作操作，最后按效果验收确认结果。</b></div>';
+html += '<div class="tip" style="margin-bottom:12px"><b>📌 逐条排查模式：系统按数据优先级只推 1 条最可能的归因方案；排查后不是此因，点按钮排除，立即换下一条，数据无需重输。</b></div>';
 
 html += attr;
 html += '</div>';
@@ -2318,6 +2455,7 @@ function buildCopyHtml(root){
       var cls = nd.className || "";
       if(/sec-title/.test(cls)) continue;
       if(/proc-toggle/.test(cls)) continue;
+      if(/diag-ui/.test(cls)) continue;
       if(/item/.test(cls)){
         var kEl = nd.querySelector && nd.querySelector(".k");
         var vEl = nd.querySelector && nd.querySelector(".v");
@@ -2358,6 +2496,7 @@ function buildCopyHtml(root){
       if(/light/.test(cls)){ h += innerHtml(c) + "<br>"; continue; }
       if(/sec-title/.test(cls)){ h += '<div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px">'+esc(txt(c))+'</div>'; continue; }
       if(/proc-toggle/.test(cls)) continue;
+      if(/diag-ui/.test(cls)) continue;
       if(/item/.test(cls)){
         var kEl = c.querySelector && c.querySelector(".k");
         var vEl = c.querySelector && c.querySelector(".v");
@@ -2743,6 +2882,24 @@ addPlatform({platform:"xiecheng", budget:"", cpc:getDefaultCpc(), orderRate:getS
 initDefaultValues();
 updateBrand();
 updateBtnState();
+
+// ===== 逐条排查交互：排除此因 → 换下一条方案（数据不重输） =====
+function excludeDiag(key){
+  if(!key) return;
+  if(typeof window._excludedDiagKeys === "undefined" || !window._excludedDiagKeys){ window._excludedDiagKeys = []; }
+  if(window._excludedDiagKeys.indexOf(key) < 0){ window._excludedDiagKeys.push(key); }
+  doCalculate();
+  scrollToSection("secDiag");
+}
+function resetDiagExclude(){
+  window._excludedDiagKeys = [];
+  doCalculate();
+  scrollToSection("secDiag");
+}
+function scrollToSection(id){
+  var el = document.getElementById(id);
+  if(el && el.scrollIntoView){ el.scrollIntoView({behavior:"smooth", block:"start"}); }
+}
 </script>
 </body>
 </html>
