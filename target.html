@@ -709,6 +709,7 @@ function adrToType(adr){
 var occMap = {eco:65, biz:60, mid:65, boutique:60, star:55, bnb:50, resort:55};
 var checkinMap = {eco:88, biz:85, mid:85, boutique:82, star:80, bnb:75, resort:78};
 // 业态 → 基准房价（与 adrToType 区间对齐，供选业态时自动带出房价）
+// 锚点基准价：与收益版统一口径(150/200/300/350/420/500/600)，改动必须两版同步
 var typeAdrMap = {eco:150, bnb:200, biz:300, mid:350, boutique:420, resort:500, star:600};
 // 业态是否被用户手动改过（手动改过后，填房价不再覆盖业态；刷新页面后恢复联动）
 var typeManuallySet = false;
