@@ -962,7 +962,7 @@ var currentRevPlan = '1';
 function safeValNum(id){ var el = document.getElementById(id); if(!el) return 0; var n = parseFloat(el.value); return isNaN(n) ? 0 : n; }
 function rankPlans(goal){
   var lib = PLAN_LIB[goal] || PLAN_LIB.newGuest;
-  var cpc = safeValNum("cpc") || safeValNum("revCpc");
+  var cpc = safeValNum("revCpc_0");
   var occNow = safeValNum("occ");
   var roomsNow = safeValNum("rooms");
   var adrNow = safeValNum("adr");
@@ -1018,9 +1018,17 @@ function setRevPlan(key){
   updateBtnState();
 }
 
+var goalInputCache = {};
 function onRevGoalChange(){
 var goal = document.getElementById("revGoal").value;
 var container = document.getElementById("revGoalInputs");
+// 缓存当前目标已填值，切换后恢复（避免用户重复填写）
+var oldGoal = goalInputCache._current;
+if(oldGoal && container){
+  var inputs = container.querySelectorAll("input");
+  if(!goalInputCache[oldGoal]) goalInputCache[oldGoal] = {};
+  for(var i=0;i<inputs.length;i++){ goalInputCache[oldGoal][inputs[i].id] = inputs[i].value; }
+}
 var html = "";
 if(goal === "newGuest"){
 html += '<div class="row">';
@@ -1050,6 +1058,15 @@ html += '</div>';
 html += '<div class="row"><label>单客召回成本（优惠券/短信）<span class="unit">元/人</span></label><input type="number" id="revRecallCost" class="auto" placeholder="例如：15" value="15"><div class="hint">触达一位老客的平均成本（优惠券面额+短信/推送费用）</div></div>';
 }
 container.innerHTML = html;
+// 恢复该目标上次已填值（auto 字段保持默认/联动，不恢复）
+if(goalInputCache[goal]){
+  var cached = goalInputCache[goal];
+  for(var ck in cached){
+    var cel = document.getElementById(ck);
+    if(cel && !cel.classList.contains("auto")){ cel.value = cached[ck]; }
+  }
+}
+goalInputCache._current = goal;
 renderRevPlan(goal);
 updateBtnState();
 }
