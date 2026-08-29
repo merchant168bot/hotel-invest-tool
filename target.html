@@ -825,14 +825,22 @@ var STORAGE_KEY = "hotel_profit_target_history_v3";
 var DRAFT_KEY_REV = "hotel_profit_draft_target_v3";
 var MAX_HISTORY = 20;
 var DYN_IDS = ["revTargetNights","revAvgNewNights","revTargetRevenue","revCurrentRevenue","revTargetOccInput","revCurrentRepurchase","revTargetRepurchase","revCustomerPool","revAvgRepurchaseNights","revRecallCost","revAdPeriod"];
-// 目标客群 → 素材方向（②执行方案渲染用；集中定义，便于维护）
+// 目标客群 → 素材方向（②执行方案渲染用；集中定义，便于维护；时段部分已抽离到 SEASON_TALK 联动）
 var SEG_CREATIVE = {
-  business: '主打商务房型/含早/快速入住，投放时段侧重工作日',
-  student: '主打学生价/连住优惠/延迟退房，投放时段侧重周五-周日',
+  business: '主打商务房型/含早/快速入住',
+  student: '主打学生价/连住优惠/延迟退房',
   resident: '主打周边特惠/家庭房/本地熟客权益',
-  vacation: '主打整租/家庭房/景区游玩攻略，节假日重点投放',
+  vacation: '主打整租/家庭房/景区游玩攻略',
   contract: '主打协议价/发票/长期合作权益',
   mixed: '按主推房型混合投放，按点击数据动态调优'
+};
+// 投放时段类型 → 时段话术（②执行方案/放量期联动；与表单 seasonHoliday 一一对应）
+var SEASON_TALK = {
+  normal:  {focus:'投放时段侧重工作日（周中预订/工作日间夜）', low:'周中低峰日', lowFill:'专补周中空房，盯工作日间夜'},
+  weekend: {focus:'投放时段侧重周五-周日（周末预订与入住高峰）', low:'工作日低峰日', lowFill:'周末客流旺，专补工作日空房'},
+  small:   {focus:'投放时段侧重小长假前3天至假期当天（中秋/清明/端午短假）', low:'假期前后工作日', lowFill:'专补假期前后工作日空房'},
+  big:     {focus:'投放时段侧重春节/国庆大长假（提前7-10天预热+假期全程加投）', low:'节前节后工作日', lowFill:'专补节前节后工作日空房'},
+  yearEnd: {focus:'投放时段侧重年末跨年（12月下旬至元旦）', low:'跨年前后工作日', lowFill:'专补跨年前后工作日空房'}
 };
 var platformCounter = 0;
 
@@ -1809,6 +1817,8 @@ html += '<div class="report-head-row"><div class="report-head">'+brandNameH2+' �
 html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div></div>';
 
 // ===== 目标版重构渲染（复购场景：触达→响应→复购→入住链路） =====
+var seasonValR = getStr("seasonHoliday") || "normal";
+var seasonTalkR = SEASON_TALK[seasonValR] || SEASON_TALK.normal;
 var stepDaysR1 = Math.min(7, period);
 var stepDaysR2 = Math.max(0, Math.min(7, period - 7));
 var stepDaysR3 = Math.max(0, period - 14);
@@ -1870,7 +1880,7 @@ html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
 html += '<div class="step-total">📌 总览：召回 ' + newRepurchaseCustomers.toLocaleString() + ' 位老客 · 达成 ' + targetNights.toLocaleString() + ' 间夜 · ' + (repMain?'调整后预算 ¥'+repEffCost.toLocaleString():'总预算 ¥'+totalRecallCost.toLocaleString()) + ' · 日均约 ¥' + Math.round(repEffCost/period).toLocaleString() + '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">1</span>触达环节 · 把老客找出来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + newRepurchaseCustomers.toLocaleString() + ' 人</span></div>';
-html += '<div class="ec-row">从老客池 ' + customerPool.toLocaleString() + ' 人中筛选高价值客群（近期活跃、偏好匹配），用企微/短信/公众号分层触达，单客召回成本控制在 ¥' + repEffCpc + ' 以内。</div>';
+html += '<div class="ec-row">从老客池 ' + customerPool.toLocaleString() + ' 人中筛选高价值客群（近期活跃、偏好匹配），用企微/短信/公众号分层触达，' + seasonTalkR.focus + '；单客召回成本控制在 ¥' + repEffCpc + ' 以内。</div>';
 html += '<div class="ec-chk">✔ 检查点：前 3 天触达打开率/领券率达标（打开率偏低换触达渠道，领券率偏低加大权益）；第 ' + stepDaysR1 + ' 天新增复购客户 ' + Math.floor(newRepurchaseCustomers*0.2).toLocaleString() + ' 人即放量，差得远先优化再进下一步。</div>';
 html += '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">2</span>响应环节 · 让老客愿意回来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + Math.round(newRepurchaseCustomers/customerPool*100).toFixed(0) + '% 响应</span></div>';
@@ -2146,6 +2156,8 @@ var platAlloc = platformAllocByCpc(pData, effBudget, mainPath ? effCpc : null);
 var platAllocStr = platAlloc.map(function(p){ return p.name + ' ¥' + p.budget.toLocaleString() + '（约' + p.clicks.toLocaleString() + '次点击）'; }).join('、');
 // 目标客群（②执行方案素材方向联动用）
 var segVal = getStr("guestSegment");
+var seasonVal = getStr("seasonHoliday") || "normal";
+var seasonTalk = SEASON_TALK[seasonVal] || SEASON_TALK.normal;
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t1 + '</div>';
@@ -2171,19 +2183,19 @@ html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
 html += '<div class="step-total">📌 总览：目标 ' + targetNights.toLocaleString() + ' 间夜 · ' + (mainPath?'调整后预算 ¥'+effBudget.toLocaleString():(pathPlan.status === "impossible"?'预算上限内 ¥'+effBudget.toLocaleString():'总预算 ¥'+needBudget.toLocaleString())) + ' · 日均约 ¥' + Math.round(effBudget/period).toLocaleString() + '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">1</span>点击环节 · 把流量买进来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effClicks.toLocaleString() + ' 次点击</span></div>';
-html += '<div class="ec-row">预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，' + (goal==='newGuest'?'定向新客人群（平台新客包，排除近90天已入住老客），素材' + (SEG_CREATIVE[segVal] || '主打新客首单礼/新客专享价') + '，盯新客点击占比≥70%':(goal==='revenue'?'高价房型优先投放，素材' + (SEG_CREATIVE[segVal] || '主打品质/含早/套房') + '，盯高房价房型点击占比':(goal==='occupancy'?'低峰时段（周中/非节假日）加投，素材' + (SEG_CREATIVE[segVal] || '主打当日特价/闪购') + '，盯低峰日点击量':'按' + (SEG_CREATIVE[segVal] || '主推房型') + '投放'))) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') + '</div>';
-html += '<div class="ec-chk">✔ 检查点：前 3 天点击量累计 ≥ 目标 ' + Math.round(getTierParams().checkPct*100) + '%（约 ' + Math.ceil(effClicks*getTierParams().checkPct).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，低峰日点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。</div>';
+html += '<div class="ec-row">预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，' + (goal==='newGuest'?'定向新客人群（平台新客包，排除近90天已入住老客），素材' + (SEG_CREATIVE[segVal] || '主打新客首单礼/新客专享价') + '，' + seasonTalk.focus + '，盯新客点击占比≥70%':(goal==='revenue'?'高价房型优先投放，素材' + (SEG_CREATIVE[segVal] || '主打品质/含早/套房') + '，' + seasonTalk.focus + '，盯高房价房型点击占比':(goal==='occupancy'?'低峰时段（' + seasonTalk.low + '）加投，素材' + (SEG_CREATIVE[segVal] || '主打当日特价/闪购') + '，盯' + seasonTalk.low + '点击量':'按' + (SEG_CREATIVE[segVal] || '主推房型') + '投放，' + seasonTalk.focus))) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') + '</div>';
+html += '<div class="ec-chk">✔ 检查点：前 3 天点击量累计 ≥ 目标 ' + Math.round(getTierParams().checkPct*100) + '%（约 ' + Math.ceil(effClicks*getTierParams().checkPct).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，' + seasonTalk.low + '点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。</div>';
 html += '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">2</span>进店环节 · 点进来要接得住</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标转化率 ' + effOrderRate.toFixed(1) + '%</span></div>';
 html += '<div class="ec-row">' + (goal==='newGuest'?'首图标"新客专享"、详情页放首单券领取入口，新客转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查首单券力度':(goal==='revenue'?'首图实景+高房价房型优先展示，盯平均订单金额，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 查详情页与价格竞争力':(goal==='occupancy'?'当日特价/闪购入口放首屏、优化"附近酒店"搜索词，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查特价力度':'首图用实景图、标题带地理/场景关键词、价格展示有竞争力'))) + '。' + (mainPath && mainPath.id!=="B"?'<b>本方案要求转化率提到 ' + effOrderRate.toFixed(1) + '%</b>，这是全链路成败关键，需同步优化详情页、价格展示与取消政策。':'') + '</div>';
 html += '<div class="ec-fix">⚠ 不达标处理：转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查详情页与价格竞争力。</div>';
 html += '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">3</span>下单环节 · 把转化变成订单</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effOrders.toLocaleString() + ' 单</span></div>';
-html += '<div class="ec-row">' + (goal==='newGuest'?'新客首单用平台补贴/新客券降低决策门槛，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='revenue'?'套餐/连住/含早抬客单价，目标客单价 ¥' + Math.round(targetRevenue/effNights).toLocaleString() + '（目标营收÷目标间夜），让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='occupancy'?'限时特惠+免取消费促低峰日下单，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':'用套餐/连住优惠抬客单价而非裸降价'))) + '；' + (goal==='occupancy'?'低峰日订单占比不足 → 查特惠曝光与取消政策':'订单跟不上 → 优先查转化率，其次加预算') + '。</div>';
+html += '<div class="ec-row">' + (goal==='newGuest'?'新客首单用平台补贴/新客券降低决策门槛，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='revenue'?'套餐/连住/含早抬客单价，目标客单价 ¥' + Math.round(targetRevenue/effNights).toLocaleString() + '（目标营收÷目标间夜），让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='occupancy'?'限时特惠+免取消费促' + seasonTalk.low + '下单，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':'用套餐/连住优惠抬客单价而非裸降价'))) + '；' + (goal==='occupancy'?seasonTalk.low + '订单占比不足 → 查特惠曝光与取消政策':'订单跟不上 → 优先查转化率，其次加预算') + '。</div>';
 html += '<div class="ec-chk">✔ 检查点：' + (hasStep2?'第 '+(stepDays1+stepDays2)+' 天累计达成 '+(stepNights1+stepNights2).toLocaleString()+' 间夜 → 进稳定期；':'第 '+stepDays1+' 天累计达成 '+targetNights.toLocaleString()+' 间夜。') + ' 订单跟不上 → 优先查转化率，其次加预算。</div>';
 html += '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">4</span>入住环节 · 把订单变成间夜</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effNights.toLocaleString() + ' 间夜</span></div>';
-html += '<div class="ec-row">' + (goal==='newGuest'?'履约率 ' + checkinRate + '%，首住体验到位（欢迎礼+加微信进私域为复购铺垫），履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='revenue'?'履约率 ' + checkinRate + '%，保间夜的同时推延住/加床/增值服务抬收入，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='occupancy'?'履约率 ' + checkinRate + '%，低峰日空房核销+连住优惠提升间夜产出，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':'履约率 ' + checkinRate + '%，控制 No-show 与取消：确认入住提醒、灵活改期政策减少损失'))) + '。</div>';
+html += '<div class="ec-row">' + (goal==='newGuest'?'履约率 ' + checkinRate + '%，首住体验到位（欢迎礼+加微信进私域为复购铺垫），履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='revenue'?'履约率 ' + checkinRate + '%，保间夜的同时推延住/加床/增值服务抬收入，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='occupancy'?'履约率 ' + checkinRate + '%，' + seasonTalk.low + '空房核销+连住优惠提升间夜产出，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':'履约率 ' + checkinRate + '%，控制 No-show 与取消：确认入住提醒、灵活改期政策减少损失'))) + '。</div>';
 html += '<div class="ec-fix">⚠ 不达标处理：履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 核查订单取消原因与到店确认流程。</div>';
 html += '</div>';
 html += '<div class="sec-sub">执行节奏</div>';
@@ -2193,7 +2205,7 @@ html += '<div class="step-line"><b>⚠ 预算不足以支撑目标节奏</b>：�
 } else {
 html += '<div class="step-line"><b>测试期（第1-' + stepDays1 + '天）</b>｜预算 ¥' + stepBudget1.toLocaleString() + '（占 ' + (effBudget>0?Math.round(stepBudget1/effBudget*100):0) + '%）。小预算验证点击成本与转化率，前 3 天盯转化率：≥' + orderRate + '% 说明素材OK，低于 ' + (orderRate*0.8).toFixed(1) + '% 换素材或降出价。' + (hasStep2?'第 '+stepDays1+' 天达成 '+stepNights1.toLocaleString()+' 间夜即放量，差得远先优化再放量。':'全量完成 ' + stepNights1.toLocaleString() + ' 间夜。') + '</div>';
 if(hasStep2){
-html += '<div class="step-line"><b>放量期（第' + (stepDays1+1) + '-' + (stepDays1+stepDays2) + '天）</b>｜预算 ¥' + stepBudget2.toLocaleString() + '（占 ' + (effBudget>0?Math.round(stepBudget2/effBudget*100):0) + '%）。保留测试期跑赢的素材和出价加大投放；' + (goal==='occupancy'?'专补低峰时段空房，盯工作日间夜':'锁定跑赢时段放量') + '。连续 2 天转化率下滑就暂停加码、查原因。' + (hasStep3?'第 '+(stepDays1+stepDays2)+' 天累计达成 '+(stepNights1+stepNights2).toLocaleString()+' 间夜 → 稳定期。':'') + '</div>';
+html += '<div class="step-line"><b>放量期（第' + (stepDays1+1) + '-' + (stepDays1+stepDays2) + '天）</b>｜预算 ¥' + stepBudget2.toLocaleString() + '（占 ' + (effBudget>0?Math.round(stepBudget2/effBudget*100):0) + '%）。保留测试期跑赢的素材和出价加大投放；' + (goal==='occupancy'?seasonTalk.lowFill:'锁定跑赢时段放量') + '。连续 2 天转化率下滑就暂停加码、查原因。' + (hasStep3?'第 '+(stepDays1+stepDays2)+' 天累计达成 '+(stepNights1+stepNights2).toLocaleString()+' 间夜 → 稳定期。':'') + '</div>';
 }
 if(hasStep3){
 html += '<div class="step-line"><b>稳定期（第' + (stepDays1+stepDays2+1) + '-' + period + '天）</b>｜预算 ¥' + stepBudget3.toLocaleString() + '（占 ' + (effBudget>0?Math.round(stepBudget3/effBudget*100):0) + '%）。只优化不换方向，盯紧间夜达成率；每周复盘一次，最后 3 天总结数据存档，为下月投放留底。</div>';
