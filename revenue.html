@@ -2774,6 +2774,8 @@ function txtBlock(el){
       }
     } else if(/table/.test(cls) || c.tagName === "TABLE"){
       h += txtTable(c) + "\n";
+    } else if(c.querySelector && c.querySelector("table")){
+      h += txtBlock(c);
     } else if(/plan-step/.test(cls)){
       h += (c.innerText||c.textContent||"").replace(/\s+/g," ").trim() + "\n";
     } else if(/proc-body|kpi-grid|kpi-col|lights|decisionBox|attr-card|plan-summary|one-liner|add-note|warn|hint|tip|danger/.test(cls)){
