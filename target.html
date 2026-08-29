@@ -516,7 +516,8 @@ h2{border-left:4px solid #2563eb}
 <span class="field-error" id="errAdr" style="display:none"></span>
 </div>
 </div>
-<div class="row" id="typeField">
+<div class="inline-row" id="typeField">
+<div class="field">
 <label>酒店业态 <span style="color:#dc2626">*</span> <span class="unit">按平均房价自动识别 · 可手动改</span></label>
 <select id="type" class="auto">
 <option value="eco">经济型/快捷酒店</option>
@@ -529,6 +530,20 @@ h2{border-left:4px solid #2563eb}
 </select>
 <div class="hint">按平均房价自动匹配 7 种业态（经济/民宿/商务/中端/精品/度假/星级），可手动修改</div>
 <span class="field-error" id="errType" style="display:none"></span>
+</div>
+<div class="field">
+<label>目标客群 <span class="unit">选填 · 手动选</span></label>
+<select id="guestSegment">
+<option value="">请选择（选填）</option>
+<option value="business">商旅出差</option>
+<option value="student">学生</option>
+<option value="resident">周边居民</option>
+<option value="vacation">度假游客</option>
+<option value="contract">协议客户</option>
+<option value="mixed">混合</option>
+</select>
+<div class="hint">按酒店实际主流客群手动选择，报告与执行方案会据此给出素材方向</div>
+</div>
 </div>
 <div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
 <div class="adv-panel" id="advBase">
@@ -810,6 +825,17 @@ var STORAGE_KEY = "hotel_profit_target_history_v3";
 var DRAFT_KEY_REV = "hotel_profit_draft_target_v3";
 var MAX_HISTORY = 20;
 var DYN_IDS = ["revTargetNights","revAvgNewNights","revTargetRevenue","revCurrentRevenue","revTargetOccInput","revCurrentRepurchase","revTargetRepurchase","revCustomerPool","revAvgRepurchaseNights","revRecallCost","revAdPeriod"];
+// 目标客群 → 中文名（表单选择框 + 报告展示共用）
+var SEG_LABELS = {business:'商旅出差', student:'学生', resident:'周边居民', vacation:'度假游客', contract:'协议客户', mixed:'混合'};
+// 目标客群 → 素材方向（②执行方案渲染用；集中定义，便于维护）
+var SEG_CREATIVE = {
+  business: '主打商务房型/含早/快速入住，投放时段侧重工作日',
+  student: '主打学生价/连住优惠/延迟退房，投放时段侧重周五-周日',
+  resident: '主打周边特惠/家庭房/本地熟客权益',
+  vacation: '主打整租/家庭房/景区游玩攻略，节假日重点投放',
+  contract: '主打协议价/发票/长期合作权益',
+  mixed: '按主推房型混合投放，按点击数据动态调优'
+};
 var platformCounter = 0;
 
 function getVal(id){
@@ -969,10 +995,9 @@ if(oldGoal && container){
 }
 var html = "";
 if(goal === "newGuest"){
-html += '<div class="row">';
-html += '<label>目标新增新客数 <span style="color:red;">*</span> <span class="unit">人 · 必填</span></label><input type="number" id="revTargetNights" placeholder="例如：100"><div class="hint">从未入住过的新客户数量（拉新只认新客）</div>';
-html += '<span class="field-error" id="errRevTargetNights" style="display:none"></span>';
-html += '<label>人均间夜 <span class="unit">间夜/人</span></label><input type="number" id="revAvgNewNights" class="auto" placeholder="例如：1.2" value="1.2" step="0.1"><div class="hint">新客平均每人住几晚（住1晚填1，住2~3晚填2或3）</div>';
+html += '<div class="compact-row">';
+html += '<div class="field"><label>目标新增新客数 <span style="color:red;">*</span> <span class="unit">人 · 必填</span></label><input type="number" id="revTargetNights" placeholder="例如：100"><div class="hint">从未入住过的新客户数量（拉新只认新客）</div><span class="field-error" id="errRevTargetNights" style="display:none"></span></div>';
+html += '<div class="field"><label>人均间夜 <span class="unit">间夜/人</span></label><input type="number" id="revAvgNewNights" class="auto" placeholder="例如：1.2" value="1.2" step="0.1"><div class="hint">新客平均每人住几晚（住1晚填1，住2~3晚填2或3）</div></div>';
 html += '</div>';
 } else if(goal === "revenue"){
 html += '<div class="compact-row">';
@@ -1095,7 +1120,7 @@ var avgCommission = totalBudgetWeight > 0 ? totalCommissionWeight / totalBudgetW
 return {count: platforms.length, totalBudget: totalBudget, avgCpc: avgCpc, avgOrderRate: avgOr, avgCheckinRate: avgCir, avgCommission: avgCommission, totalOtherFee: totalOtherFee, platforms: platforms};
 }
 
-function onPlatformChange(idx){
+function onPlatformChange(idx, skipCheck){
 var sel = document.getElementById(idx === 0 ? "revPlatform" : "revPlatform_" + idx);
 if(!sel) return;
 var val = platformMap[sel.value];
@@ -1103,7 +1128,7 @@ if(val !== undefined){
 var commEl = document.getElementById(idx === 0 ? "commission_0" : "commission_" + idx);
 if(commEl){ commEl.value = val; commEl.classList.add("auto"); }
 }
-checkDuplicatePlatform(sel.value, idx);
+if(!skipCheck) checkDuplicatePlatform(sel.value, idx);
 updateTotalBudget();
 saveDraft();
 }
@@ -1129,7 +1154,7 @@ var sel = document.getElementById(excludeIdx === 0 ? "revPlatform" : "revPlatfor
 if(sel) sel.value = "";
 }
 }
-function addPlatform(){
+function addPlatform(initVal, skipCheck){
 var container = document.getElementById("extraPlatforms");
 if(!container) return;
 var blocks = container.querySelectorAll(".platform-block");
@@ -1162,7 +1187,7 @@ var div = document.createElement("div");
 div.innerHTML = html;
 container.appendChild(div.firstChild);
 syncAutoParams();
-onPlatformChange(idx);
+onPlatformChange(idx, skipCheck);
 updateTotalBudget();
 updateBtnState();
 }
@@ -2107,7 +2132,8 @@ var platAlloc = platformAllocByCpc(pData, effBudget, mainPath ? effCpc : null);
 var platAllocStr = platAlloc.map(function(p){ return p.name + ' ¥' + p.budget.toLocaleString() + '（约' + p.clicks.toLocaleString() + '次点击）'; }).join('、');
 // ===== 目标客群与投放渠道（纯表单数据支撑，杜绝方案库空话） =====
 var audienceStr = '';
-if(goal === "newGuest"){ audienceStr = '新增新客 ' + newGuests + ' 位（人均 ' + avgNewNights + ' 间夜，共 ' + targetNights + ' 间夜）'; }
+var segVal = getStr("guestSegment");
+if(goal === "newGuest"){ audienceStr = SEG_LABELS[segVal] || '未填写'; }
 else if(goal === "revenue"){ audienceStr = '冲营收目标 ¥' + targetRevenue.toLocaleString() + (currentRevenue>0 ? '（缺口 ¥' + gapRevenue.toLocaleString() + '）' : '') + '，需补 ' + targetNights + ' 间夜'; }
 else if(goal === "occupancy"){ audienceStr = '入住率从 ' + currentOcc + '% 提升至 ' + targetOcc + '%（' + period + '天），需新增 ' + targetNights + ' 间夜'; }
 else if(goal === "repurchase"){ audienceStr = '老客复购：客户池 ' + customerPool + ' 位，复购率 ' + currentRepurchase + '% → ' + targetRepurchase + '%，新增复购 ' + newRepurchaseCustomers + ' 位（人均 ' + avgRepurchaseNights + ' 间夜）'; }
@@ -2121,8 +2147,7 @@ if(mainPath){
 } else if(pathPlan.status === "impossible"){
   conclStr = '当前预算上限 ¥' + budgetLimit.toLocaleString() + ' 无法支撑 ' + targetNights.toLocaleString() + ' 间夜目标，预算内最多可达成 <b class="c-num">' + pathPlan.maxNights.toLocaleString() + '</b> 间夜（' + pathPlan.maxOrders.toLocaleString() + ' 单、' + pathPlan.maxClicks.toLocaleString() + ' 次点击）';
 }
-html += '<div class="conclusion-box"><div class="c-label">📌 方案总结论</div>' + conclStr + '。按当前点击成本 ¥' + cpc.toFixed(2) + '、下单转化率 ' + orderRate + '%、履约率 ' + checkinRate + '% 测算，全周期预算 <b class="c-num">¥' + effBudget.toLocaleString() + '</b>，预期营收 <b class="c-num">¥' + effVRevenue.toLocaleString() + '</b>，投放净利 <b class="c-num">' + (effVProfit>=0?'¥':'-¥') + Math.round(Math.abs(effVProfit)).toLocaleString() + '</b>（ROI ' + effVRoi.toFixed(2) + '）。' + (mainPath?'<span class="c-tip">注：因预算上限约束，全链路已按调整后口径重算。</span>':(pathPlan.status === "impossible"?'<span class="c-tip">注：预算不足，收益已按预算内可达成口径重算。</span>':'')) + '</div>';
-html += '<div class="path-box" style="margin-top:10px;"><span style="color:#0ea5e9;font-weight:700;">🎯 目标：</span>' + goalDesc + '</div>';
+html += '<div class="conclusion-box"><div class="c-label">🎯 目标：' + goalDesc + '</div>' + conclStr + '。按当前点击成本 ¥' + cpc.toFixed(2) + '、下单转化率 ' + orderRate + '%、履约率 ' + checkinRate + '% 测算，全周期预算 <b class="c-num">¥' + effBudget.toLocaleString() + '</b>，预期营收 <b class="c-num">¥' + effVRevenue.toLocaleString() + '</b>，投放净利 <b class="c-num">' + (effVProfit>=0?'¥':'-¥') + Math.round(Math.abs(effVProfit)).toLocaleString() + '</b>（ROI ' + effVRoi.toFixed(2) + '）。' + (mainPath?'<span class="c-tip">注：因预算上限约束，全链路已按调整后口径重算。</span>':(pathPlan.status === "impossible"?'<span class="c-tip">注：预算不足，收益已按预算内可达成口径重算。</span>':'')) + '</div>';
 html += '<div class="chain">';
 var chainSteps = [
   {name:'① 点击', val: effClicks.toLocaleString() + ' 次', note:'CPC ¥' + effCpc.toFixed(2), hot:true},
@@ -2143,7 +2168,7 @@ html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
 html += '<div class="step-total">📌 总览：目标 ' + targetNights.toLocaleString() + ' 间夜 · ' + (mainPath?'调整后预算 ¥'+effBudget.toLocaleString():(pathPlan.status === "impossible"?'预算上限内 ¥'+effBudget.toLocaleString():'总预算 ¥'+needBudget.toLocaleString())) + ' · 日均约 ¥' + Math.round(effBudget/period).toLocaleString() + '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">1</span>点击环节 · 把流量买进来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effClicks.toLocaleString() + ' 次点击</span></div>';
-html += '<div class="ec-row">预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，素材按' + (goal==='revenue'?'高价房型优先':'主推房型') + '投放。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') + '</div>';
+html += '<div class="ec-row">预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，素材' + (SEG_CREATIVE[segVal] || ('按' + (goal==='revenue'?'高价房型优先':'主推房型') + '投放')) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') + '</div>';
 html += '<div class="ec-chk">✔ 检查点：前 3 天点击量累计 ≥ 目标 20%（约 ' + Math.ceil(effClicks*0.2).toLocaleString() + ' 次）；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。</div>';
 html += '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">2</span>进店环节 · 点进来要接得住</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标转化率 ' + effOrderRate.toFixed(1) + '%</span></div>';
@@ -2288,6 +2313,7 @@ html += '<p style="font-size:12px;color:#64748b;margin-bottom:10px">投放结束
 html += '<div class="review-inputs"><div class="inline-row">';
 html += '<div class="field"><label>实际投放金额(元)</label><input type="number" id="actualCost" placeholder="0"></div>';
 html += '<div class="field"><label>实际营收(元)</label><input type="number" id="actualRevenue" placeholder="0"></div>';
+html += '</div><div class="inline-row">';
 html += '<div class="field"><label>实际订单数</label><input type="number" id="actualOrders" placeholder="0"></div>';
 html += '<div class="field"><label>实际间夜</label><input type="number" id="actualNights" placeholder="0"></div>';
 html += '</div></div>';
@@ -2326,7 +2352,7 @@ return true;
 
 // ==================== 事件绑定 & 存储 ====================
 function getAllFieldIds(){
-return ["type","location","rooms","adr","varCost","taxType","taxRate","occ","brandName","revGoal","revPlatform","revAdPeriod","commission_0","otherFee_0","revCpc_0","revOrderRate_0","revCheckinRate_0","budgetLimit_0"];
+return ["type","guestSegment","location","rooms","adr","varCost","taxType","taxRate","occ","brandName","revGoal","revPlatform","revAdPeriod","commission_0","otherFee_0","revCpc_0","revOrderRate_0","revCheckinRate_0","budgetLimit_0"];
 }
 
 function getData(){
@@ -2383,7 +2409,7 @@ var container = document.getElementById("extraPlatforms");
 if(container) container.innerHTML = "";
 platformCounter = 0;
 data.extraPlatforms.forEach(function(p){
-addPlatform();
+addPlatform(null, true);
 var idx = platformCounter;
 var sel = document.getElementById("revPlatform_" + idx);
 var comm = document.getElementById("commission_" + idx);
