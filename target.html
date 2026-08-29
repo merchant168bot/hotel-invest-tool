@@ -836,6 +836,19 @@ var SEG_CREATIVE = {
 };
 var platformCounter = 0;
 
+// ===== 方案档位（稳健/均衡/激进）：同一目标三套策略，一键切换重算 =====
+var planTier = "balanced";
+var TIER_META = {
+  conservative: {name:"稳健", cpcAdj:0.9,  checkPct:0.15, paceDays:10, cpcFloor:0.75, desc:"控成本 · 拉长测试期 · 优先保净利，不过度压价"},
+  balanced:     {name:"均衡", cpcAdj:1.0,  checkPct:0.20, paceDays:7,  cpcFloor:0.5,  desc:"按当前参数标准执行 · 预算节奏居中"},
+  aggressive:   {name:"激进", cpcAdj:1.12, checkPct:0.25, paceDays:5,  cpcFloor:0.3,  desc:"提价抢量 · 愿意压价换量 · 快速放量冲规模"}
+};
+function getTierParams(){ return TIER_META[planTier] || TIER_META.balanced; }
+function setPlanTier(t){
+  planTier = t;
+  if(typeof doReverseCalculate === "function"){ doReverseCalculate(); }
+}
+
 function getVal(id){
 var el = document.getElementById(id);
 var v = el ? parseFloat(el.value) : NaN;
@@ -1217,8 +1230,10 @@ function buildBudgetPath(o){
   var floor = o.cpcFloor || 0.5;
   var paths = [];
   // 路径B：保转化率，降CPC（实操最快：后台直接调出价）
-  var needCpcB = o.needClicks > 0 ? o.budgetLimit / o.needClicks : 0;
-  paths.push({id:"B", name:"降低点击成本 CPC", desc:"保持转化率不变，把 CPC 从 ¥"+o.cpc.toFixed(2)+" 压到 ¥"+needCpcB.toFixed(2), feasible: needCpcB >= floor, needCpc: needCpcB, needOr: o.orderRate, clicks: o.needClicks, cpc: needCpcB, orderRate: o.orderRate});
+  var deep = o.tier === "aggressive" ? 0.85 : 1;
+  var needCpcB = o.needClicks > 0 ? (o.budgetLimit / o.needClicks) * deep : 0;
+  var clicksB = (o.tier === "aggressive" && needCpcB > 0) ? Math.floor(o.budgetLimit / needCpcB) : o.needClicks;
+  paths.push({id:"B", name:"降低点击成本 CPC", desc:"保持转化率不变，把 CPC 从 ¥"+o.cpc.toFixed(2)+" 压到 ¥"+needCpcB.toFixed(2), feasible: needCpcB >= floor, needCpc: needCpcB, needOr: o.orderRate, clicks: clicksB, cpc: needCpcB, orderRate: o.orderRate});
   // 路径A：保CPC，提转化率（慢功夫：改详情/调价/素材）
   var maxClicksA = o.cpc > 0 ? o.budgetLimit / o.cpc : 0;
   var needOrA = maxClicksA > 0 ? (o.needOrders / maxClicksA * 100) : 999;
@@ -1696,7 +1711,7 @@ var goal = document.getElementById("revGoal").value;
 var period = getVal("revAdPeriod") || 30;
 var occ = getVal("occ");
 var pData = getPlatformsData();
-var cpc = pData.avgCpc;
+var cpc = pData.avgCpc * (getTierParams().cpcAdj || 1);
 var orderRate = pData.avgOrderRate;
 var checkinRate = pData.avgCheckinRate;
 var commission = pData.avgCommission;
@@ -2079,9 +2094,18 @@ var dNowH = new Date();
 var todayStrH = dNowH.getFullYear() + "-" + String(dNowH.getMonth()+1).padStart(2,"0") + "-" + String(dNowH.getDate()).padStart(2,"0");
 html += '<div class="report-head-row"><div class="report-head">'+brandNameH+' · '+typeNameH+(locNameH?' · '+locNameH:'')+' · '+todayStrH+'</div>';
 html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div></div>';
+var tierP = getTierParams();
+html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 14px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">';
+html += '<span style="font-weight:700;color:#334155;font-size:13px;">方案档位：</span>';
+['conservative','balanced','aggressive'].forEach(function(k){
+  var tm = TIER_META[k];
+  var active = planTier === k;
+  html += '<button onclick="setPlanTier(\''+k+'\')" style="padding:5px 14px;border-radius:8px;border:1px solid '+(active?'#f59e0b':'#cbd5e1')+';background:'+(active?'#fbbf24':'#fff')+';color:'+(active?'#78350f':'#475569')+';font-weight:'+(active?'700':'500')+';font-size:13px;cursor:pointer;">'+tm.name+'</button>';
+});
+html += '<span style="font-size:12px;color:#64748b;margin-left:4px;">当前：'+tierP.name+'打法 · '+tierP.desc+'</span></div>';
 
 // ===== 目标版重构渲染（主场景：点击→进店→下单→入住链路） =====
-var stepDays1 = Math.min(7, period);
+var stepDays1 = Math.min(getTierParams().paceDays, period);
 var stepDays2 = Math.max(0, Math.min(7, period - 7));
 var stepDays3 = Math.max(0, period - 14);
 var hasStep2 = stepDays2 > 0;
@@ -2090,7 +2114,7 @@ var stepNights1 = Math.round(targetNights * 0.2);
 var stepNights2 = Math.round(targetNights * 0.3);
 var stepNights3 = targetNights - stepNights1 - stepNights2;
 // ===== 预算路径决策（主方案唯一，备选折叠给服务商自用） =====
-var pathPlan = buildBudgetPath({budgetLimit: budgetLimit, needBudget: needBudget, needClicks: needClicks, needOrders: needOrders, cpc: cpc, orderRate: orderRate, checkinRate: checkinRate, cpcFloor: 0.5});
+var pathPlan = buildBudgetPath({budgetLimit: budgetLimit, needBudget: needBudget, needClicks: needClicks, needOrders: needOrders, cpc: cpc, orderRate: orderRate, checkinRate: checkinRate, cpcFloor: getTierParams().cpcFloor, tier: planTier});
 var mainPath = pathPlan.status === "adjusted" ? pathPlan.main : null;
 // 生效口径：预算不足且路径可行时，全链路按路径重算；其余情形与原始口径一致
 var effCpc = mainPath ? mainPath.needCpc : cpc;
@@ -2148,7 +2172,7 @@ html += '<div class="sec-title">' + SEC.t2 + '</div>';
 html += '<div class="step-total">📌 总览：目标 ' + targetNights.toLocaleString() + ' 间夜 · ' + (mainPath?'调整后预算 ¥'+effBudget.toLocaleString():(pathPlan.status === "impossible"?'预算上限内 ¥'+effBudget.toLocaleString():'总预算 ¥'+needBudget.toLocaleString())) + ' · 日均约 ¥' + Math.round(effBudget/period).toLocaleString() + '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">1</span>点击环节 · 把流量买进来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effClicks.toLocaleString() + ' 次点击</span></div>';
 html += '<div class="ec-row">预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，' + (goal==='newGuest'?'定向新客人群（平台新客包，排除近90天已入住老客），素材' + (SEG_CREATIVE[segVal] || '主打新客首单礼/新客专享价') + '，盯新客点击占比≥70%':(goal==='revenue'?'高价房型优先投放，素材' + (SEG_CREATIVE[segVal] || '主打品质/含早/套房') + '，盯高房价房型点击占比':(goal==='occupancy'?'低峰时段（周中/非节假日）加投，素材' + (SEG_CREATIVE[segVal] || '主打当日特价/闪购') + '，盯低峰日点击量':'按' + (SEG_CREATIVE[segVal] || '主推房型') + '投放'))) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') + '</div>';
-html += '<div class="ec-chk">✔ 检查点：前 3 天点击量累计 ≥ 目标 20%（约 ' + Math.ceil(effClicks*0.2).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，低峰日点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。</div>';
+html += '<div class="ec-chk">✔ 检查点：前 3 天点击量累计 ≥ 目标 ' + Math.round(getTierParams().checkPct*100) + '%（约 ' + Math.ceil(effClicks*getTierParams().checkPct).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，低峰日点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。</div>';
 html += '</div>';
 html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">2</span>进店环节 · 点进来要接得住</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标转化率 ' + effOrderRate.toFixed(1) + '%</span></div>';
 html += '<div class="ec-row">' + (goal==='newGuest'?'首图标"新客专享"、详情页放首单券领取入口，新客转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查首单券力度':(goal==='revenue'?'首图实景+高房价房型优先展示，盯平均订单金额，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 查详情页与价格竞争力':(goal==='occupancy'?'当日特价/闪购入口放首屏、优化"附近酒店"搜索词，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查特价力度':'首图用实景图、标题带地理/场景关键词、价格展示有竞争力'))) + '。' + (mainPath && mainPath.id!=="B"?'<b>本方案要求转化率提到 ' + effOrderRate.toFixed(1) + '%</b>，这是全链路成败关键，需同步优化详情页、价格展示与取消政策。':'') + '</div>';
