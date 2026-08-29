@@ -1818,7 +1818,7 @@ if(repMain){
 } else if(repPath.status === "impossible"){
   rConcl = '当前预算上限 ¥' + budgetLimit.toLocaleString() + ' 无法支撑 ' + targetNights.toLocaleString() + ' 间夜目标，预算内最多召回 <b class="c-num">' + repPath.maxNights.toLocaleString() + '</b> 间夜（' + repPath.maxOrders.toLocaleString() + ' 位老客）';
 }
-html += '<div class="conclusion-box"><div class="c-label">📌 方案总结论</div>' + rConcl + '。按当前单客召回成本 ¥' + recallCost + '、人均复购 ' + avgRepurchaseNights + ' 间夜测算，全周期召回预算 <b class="c-num">¥' + repEffCost.toLocaleString() + '</b>，预期营收 <b class="c-num">¥' + revGrossEff.toLocaleString() + '</b>，投放净利 <b class="c-num">' + (revProfitEff>=0?'¥':'-¥') + Math.abs(revProfitEff).toFixed(0) + '</b>（ROI ' + revRoiEff.toFixed(2) + '）。' + (repMain?'<span class="c-tip">注：因预算上限约束，全链路已按调整后口径重算。</span>':(repPath.status === "impossible"?'<span class="c-tip">注：预算不足，收益已按预算内可达成口径重算。</span>':'')) + '</div>';
+html += '<div class="conclusion-box"><div class="c-label">📌 方案总结论</div>' + rConcl + '。按当前单客召回成本 ¥' + recallCost + '、人均复购 ' + avgRepurchaseNights + ' 间夜测算，全周期召回预算 <b class="c-num">¥' + repEffCost.toLocaleString() + '</b>，预期营收 <b class="c-num">¥' + revGrossEff.toLocaleString() + '</b>，投放净利 <b class="c-num">' + (revProfitEff>=0?'¥':'-¥') + Math.round(Math.abs(revProfitEff)).toLocaleString() + '</b>（ROI ' + revRoiEff.toFixed(2) + '）。' + (repMain?'<span class="c-tip">注：因预算上限约束，全链路已按调整后口径重算。</span>':(repPath.status === "impossible"?'<span class="c-tip">注：预算不足，收益已按预算内可达成口径重算。</span>':'')) + '</div>';
 html += '<div class="path-box" style="margin-top:10px;"><span style="color:#0ea5e9;font-weight:700;">🎯 目标：</span>复购率从 ' + currentRepurchase + '% 提升至 ' + targetRepurchase + '%（' + period + '天），新增 ' + newRepurchaseCustomers.toLocaleString() + ' 位复购客户、' + targetNights.toLocaleString() + ' 间夜</div>';
 html += '<div class="chain">';
 var rChain = [
@@ -1876,7 +1876,7 @@ html += '<div class="sec-title">' + SEC.t3 + '</div>';
 html += '<div class="big-cards">';
 html += '<div class="big-card"><div class="label">召回总预算</div><div class="num">¥' + repEffCost.toLocaleString() + '</div></div>';
 html += '<div class="big-card"><div class="label">复购营收</div><div class="num">¥' + revGrossEff.toLocaleString() + '</div></div>';
-html += '<div class="big-card"><div class="label">投放净利</div><div class="num ' + (revProfitEff>=0?"green":"red") + '">' + (revProfitEff>=0?'¥':'-¥') + Math.abs(revProfitEff).toFixed(0) + '</div></div>';
+html += '<div class="big-card"><div class="label">投放净利</div><div class="num ' + (revProfitEff>=0?"green":"red") + '">' + (revProfitEff>=0?'¥':'-¥') + Math.round(Math.abs(revProfitEff)).toLocaleString() + '</div></div>';
 html += '<div class="big-card"><div class="label">ROI</div><div class="num ' + (revProfitEff>=0?"green":"red") + '">' + revRoiEff.toFixed(2) + '</div></div>';
 html += '</div>';
 html += '<div class="sec-sub">成本口径</div>';
@@ -1887,7 +1887,7 @@ html += '<details class="calc-detail"><summary>📊 收益与预算明细</summa
 html += '<table class="calc-table">';
 html += '<tr><td>复购营收</td><td class="num blue">¥' + revGrossEff.toLocaleString() + '</td><td>复购客户带来的总房费收入</td></tr>';
 html += '<tr><td>召回总预算</td><td class="num">-¥' + repEffCost.toLocaleString() + '</td><td>召回 ' + repEffPeople.toLocaleString() + ' 位老客的推广总花费</td></tr>';
-html += '<tr class="total"><td>投放净利</td><td class="num ' + (revProfitEff>=0?"green":"red") + '">' + (revProfitEff>=0?'¥':'-¥') + Math.abs(revProfitEff).toFixed(0) + '</td><td>扣除所有费用后的净利润，ROI ' + revRoiEff.toFixed(2) + '，≥0.3 较优</td></tr>';
+html += '<tr class="total"><td>投放净利</td><td class="num ' + (revProfitEff>=0?"green":"red") + '">' + (revProfitEff>=0?'¥':'-¥') + Math.round(Math.abs(revProfitEff)).toLocaleString() + '</td><td>扣除所有费用后的净利润，ROI ' + revRoiEff.toFixed(2) + '，≥0.3 较优</td></tr>';
 html += '<tr><td>平台佣金</td><td class="num">-¥' + Math.round(revCommEff).toLocaleString() + '</td><td>平台平均佣金率 ' + commission.toFixed(1) + '%</td></tr>';
 html += '<tr><td>变动成本</td><td class="num">-¥' + Math.round(revVarEff).toLocaleString() + '</td><td>预计售出间夜的保洁、布草等变动成本</td></tr>';
 html += '<tr><td>税费</td><td class="num">-¥' + Math.round(revTaxEff).toLocaleString() + '</td><td>按税率 ' + taxRate + '% 测算的应交税费</td></tr>';
@@ -1942,7 +1942,7 @@ html += '<div class="stop-list">';
 html += '<div class="stop-item"><span class="s-flag ' + (revRoiEff<=0?"s-red":"s-yellow") + '">ROI 红线</span><span class="s-desc">ROI ≤ 0（当前 ' + revRoiEff.toFixed(2) + '）→ <b>立即停投</b>；ROI 低于预期 50%（' + (revRoiEff*0.5).toFixed(2) + '）→ <b>暂停排查</b>成本与响应率。</span></div>';
 html += '<div class="stop-item"><span class="s-flag ' + (repPerRoomCost>marginPerRoom?"s-red":"s-green") + '">毛利红线</span><span class="s-desc">每间夜召回成本 ¥' + repPerRoomCost.toFixed(1) + (repPerRoomCost>marginPerRoom?' <b>已超过</b> 单房毛利 ¥' + marginPerRoom.toFixed(1) + ' → <b>卖一间亏一间，立即停投</b>':' 未超过单房毛利 ¥' + marginPerRoom.toFixed(1) + '，投放安全。') + '</span></div>';
 html += '<div class="stop-item"><span class="s-flag s-yellow">响应红线</span><span class="s-desc">复购响应率连续 3 天低于目标 50% → <b>停投复盘</b>，检查触达人群与权益力度。</span></div>';
-html += '<div class="stop-item"><span class="s-flag s-yellow">间夜红线</span><span class="s-desc">复购间夜连续 3 天低于目标 50% → <b>停投复盘</b>；最后 3 天总结数据存档，为下月投放留底。</span></div>';
+html += '<div class="stop-item"><span class="s-flag s-yellow">间夜红线</span><span class="s-desc">复购间夜连续 3 天低于目标 50% → <b>停投复盘</b>。</span></div>';
 html += '</div>';
 html += '<div class="fold">';
 html += '<div class="fold-bar" onclick="toggleFold(this)">敏感性测算（召回成本 / 响应率波动）<span class="fold-arrow">▾</span></div>';
@@ -2104,14 +2104,14 @@ var platDispArr0 = [];
 (pData.platforms || []).forEach(function(pp){ var nm = platNameMap0[pp.platform] || pp.platform; if(platDispArr0.indexOf(nm) < 0) platDispArr0.push(nm); });
 var platDisp0 = platDispArr0.join('、') || '各平台';
 var platAlloc = platformAllocByCpc(pData, effBudget, mainPath ? effCpc : null);
-var platAllocStr = platAlloc.map(function(p){ return p.name + ' ¥' + Math.round(p.budget).toLocaleString() + '（约' + p.clicks.toLocaleString() + '次点击）'; }).join('、');
+var platAllocStr = platAlloc.map(function(p){ return p.name + ' ¥' + p.budget.toLocaleString() + '（约' + p.clicks.toLocaleString() + '次点击）'; }).join('、');
 // ===== 目标客群与投放渠道（纯表单数据支撑，杜绝方案库空话） =====
 var audienceStr = '';
 if(goal === "newGuest"){ audienceStr = '新增新客 ' + newGuests + ' 位（人均 ' + avgNewNights + ' 间夜，共 ' + targetNights + ' 间夜）'; }
 else if(goal === "revenue"){ audienceStr = '冲营收目标 ¥' + targetRevenue.toLocaleString() + (currentRevenue>0 ? '（缺口 ¥' + gapRevenue.toLocaleString() + '）' : '') + '，需补 ' + targetNights + ' 间夜'; }
 else if(goal === "occupancy"){ audienceStr = '入住率从 ' + currentOcc + '% 提升至 ' + targetOcc + '%（' + period + '天），需新增 ' + targetNights + ' 间夜'; }
 else if(goal === "repurchase"){ audienceStr = '老客复购：客户池 ' + customerPool + ' 位，复购率 ' + currentRepurchase + '% → ' + targetRepurchase + '%，新增复购 ' + newRepurchaseCustomers + ' 位（人均 ' + avgRepurchaseNights + ' 间夜）'; }
-var channelStr = platAlloc.map(function(p){ return p.name + '（CPC ¥' + p.cpc.toFixed(2) + ' · 预算 ¥' + Math.round(p.budget).toLocaleString() + ' · 约' + p.clicks.toLocaleString() + '次点击）'; }).join('、');
+var channelStr = platAlloc.map(function(p){ return p.name + '（CPC ¥' + p.cpc.toFixed(2) + ' · 预算 ¥' + p.budget.toLocaleString() + ' · 约' + p.clicks.toLocaleString() + '次点击）'; }).join('、');
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t1 + '</div>';
@@ -2121,7 +2121,7 @@ if(mainPath){
 } else if(pathPlan.status === "impossible"){
   conclStr = '当前预算上限 ¥' + budgetLimit.toLocaleString() + ' 无法支撑 ' + targetNights.toLocaleString() + ' 间夜目标，预算内最多可达成 <b class="c-num">' + pathPlan.maxNights.toLocaleString() + '</b> 间夜（' + pathPlan.maxOrders.toLocaleString() + ' 单、' + pathPlan.maxClicks.toLocaleString() + ' 次点击）';
 }
-html += '<div class="conclusion-box"><div class="c-label">📌 方案总结论</div>' + conclStr + '。按当前点击成本 ¥' + cpc.toFixed(2) + '、下单转化率 ' + orderRate + '%、履约率 ' + checkinRate + '% 测算，全周期预算 <b class="c-num">¥' + effBudget.toLocaleString() + '</b>，预期营收 <b class="c-num">¥' + effVRevenue.toLocaleString() + '</b>，投放净利 <b class="c-num">' + (effVProfit>=0?'¥':'-¥') + Math.abs(effVProfit).toFixed(0) + '</b>（ROI ' + effVRoi.toFixed(2) + '）。' + (mainPath?'<span class="c-tip">注：因预算上限约束，全链路已按调整后口径重算。</span>':(pathPlan.status === "impossible"?'<span class="c-tip">注：预算不足，收益已按预算内可达成口径重算。</span>':'')) + '</div>';
+html += '<div class="conclusion-box"><div class="c-label">📌 方案总结论</div>' + conclStr + '。按当前点击成本 ¥' + cpc.toFixed(2) + '、下单转化率 ' + orderRate + '%、履约率 ' + checkinRate + '% 测算，全周期预算 <b class="c-num">¥' + effBudget.toLocaleString() + '</b>，预期营收 <b class="c-num">¥' + effVRevenue.toLocaleString() + '</b>，投放净利 <b class="c-num">' + (effVProfit>=0?'¥':'-¥') + Math.round(Math.abs(effVProfit)).toLocaleString() + '</b>（ROI ' + effVRoi.toFixed(2) + '）。' + (mainPath?'<span class="c-tip">注：因预算上限约束，全链路已按调整后口径重算。</span>':(pathPlan.status === "impossible"?'<span class="c-tip">注：预算不足，收益已按预算内可达成口径重算。</span>':'')) + '</div>';
 html += '<div class="path-box" style="margin-top:10px;"><span style="color:#0ea5e9;font-weight:700;">🎯 目标：</span>' + goalDesc + '</div>';
 html += '<div class="chain">';
 var chainSteps = [
@@ -2179,19 +2179,19 @@ html += '<div class="sec-title">' + SEC.t3 + '</div>';
 html += '<div class="big-cards">';
 html += '<div class="big-card"><div class="label">总预算</div><div class="num">¥' + effBudget.toLocaleString() + '</div></div>';
 html += '<div class="big-card"><div class="label">预期营收</div><div class="num">¥' + effVRevenue.toLocaleString() + '</div></div>';
-html += '<div class="big-card"><div class="label">投放净利</div><div class="num ' + (effVProfit>=0?"green":"red") + '">' + (effVProfit>=0?'¥':'-¥') + Math.abs(effVProfit).toFixed(0) + '</div></div>';
+html += '<div class="big-card"><div class="label">投放净利</div><div class="num ' + (effVProfit>=0?"green":"red") + '">' + (effVProfit>=0?'¥':'-¥') + Math.round(Math.abs(effVProfit)).toLocaleString() + '</div></div>';
 html += '<div class="big-card"><div class="label">ROI</div><div class="num ' + (effVProfit>=0?"green":"red") + '">' + effVRoi.toFixed(2) + '</div></div>';
 html += '</div>';
 html += '<div class="sec-sub">平台预算分配</div>';
 html += '<table class="budget-table"><tr><th>平台</th><th>CPC</th><th>点击量</th><th>预算</th><th>占比</th></tr>';
-platAlloc.forEach(function(p){ html += '<tr><td>' + p.name + '</td><td>¥' + p.cpc.toFixed(2) + '</td><td>' + p.clicks.toLocaleString() + '</td><td>¥' + Math.round(p.budget).toLocaleString() + '</td><td>' + p.share.toFixed(0) + '%</td></tr>'; });
+platAlloc.forEach(function(p){ html += '<tr><td>' + p.name + '</td><td>¥' + p.cpc.toFixed(2) + '</td><td>' + p.clicks.toLocaleString() + '</td><td>¥' + p.budget.toLocaleString() + '</td><td>' + p.share.toFixed(0) + '%</td></tr>'; });
 html += '</table>';
 html += '<div class="sec-sub">收益与预算明细</div>';
 html += '<details class="calc-detail" open><summary>📊 展开查看明细</summary>';
 html += '<table class="calc-table">';
 html += '<tr><td>预期营收</td><td class="num blue">¥' + effVRevenue.toLocaleString() + '</td><td>投放期间预计带来的总房费收入</td></tr>';
 html += '<tr><td>总预算</td><td class="num">¥' + effBudget.toLocaleString() + '</td><td>达成目标需要的推广总花费</td></tr>';
-html += '<tr class="total"><td>投放净利</td><td class="num ' + (effVProfit>=0?"green":"red") + '">' + (effVProfit>=0?'¥':'-¥') + Math.abs(effVProfit).toFixed(0) + '</td><td>扣除所有费用后的净利润，ROI ' + effVRoi.toFixed(2) + '，≥0.3 较优</td></tr>';
+html += '<tr class="total"><td>投放净利</td><td class="num ' + (effVProfit>=0?"green":"red") + '">' + (effVProfit>=0?'¥':'-¥') + Math.round(Math.abs(effVProfit)).toLocaleString() + '</td><td>扣除所有费用后的净利润，ROI ' + effVRoi.toFixed(2) + '，≥0.3 较优</td></tr>';
 html += '<tr><td>平台佣金</td><td class="num">-¥' + Math.round(effVComm).toLocaleString() + '</td><td>' + platDispArr0.length + '个平台平均佣金率 ' + commission.toFixed(1) + '%</td></tr>';
 html += '<tr><td>变动成本</td><td class="num">-¥' + Math.round(effVVar).toLocaleString() + '</td><td>预计售出间夜的保洁、布草等变动成本</td></tr>';
 html += '<tr><td>税费</td><td class="num">-¥' + Math.round(effVTax).toLocaleString() + '</td><td>按税率 ' + taxRate + '% 测算的应交税费</td></tr>';
@@ -2252,7 +2252,7 @@ html += '<div class="stop-list">';
 html += '<div class="stop-item"><span class="s-flag ' + (effVRoi<=0?"s-red":"s-yellow") + '">ROI 红线</span><span class="s-desc">ROI ≤ 0（当前 ' + effVRoi.toFixed(2) + '）→ <b>立即停投</b>；ROI 低于预期 50%（' + (effVRoi*0.5).toFixed(2) + '）→ <b>暂停排查</b>成本与转化。</span></div>';
 html += '<div class="stop-item"><span class="s-flag ' + (perRoomCostEff>marginPerRoom?"s-red":"s-green") + '">毛利红线</span><span class="s-desc">每间夜推广成本 ¥' + perRoomCostEff.toFixed(1) + (perRoomCostEff>marginPerRoom?' <b>已超过</b> 单房毛利 ¥' + marginPerRoom.toFixed(1) + ' → <b>卖一间亏一间，立即停投</b>':' 未超过单房毛利 ¥' + marginPerRoom.toFixed(1) + '，投放安全。') + '</span></div>';
 html += '<div class="stop-item"><span class="s-flag s-yellow">转化红线</span><span class="s-desc">下单转化率连续 3 天低于目标 50%（' + (effOrderRate*0.5).toFixed(1) + '%）→ <b>停投复盘</b>，检查详情页与价格竞争力。</span></div>';
-html += '<div class="stop-item"><span class="s-flag s-yellow">间夜红线</span><span class="s-desc">间夜达成连续 3 天低于目标 50% → <b>停投复盘</b>；最后 3 天总结数据存档，为下月投放留底。</span></div>';
+html += '<div class="stop-item"><span class="s-flag s-yellow">间夜红线</span><span class="s-desc">间夜达成连续 3 天低于目标 50% → <b>停投复盘</b>。</span></div>';
 html += '</div>';
 html += '<div class="fold">';
 html += '<div class="fold-bar" onclick="toggleFold(this)">敏感性测算（CPC / 转化率波动）<span class="fold-arrow">▾</span></div>';
@@ -2266,7 +2266,7 @@ var cases = [
 ];
 cases.forEach(function(s){
 var sCpc = cpc * s.cpcM;
-var sClicks = needOrders / (orderRate*s.orM/100);
+var sClicks = Math.ceil(needOrders / (orderRate*s.orM/100));
 var sCost = sClicks * sCpc;
 var sGross = targetNights * adr;
 var sRev = sGross * (1 - commission/100);
