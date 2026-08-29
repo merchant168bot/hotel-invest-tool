@@ -2352,7 +2352,7 @@ return true;
 
 // ==================== 事件绑定 & 存储 ====================
 function getAllFieldIds(){
-return ["type","guestSegment","location","rooms","adr","varCost","taxType","taxRate","occ","brandName","revGoal","revPlatform","revAdPeriod","commission_0","otherFee_0","revCpc_0","revOrderRate_0","revCheckinRate_0","budgetLimit_0"];
+return ["type","guestSegment","cityTier","seasonHoliday","location","rooms","adr","varCost","taxType","taxRate","occ","brandName","revGoal","revPlatform","revAdPeriod","commission_0","otherFee_0","revCpc_0","revOrderRate_0","revCheckinRate_0","budgetLimit_0"];
 }
 
 function getData(){
@@ -2609,6 +2609,7 @@ if(ok){
 
 // 重置表单
 function resetForm(){
+goalInputCache = {};
 getAllFieldIds().forEach(function(id){
 var el = document.getElementById(id);
 if(!el) return;
@@ -2640,6 +2641,7 @@ updateBrand();
 resultEl.style.display = "none";
 isResultVisible = false;
 updateBtnState();
+updateTotalBudget();
 }
 
 var btnClear = document.getElementById("btnClear");
