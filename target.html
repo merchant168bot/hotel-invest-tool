@@ -617,14 +617,7 @@ h2{border-left:4px solid #2563eb}
 <div class="compact-row">
 <div class="field">
 <label>平台选择 <span style="color:red;">*</span> <span class="unit">必选</span></label>
-<select id="revPlatform" onchange="onPlatformChange(0)">
-<option value="meituan">美团</option>
-<option value="xiecheng" selected>携程</option>
-<option value="tongcheng">同程</option>
-<option value="qunaer">去哪儿</option>
-<option value="feizhu">飞猪</option>
-<option value="douyin">抖音本地</option>
-</select>
+<select id="revPlatform" onchange="onPlatformChange(0)"></select>
 <div class="hint">以酒店实际签约佣金为准</div>
 <span class="field-error" id="errRevPlatform" style="display:none"></span>
 </div>
@@ -757,7 +750,31 @@ h2{border-left:4px solid #2563eb}
 </div>
 <script>
 
-var platformMap = {meituan:10, xiecheng:15, tongcheng:12, qunaer:12, feizhu:10, douyin:8};
+// ===== 平台统一配置表（唯一数据源；以后新增平台只改这里，下拉/名称/佣金全部自动生效） =====
+// 结构：{v:平台键, label:展示名, comm:默认佣金率}
+var PLATFORMS = [
+  {v:"meituan", label:"美团", comm:10},
+  {v:"xiecheng", label:"携程", comm:15},
+  {v:"tongcheng", label:"同程", comm:12},
+  {v:"qunaer", label:"去哪儿", comm:12},
+  {v:"feizhu", label:"飞猪", comm:10},
+  {v:"douyin", label:"抖音本地", comm:8}
+];
+// 平台键 → 默认佣金率（选平台自动带出佣金用）
+var platformMap = {};
+PLATFORMS.forEach(function(p){ platformMap[p.v] = p.comm; });
+// 平台键 → 展示名（报告/分配表统一用）
+var PLATFORM_LABELS = {};
+PLATFORMS.forEach(function(p){ PLATFORM_LABELS[p.v] = p.label; });
+// 新增平台下拉的 option HTML（首项"请选择"，无默认选中）
+var PLATFORM_OPTIONS_HTML = '<option value="">请选择平台</option>' + PLATFORMS.map(function(p){ return '<option value="'+p.v+'">'+p.label+'</option>'; }).join('');
+// 主平台下拉的 option HTML（不含"请选择"，初始化时默认选中携程）
+var PLATFORM_OPTIONS_MAIN = PLATFORMS.map(function(p){ return '<option value="'+p.v+'">'+p.label+'</option>'; }).join('');
+// 页面初始化：主平台下拉由 PLATFORMS 填充并默认选中携程（唯一数据源，避免与配置表不同步）
+(function(){
+  var mainSel = document.getElementById("revPlatform");
+  if(mainSel){ mainSel.innerHTML = PLATFORM_OPTIONS_MAIN; mainSel.value = "xiecheng"; }
+})();
 var varCostMap = {eco:35, biz:55, mid:70, boutique:70, star:100, bnb:40, resort:80};
 // 房价区间 → 业态自动映射（AI智能填充）
 function adrToType(adr){
@@ -816,10 +833,14 @@ function applyTypeAuto(t){
 }
 var cpcMap = {eco:2.0, biz:3.0, mid:3.5, boutique:4.0, star:5.0, bnb:2.5, resort:4.5};
 var taxTypeMap = {general:6, small:3, small1:1};
-// CPC联动系数映射（与收益测算口径一致）
+// ===== 系数映射表（集中定义；改这里只影响测算系数，不影响报告结构与文案） =====
+// 城市等级 → CPC系数
 var cityTierMap = {tier1:1.3, newTier1:1.15, tier2:1.0, tier3:0.85, tier4:0.7};
+// 位置 → CPC系数
 var locationMap = {scenic:1.15, biz_district:1.0, traffic:1.0, biz:1.1, edu:0.9, res:0.85};
+// 季节 → CPC系数（与表单 seasonHoliday 的键一一对应）
 var seasonCpcMap = {normal:1.0, weekend:1.1, small:1.3, big:1.5, yearEnd:1.2};
+// 季节 → 转化率倍数
 var seasonRateMap = {normal:3.0, weekend:3.5, small:4.5, big:5.0, yearEnd:4.0};
 var STORAGE_KEY = "hotel_profit_target_history_v3";
 var DRAFT_KEY_REV = "hotel_profit_draft_target_v3";
@@ -922,8 +943,36 @@ function syncAutoParams(){
   });
 }
 function platformLabel(val){
-var m = {meituan:"美团", xiecheng:"携程", tongcheng:"同程", qunaer:"去哪儿", feizhu:"飞猪", douyin:"抖音本地"};
-return m[val] || val;
+return PLATFORM_LABELS[val] || val;
+}
+// ===== 报告抬头（品牌 · 业态 · 位置 · 日期 + 复制按钮）；主场景/复购共用 =====
+function renderReportHead(){
+  var brandName = getBrandName() || "流量增长服务商";
+  var typeEl = document.getElementById("type");
+  var typeName = typeEl && typeEl.options[typeEl.selectedIndex] ? typeEl.options[typeEl.selectedIndex].text : "";
+  var locEl = document.getElementById("location");
+  var locName = locEl && locEl.options[locEl.selectedIndex] ? locEl.options[locEl.selectedIndex].text : "";
+  var dNow = new Date();
+  var todayStr = dNow.getFullYear() + "-" + String(dNow.getMonth()+1).padStart(2,"0") + "-" + String(dNow.getDate()).padStart(2,"0");
+  return '<div class="report-head-row"><div class="report-head">'+brandName+' · '+typeName+(locName?' · '+locName:'')+' · '+todayStr+'</div>' +
+         '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div></div>';
+}
+// ===== 链路步骤渲染（①目标链路的 chain-step 卡片）；主场景/复购共用，s.hot 控制高亮 =====
+function renderChain(steps){
+  var h = "";
+  steps.forEach(function(s){
+    h += '<div class="chain-step' + (s.hot?' cs-hot':'') + '"><div class="cs-name">' + s.name + '</div><div class="cs-val">' + s.val + '</div><div class="cs-note">' + s.note + '</div></div>';
+  });
+  return h;
+}
+// ===== 环节卡片渲染（②执行方案的 env-card）；主场景/复购共用，o.chk/o.fix 按需出现 =====
+function renderEnvCard(o){
+  var h = '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">' + o.no + '</span>' + o.name + '</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">' + o.tag + '</span></div>';
+  h += '<div class="ec-row">' + o.row + '</div>';
+  if(o.chk) h += '<div class="ec-chk">✔ 检查点：' + o.chk + '</div>';
+  if(o.fix) h += '<div class="ec-fix">⚠ 不达标处理：' + o.fix + '</div>';
+  h += '</div>';
+  return h;
 }
 function showToast(msg){
 var toast = document.getElementById("toast");
@@ -1186,7 +1235,7 @@ html += '<div class="compact-row">';
 html += '<div class="field">';
 html += '<label>平台选择 <span style="color:red;">*</span> <span class="unit">必选</span></label>';
 html += '<select id="revPlatform_' + idx + '" onchange="onPlatformChange(' + idx + ')">';
-html += '<option value="">请选择平台</option><option value="meituan">美团</option><option value="xiecheng">携程</option><option value="tongcheng">同程</option><option value="qunaer">去哪儿</option><option value="feizhu">飞猪</option><option value="douyin">抖音本地</option>';
+html += PLATFORM_OPTIONS_HTML;
 html += '</select><div class="hint">以酒店实际签约佣金为准</div></div>';
 html += '<div class="field"><label>预算上限（选填）<span class="unit">元</span></label><input type="number" id="budgetLimit_' + idx + '" placeholder="例如：5000" oninput="updateTotalBudget()"><div class="hint">该平台投放预算上限</div></div>';
 html += '</div>';
@@ -1806,15 +1855,7 @@ var repurchaseRoi = totalRecallCost > 0 ? (repurchaseProfit / totalRecallCost) :
 var totalEmptyCapacity2 = Math.floor(rooms * (1 - occ/100) * period);
 var html = '';
 // ===== 报告抬头（去模板感：品牌 · 业态 · 位置 · 日期） =====
-var brandNameH2 = getBrandName() || "流量增长服务商";
-var typeElH2 = document.getElementById("type");
-var typeNameH2 = typeElH2 && typeElH2.options[typeElH2.selectedIndex] ? typeElH2.options[typeElH2.selectedIndex].text : "";
-var locElH2 = document.getElementById("location");
-var locNameH2 = locElH2 && locElH2.options[locElH2.selectedIndex] ? locElH2.options[locElH2.selectedIndex].text : "";
-var dNowH2 = new Date();
-var todayStrH2 = dNowH2.getFullYear() + "-" + String(dNowH2.getMonth()+1).padStart(2,"0") + "-" + String(dNowH2.getDate()).padStart(2,"0");
-html += '<div class="report-head-row"><div class="report-head">'+brandNameH2+' · '+typeNameH2+(locNameH2?' · '+locNameH2:'')+' · '+todayStrH2+'</div>';
-html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div></div>';
+html += renderReportHead();
 
 // ===== 目标版重构渲染（复购场景：触达→响应→复购→入住链路） =====
 var seasonValR = getStr("seasonHoliday") || "normal";
@@ -1872,29 +1913,17 @@ var rChain = [
   {name:'③ 复购', val: repEffPeople.toLocaleString() + ' 人', note:'下单复购'},
   {name:'④ 入住', val: repEffNights.toLocaleString() + ' 间夜', note:'人均 ' + avgRepurchaseNights + ' 间夜'}
 ];
-rChain.forEach(function(s){ html += '<div class="chain-step"><div class="cs-name">' + s.name + '</div><div class="cs-val">' + s.val + '</div><div class="cs-note">' + s.note + '</div></div>'; });
+html += renderChain(rChain);
 html += '</div>';
 html += '</div>';
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
 html += '<div class="step-total">📌 总览：召回 ' + newRepurchaseCustomers.toLocaleString() + ' 位老客 · 达成 ' + targetNights.toLocaleString() + ' 间夜 · ' + (repMain?'调整后预算 ¥'+repEffCost.toLocaleString():'总预算 ¥'+totalRecallCost.toLocaleString()) + ' · 日均约 ¥' + Math.round(repEffCost/period).toLocaleString() + '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">1</span>触达环节 · 把老客找出来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + newRepurchaseCustomers.toLocaleString() + ' 人</span></div>';
-html += '<div class="ec-row">从老客池 ' + customerPool.toLocaleString() + ' 人中筛选高价值客群（近期活跃、偏好匹配），用企微/短信/公众号分层触达，' + seasonTalkR.focus + '；单客召回成本控制在 ¥' + repEffCpc + ' 以内。</div>';
-html += '<div class="ec-chk">✔ 检查点：前 3 天触达打开率/领券率达标（打开率偏低换触达渠道，领券率偏低加大权益）；第 ' + stepDaysR1 + ' 天新增复购客户 ' + Math.floor(newRepurchaseCustomers*0.2).toLocaleString() + ' 人即放量，差得远先优化再进下一步。</div>';
-html += '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">2</span>响应环节 · 让老客愿意回来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + Math.round(newRepurchaseCustomers/customerPool*100).toFixed(0) + '% 响应</span></div>';
-html += '<div class="ec-row">权益设计：单客召回成本控制在 ¥' + recallCost + ' 以内，用专属召回礼/满减券降决策门槛，私域专属价保证不比 OTA 贵（严禁价格倒挂）。</div>';
-html += '<div class="ec-fix">⚠ 不达标处理：连续 2 天响应率下滑 → 暂停加码，先查触达人群与权益力度。</div>';
-html += '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">3</span>复购环节 · 把响应变成订单</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + repEffPeople.toLocaleString() + ' 人</span></div>';
-html += '<div class="ec-row">已领券未下单的老客做二次召回，重点跟进高价值客（A 级专属客户经理）；单客召回成本 ' + (repMain?'压到 ¥'+repEffCpc:'¥'+recallCost) + ' 是红线，超了就调整权益组合。</div>';
-html += '<div class="ec-chk">✔ 检查点：' + (hasStepR2?'第 '+(stepDaysR1+stepDaysR2)+' 天累计新增 '+(Math.floor(newRepurchaseCustomers*0.2)+Math.floor(newRepurchaseCustomers*0.3)).toLocaleString()+' 位复购客户':'第 '+stepDaysR1+' 天累计新增 '+newRepurchaseCustomers.toLocaleString()+' 位复购客户') + ' → 进入稳定期收尾。</div>';
-html += '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">4</span>入住环节 · 把订单变成间夜</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + repEffNights.toLocaleString() + ' 间夜</span></div>';
-html += '<div class="ec-row">确认入住、控制 No-show 与取消；老客人均 ' + avgRepurchaseNights + ' 间夜，鼓励连住提升间夜产出。</div>';
-html += '<div class="ec-fix">⚠ 不达标处理：履约率异常 → 核查订单取消原因与到店确认流程。</div>';
-html += '</div>';
+html += renderEnvCard({no:1, name:'触达环节 · 把老客找出来', tag:'目标 ' + newRepurchaseCustomers.toLocaleString() + ' 人', row:'从老客池 ' + customerPool.toLocaleString() + ' 人中筛选高价值客群（近期活跃、偏好匹配），用企微/短信/公众号分层触达，' + seasonTalkR.focus + '；单客召回成本控制在 ¥' + repEffCpc + ' 以内。', chk:'前 3 天触达打开率/领券率达标（打开率偏低换触达渠道，领券率偏低加大权益）；第 ' + stepDaysR1 + ' 天新增复购客户 ' + Math.floor(newRepurchaseCustomers*0.2).toLocaleString() + ' 人即放量，差得远先优化再进下一步。'});
+html += renderEnvCard({no:2, name:'响应环节 · 让老客愿意回来', tag:'目标 ' + Math.round(newRepurchaseCustomers/customerPool*100).toFixed(0) + '% 响应', row:'权益设计：单客召回成本控制在 ¥' + recallCost + ' 以内，用专属召回礼/满减券降决策门槛，私域专属价保证不比 OTA 贵（严禁价格倒挂）。', fix:'连续 2 天响应率下滑 → 暂停加码，先查触达人群与权益力度。'});
+html += renderEnvCard({no:3, name:'复购环节 · 把响应变成订单', tag:'目标 ' + repEffPeople.toLocaleString() + ' 人', row:'已领券未下单的老客做二次召回，重点跟进高价值客（A 级专属客户经理）；单客召回成本 ' + (repMain?'压到 ¥'+repEffCpc:'¥'+recallCost) + ' 是红线，超了就调整权益组合。', chk:(hasStepR2?'第 '+(stepDaysR1+stepDaysR2)+' 天累计新增 '+(Math.floor(newRepurchaseCustomers*0.2)+Math.floor(newRepurchaseCustomers*0.3)).toLocaleString()+' 位复购客户':'第 '+stepDaysR1+' 天累计新增 '+newRepurchaseCustomers.toLocaleString()+' 位复购客户') + ' → 进入稳定期收尾。'});
+html += renderEnvCard({no:4, name:'入住环节 · 把订单变成间夜', tag:'目标 ' + repEffNights.toLocaleString() + ' 间夜', row:'确认入住、控制 No-show 与取消；老客人均 ' + avgRepurchaseNights + ' 间夜，鼓励连住提升间夜产出。', fix:'履约率异常 → 核查订单取消原因与到店确认流程。'});
 html += '<div class="sec-sub">执行节奏</div>';
 html += '<div class="steps">';
 if(repPath.status === "impossible"){
@@ -2095,15 +2124,7 @@ period: period
 var html = '';
 
 // ===== 报告抬头（去模板感：品牌 · 业态 · 位置 · 日期） =====
-var brandNameH = getBrandName() || "流量增长服务商";
-var typeElH = document.getElementById("type");
-var typeNameH = typeElH && typeElH.options[typeElH.selectedIndex] ? typeElH.options[typeElH.selectedIndex].text : "";
-var locElH = document.getElementById("location");
-var locNameH = locElH && locElH.options[locElH.selectedIndex] ? locElH.options[locElH.selectedIndex].text : "";
-var dNowH = new Date();
-var todayStrH = dNowH.getFullYear() + "-" + String(dNowH.getMonth()+1).padStart(2,"0") + "-" + String(dNowH.getDate()).padStart(2,"0");
-html += '<div class="report-head-row"><div class="report-head">'+brandNameH+' · '+typeNameH+(locNameH?' · '+locNameH:'')+' · '+todayStrH+'</div>';
-html += '<div class="report-copy-bar"><button onclick="copyReportText()">📋 复制报告</button><span class="report-copy-tip">复制后可直接粘贴到微信/文档</span></div></div>';
+html += renderReportHead();
 var tierP = getTierParams();
 html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 14px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">';
 html += '<span style="font-weight:700;color:#334155;font-size:13px;">方案档位：</span>';
@@ -2148,7 +2169,7 @@ var effVProfit = effNights * marginPerRoom - effBudget - otherFee - effVTax;
 var effVRoi = effBudget>0 ? (effVProfit/effBudget) : 0;
 var perRoomCostEff = effNights>0 ? (effBudget/effNights) : 0;
 // 平台预算分配（按各平台CPC加权）
-var platNameMap0 = {meituan:'美团', xiecheng:'携程', tongcheng:'同程', qunaer:'去哪儿', feizhu:'飞猪', douyin:'抖音'};
+var platNameMap0 = PLATFORM_LABELS;
 var platDispArr0 = [];
 (pData.platforms || []).forEach(function(pp){ var nm = platNameMap0[pp.platform] || pp.platform; if(platDispArr0.indexOf(nm) < 0) platDispArr0.push(nm); });
 var platDisp0 = platDispArr0.join('、') || '各平台';
@@ -2175,29 +2196,17 @@ var chainSteps = [
   {name:'③ 下单', val: effOrders.toLocaleString() + ' 单', note:'下单转化'},
   {name:'④ 入住', val: effNights.toLocaleString() + ' 间夜', note:'履约率 ' + checkinRate + '%'}
 ];
-chainSteps.forEach(function(s){ html += '<div class="chain-step' + (s.hot?' cs-hot':'') + '"><div class="cs-name">' + s.name + '</div><div class="cs-val">' + s.val + '</div><div class="cs-note">' + s.note + '</div></div>'; });
+html += renderChain(chainSteps);
 html += '</div>';
 html += '</div>';
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
 html += '<div class="step-total">📌 总览：目标 ' + targetNights.toLocaleString() + ' 间夜 · ' + (mainPath?'调整后预算 ¥'+effBudget.toLocaleString():(pathPlan.status === "impossible"?'预算上限内 ¥'+effBudget.toLocaleString():'总预算 ¥'+needBudget.toLocaleString())) + ' · 日均约 ¥' + Math.round(effBudget/period).toLocaleString() + '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">1</span>点击环节 · 把流量买进来</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effClicks.toLocaleString() + ' 次点击</span></div>';
-html += '<div class="ec-row">预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，' + (goal==='newGuest'?'定向新客人群（平台新客包，排除近90天已入住老客），素材' + (SEG_CREATIVE[segVal] || '主打新客首单礼/新客专享价') + '，' + seasonTalk.focus + '，盯新客点击占比≥70%':(goal==='revenue'?'高价房型优先投放，素材' + (SEG_CREATIVE[segVal] || '主打品质/含早/套房') + '，' + seasonTalk.focus + '，盯高房价房型点击占比':(goal==='occupancy'?'低峰时段（' + seasonTalk.low + '）加投，素材' + (SEG_CREATIVE[segVal] || '主打当日特价/闪购') + '，盯' + seasonTalk.low + '点击量':'按' + (SEG_CREATIVE[segVal] || '主推房型') + '投放，' + seasonTalk.focus))) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') + '</div>';
-html += '<div class="ec-chk">✔ 检查点：前 3 天点击量累计 ≥ 目标 ' + Math.round(getTierParams().checkPct*100) + '%（约 ' + Math.ceil(effClicks*getTierParams().checkPct).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，' + seasonTalk.low + '点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。</div>';
-html += '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">2</span>进店环节 · 点进来要接得住</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标转化率 ' + effOrderRate.toFixed(1) + '%</span></div>';
-html += '<div class="ec-row">' + (goal==='newGuest'?'首图标"新客专享"、详情页放首单券领取入口，新客转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查首单券力度':(goal==='revenue'?'首图实景+高房价房型优先展示，盯平均订单金额，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 查详情页与价格竞争力':(goal==='occupancy'?'当日特价/闪购入口放首屏、优化"附近酒店"搜索词，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查特价力度':'首图用实景图、标题带地理/场景关键词、价格展示有竞争力'))) + '。' + (mainPath && mainPath.id!=="B"?'<b>本方案要求转化率提到 ' + effOrderRate.toFixed(1) + '%</b>，这是全链路成败关键，需同步优化详情页、价格展示与取消政策。':'') + '</div>';
-html += '<div class="ec-fix">⚠ 不达标处理：转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查详情页与价格竞争力。</div>';
-html += '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">3</span>下单环节 · 把转化变成订单</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effOrders.toLocaleString() + ' 单</span></div>';
-html += '<div class="ec-row">' + (goal==='newGuest'?'新客首单用平台补贴/新客券降低决策门槛，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='revenue'?'套餐/连住/含早抬客单价，目标客单价 ¥' + Math.round(targetRevenue/effNights).toLocaleString() + '（目标营收÷目标间夜），让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='occupancy'?'限时特惠+免取消费促' + seasonTalk.low + '下单，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':'用套餐/连住优惠抬客单价而非裸降价'))) + '；' + (goal==='occupancy'?seasonTalk.low + '订单占比不足 → 查特惠曝光与取消政策':'订单跟不上 → 优先查转化率，其次加预算') + '。</div>';
-html += '<div class="ec-chk">✔ 检查点：' + (hasStep2?'第 '+(stepDays1+stepDays2)+' 天累计达成 '+(stepNights1+stepNights2).toLocaleString()+' 间夜 → 进稳定期；':'第 '+stepDays1+' 天累计达成 '+targetNights.toLocaleString()+' 间夜。') + ' 订单跟不上 → 优先查转化率，其次加预算。</div>';
-html += '</div>';
-html += '<div class="env-card"><div class="ec-head"><span class="ec-name"><span class="env-no">4</span>入住环节 · 把订单变成间夜</span><span class="ec-tag" style="background:#eff6ff;color:#1e40af">目标 ' + effNights.toLocaleString() + ' 间夜</span></div>';
-html += '<div class="ec-row">' + (goal==='newGuest'?'履约率 ' + checkinRate + '%，首住体验到位（欢迎礼+加微信进私域为复购铺垫），履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='revenue'?'履约率 ' + checkinRate + '%，保间夜的同时推延住/加床/增值服务抬收入，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='occupancy'?'履约率 ' + checkinRate + '%，' + seasonTalk.low + '空房核销+连住优惠提升间夜产出，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':'履约率 ' + checkinRate + '%，控制 No-show 与取消：确认入住提醒、灵活改期政策减少损失'))) + '。</div>';
-html += '<div class="ec-fix">⚠ 不达标处理：履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 核查订单取消原因与到店确认流程。</div>';
-html += '</div>';
+html += renderEnvCard({no:1, name:'点击环节 · 把流量买进来', tag:'目标 ' + effClicks.toLocaleString() + ' 次点击', row:'预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，' + (goal==='newGuest'?'定向新客人群（平台新客包，排除近90天已入住老客），素材' + (SEG_CREATIVE[segVal] || '主打新客首单礼/新客专享价') + '，' + seasonTalk.focus + '，盯新客点击占比≥70%':(goal==='revenue'?'高价房型优先投放，素材' + (SEG_CREATIVE[segVal] || '主打品质/含早/套房') + '，' + seasonTalk.focus + '，盯高房价房型点击占比':(goal==='occupancy'?'低峰时段（' + seasonTalk.low + '）加投，素材' + (SEG_CREATIVE[segVal] || '主打当日特价/闪购') + '，盯' + seasonTalk.low + '点击量':'按' + (SEG_CREATIVE[segVal] || '主推房型') + '投放，' + seasonTalk.focus))) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') , chk:'前 3 天点击量累计 ≥ 目标 ' + Math.round(getTierParams().checkPct*100) + '%（约 ' + Math.ceil(effClicks*getTierParams().checkPct).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，' + seasonTalk.low + '点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。'});
+html += renderEnvCard({no:2, name:'进店环节 · 点进来要接得住', tag:'目标转化率 ' + effOrderRate.toFixed(1) + '%', row:(goal==='newGuest'?'首图标"新客专享"、详情页放首单券领取入口，新客转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查首单券力度':(goal==='revenue'?'首图实景+高房价房型优先展示，盯平均订单金额，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 查详情页与价格竞争力':(goal==='occupancy'?'当日特价/闪购入口放首屏、优化"附近酒店"搜索词，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查特价力度':'首图用实景图、标题带地理/场景关键词、价格展示有竞争力'))) + '。' + (mainPath && mainPath.id!=="B"?'<b>本方案要求转化率提到 ' + effOrderRate.toFixed(1) + '%</b>，这是全链路成败关键，需同步优化详情页、价格展示与取消政策。':'') , fix:'转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查详情页与价格竞争力。'});
+html += renderEnvCard({no:3, name:'下单环节 · 把转化变成订单', tag:'目标 ' + effOrders.toLocaleString() + ' 单', row:(goal==='newGuest'?'新客首单用平台补贴/新客券降低决策门槛，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='revenue'?'套餐/连住/含早抬客单价，目标客单价 ¥' + Math.round(targetRevenue/effNights).toLocaleString() + '（目标营收÷目标间夜），让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='occupancy'?'限时特惠+免取消费促' + seasonTalk.low + '下单，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':'用套餐/连住优惠抬客单价而非裸降价'))) + '；' + (goal==='occupancy'?seasonTalk.low + '订单占比不足 → 查特惠曝光与取消政策':'订单跟不上 → 优先查转化率，其次加预算') + '。', chk:(hasStep2?'第 '+(stepDays1+stepDays2)+' 天累计达成 '+(stepNights1+stepNights2).toLocaleString()+' 间夜 → 进稳定期；':'第 '+stepDays1+' 天累计达成 '+targetNights.toLocaleString()+' 间夜。') + ' 订单跟不上 → 优先查转化率，其次加预算。'});
+html += renderEnvCard({no:4, name:'入住环节 · 把订单变成间夜', tag:'目标 ' + effNights.toLocaleString() + ' 间夜', row:(goal==='newGuest'?'履约率 ' + checkinRate + '%，首住体验到位（欢迎礼+加微信进私域为复购铺垫），履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='revenue'?'履约率 ' + checkinRate + '%，保间夜的同时推延住/加床/增值服务抬收入，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='occupancy'?'履约率 ' + checkinRate + '%，' + seasonTalk.low + '空房核销+连住优惠提升间夜产出，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':'履约率 ' + checkinRate + '%，控制 No-show 与取消：确认入住提醒、灵活改期政策减少损失'))) + '。', fix:'履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 核查订单取消原因与到店确认流程。'});
 html += '<div class="sec-sub">执行节奏</div>';
 html += '<div class="steps">';
 if(pathPlan.status === "impossible"){
