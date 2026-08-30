@@ -481,7 +481,7 @@ h2{border-left:4px solid #2563eb}
 <div class="guide-bar" style="background:linear-gradient(135deg,#ecfdf5 0%,#f8fafc 100%);border-color:#a7f3d0;color:#065f46"><b>不用填表、不用算数：</b>从携程 / 美团商家后台直接导出「订单明细」和「推广数据」两个报表，拖进来系统自动识别、自动算出真实房价 / 履约率 / 转化率 / CPC，并一键填入下方表单。</div>
 <div class="import-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
 <button type="button" id="btnDlTemplate" onclick="downloadImportTemplate()" style="padding:10px 16px;border:1px solid #059669;background:#fff;color:#059669;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">⬇️ 下载模板示例</button>
-<label style="padding:10px 16px;border:1px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">📂 选择报表文件（xlsx / xls / csv）
+<label id="importDropZone" for="dataFileInput" style="padding:10px 16px;border:1px dashed #2563eb;background:#eff6ff;color:#2563eb;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-block;transition:all .2s">📂 选择报表文件，或直接把文件拖进来（xlsx / xls / csv）
 <input type="file" id="dataFileInput" accept=".xlsx,.xls,.csv" onchange="handleDataFile(this)" style="display:none">
 </label>
 <button type="button" id="btnFillImport" onclick="fillFromImport()" style="display:none;padding:10px 16px;border:1px solid #059669;background:#059669;color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">⚡ 一键填入表单</button>
@@ -3039,9 +3039,7 @@ function downloadImportTemplate(){
   XLSX.writeFile(wb, "酒店投流-数据导入模板.xlsx");
 }
 
-function handleDataFile(input){
-  var file = input.files && input.files[0];
-  if(!file) return;
+function parseImportFile(file){
   if(typeof XLSX === "undefined"){ alert("表格库加载失败，请检查网络后重试（需要联网加载一次）。"); return; }
   var reader = new FileReader();
   reader.onload = function(e){
@@ -3059,6 +3057,26 @@ function handleDataFile(input){
   };
   reader.readAsArrayBuffer(file);
 }
+
+function handleDataFile(input){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  parseImportFile(file);
+}
+
+(function(){
+  var zone = document.getElementById("importDropZone");
+  if(!zone) return;
+  function hl(on){ zone.style.borderColor = on ? "#059669" : "#2563eb"; zone.style.background = on ? "#ecfdf5" : "#eff6ff"; }
+  zone.addEventListener("dragenter", function(e){ e.preventDefault(); e.stopPropagation(); hl(true); });
+  zone.addEventListener("dragover", function(e){ e.preventDefault(); e.stopPropagation(); });
+  zone.addEventListener("dragleave", function(e){ e.preventDefault(); e.stopPropagation(); hl(false); });
+  zone.addEventListener("drop", function(e){
+    e.preventDefault(); e.stopPropagation(); hl(false);
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) parseImportFile(f);
+  });
+})();
 
 function parseWorkbook(wb){
   var orderSheet = null, promoSheet = null;
