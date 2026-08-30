@@ -1898,6 +1898,19 @@ var repPerRoomCost = repEffNights > 0 ? repEffCost / repEffNights : 0;
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t1 + '</div>';
+// ===== 目标结论（目标驱动：先给"能不能达成"的一句话结论） =====
+var occRateR = totalEmptyCapacity2 > 0 ? (targetNights / totalEmptyCapacity2 * 100) : 0;
+var verdictR = '';
+if(totalEmptyCapacity2 < targetNights){
+  verdictR = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>🛑 <b>目标偏难：空房容量不够</b> —— ' + period + ' 天可售空房仅 <b class="c-num">' + totalEmptyCapacity2.toLocaleString() + '</b> 间夜，装不下目标 <b class="c-num">' + targetNights.toLocaleString() + '</b> 间夜。<span class="c-tip">先解决容量：延长投放周期 / 提升自然流量入住率 / 下调目标。</span></div>';
+} else if(repPath.status === "impossible"){
+  verdictR = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：当前召回成本下预算内达不到</b> —— 预算内最多召回 <b class="c-num">' + repPath.maxOrders.toLocaleString() + '</b> 位老客、达成 <b class="c-num">' + repPath.maxNights.toLocaleString() + '</b> 间夜。<span class="c-tip">先解决效率：压低单客召回成本 / 提高预算，再按完整链路执行。</span></div>';
+} else if(repEffNights > 0 && repEffCost/repEffNights > marginPerRoom){
+  verdictR = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：单客召回成本超毛利</b> —— 每间夜召回成本 <b>¥' + (repEffCost/repEffNights).toFixed(1) + '</b> 已超单房毛利 <b>¥' + marginPerRoom.toFixed(1) + '</b>，卖一间亏一间。<span class="c-tip">先降成本：压低召回成本 / 提高人均间夜 / 优化权益组合，再谈放量。</span></div>';
+} else {
+  verdictR = '<div class="conclusion-box" style="border-color:#16a34a;"><div class="c-label">📌 目标结论</div>✅ <b>目标可行</b> —— 容量、成本、效率均留有空间，按下方达成链路与执行方案推进即可。</div>';
+}
+html += verdictR;
 var rConcl = '达成 <b class="c-num">' + targetNights.toLocaleString() + '</b> 间夜目标，需要召回 <b class="c-num">' + newRepurchaseCustomers.toLocaleString() + '</b> 位老客复购';
 if(repMain){
   rConcl = '预算约束下，达成 ' + targetNights.toLocaleString() + ' 间夜目标需调整路径：' + repMain.desc + '，对应召回 <b class="c-num">' + repEffPeople.toLocaleString() + '</b> 位老客、' + repEffNights.toLocaleString() + ' 间夜';
@@ -1916,6 +1929,21 @@ var rChain = [
 html += renderChain(rChain);
 html += '</div>';
 html += '</div>';
+// ===== 卡点提示（目标驱动：指出最可能卡住的环节与对应动作） =====
+var respRate = customerPool > 0 ? Math.round(newRepurchaseCustomers/customerPool*100) : 0;
+var blockListR = [];
+if(respRate > 50){
+  blockListR.push('「响应环节」需 ' + respRate + '% 老客响应 —— 先验证触达渠道与权益力度，响应不足换渠道/加权益');
+}
+if(repMain && repMain.id === "B"){
+  blockListR.push('「召回成本」需把单客召回成本从 ¥' + recallCost + ' 压到 <b>¥' + repEffCpc + '</b> —— 先调权益组合与触达方式');
+}
+if(occRateR > 80){
+  blockListR.push('「空房容量」目标间夜占空房容量 <b>' + occRateR.toFixed(1) + '%</b> —— 注意排房与连住引导，防容量不足');
+}
+if(blockListR.length > 0){
+  html += '<div class="tip" style="margin-top:10px;"><b>⚠️ 卡点提示：</b>' + blockListR.join('；') + '。</div>';
+}
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
@@ -2174,6 +2202,19 @@ var seasonTalk = SEASON_TALK[seasonVal] || SEASON_TALK.normal;
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t1 + '</div>';
+// ===== 目标结论（目标驱动：先给"能不能达成"的一句话结论） =====
+var occRateNow = totalEmptyCapacity > 0 ? (targetNights / totalEmptyCapacity * 100) : 0;
+var verdictHtml = '';
+if(!capacityEnough){
+  verdictHtml = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>🛑 <b>目标偏难：空房容量不够</b> —— ' + period + ' 天可售空房仅 <b class="c-num">' + totalEmptyCapacity.toLocaleString() + '</b> 间夜，装不下目标 <b class="c-num">' + targetNights.toLocaleString() + '</b> 间夜。<span class="c-tip">先解决容量：延长投放周期 / 提升自然流量入住率 / 下调目标。</span></div>';
+} else if(pathPlan.status === "impossible"){
+  verdictHtml = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：当前成本与效率下预算内达不到</b> —— 预算内最多达成 <b class="c-num">' + pathPlan.maxNights.toLocaleString() + '</b> 间夜。<span class="c-tip">先解决效率：压低 CPC / 提升转化率 / 上调预算，再按完整链路执行。</span></div>';
+} else if(effNights > 0 && perRoomCostEff > marginPerRoom){
+  verdictHtml = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：推广成本超毛利</b> —— 每间夜推广成本 <b>¥' + perRoomCostEff.toFixed(1) + '</b> 已超单房毛利 <b>¥' + marginPerRoom.toFixed(1) + '</b>，卖一间亏一间。<span class="c-tip">先降成本：压低 CPC / 提升转化率 / 优化素材，再谈放量。</span></div>';
+} else {
+  verdictHtml = '<div class="conclusion-box" style="border-color:#16a34a;"><div class="c-label">📌 目标结论</div>✅ <b>目标可行</b> —— 容量、成本、效率均留有空间，按下方达成链路与执行方案推进即可。</div>';
+}
+html += verdictHtml;
 var conclStr = '达成 <b class="c-num">' + targetNights.toLocaleString() + '</b> 间夜目标，需要 <b class="c-num">' + needOrders.toLocaleString() + '</b> 单订单、<b class="c-num">' + needClicks.toLocaleString() + '</b> 次点击';
 if(mainPath){
   conclStr = '预算约束下，达成 ' + targetNights.toLocaleString() + ' 间夜目标需调整路径：' + mainPath.desc + '，对应点击 <b class="c-num">' + effClicks.toLocaleString() + '</b> 次、订单 <b class="c-num">' + effOrders.toLocaleString() + '</b> 单';
@@ -2191,6 +2232,23 @@ var chainSteps = [
 html += renderChain(chainSteps);
 html += '</div>';
 html += '</div>';
+// ===== 卡点提示（目标驱动：指出最可能卡住的环节与对应动作） =====
+var blockList = [];
+if(effOrderRate > orderRate + 0.5){
+  blockList.push('「进店转化」需把转化率从 ' + orderRate + '% 提到 <b>' + effOrderRate.toFixed(1) + '%</b> —— 先优化详情页、价格竞争力与首图素材');
+}
+if(mainPath && mainPath.id === "B"){
+  blockList.push('「点击成本」需把 CPC 从 ¥' + cpc.toFixed(2) + ' 压到 <b>¥' + effCpc.toFixed(2) + '</b> —— 先调出价、时段与素材');
+}
+if(occRateNow > 80){
+  blockList.push('「空房容量」目标间夜占空房容量 <b>' + occRateNow.toFixed(1) + '%</b> —— 低峰时段排布要密，防容量不足');
+}
+if(checkinRate < 80){
+  blockList.push('「履约入住」履约率仅 ' + checkinRate + '% —— 先控 No-show 与取消再放量');
+}
+if(blockList.length > 0){
+  html += '<div class="tip" style="margin-top:10px;"><b>⚠️ 卡点提示：</b>' + blockList.join('；') + '。</div>';
+}
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
