@@ -701,7 +701,6 @@ h2{border-left:4px solid #2563eb}
 <button id="btnCopy">📋 一键复制</button>
 <button id="btnHistory">📜 历史</button>
 <button id="btnPrint">🖨️ 导出报表</button>
-<button id="btnImport">📥 导入</button>
 <button id="btnClearStorage" class="danger">🗑️ 清空数据</button>
 </div>
 <div class="brand-setting collapsed">
@@ -753,18 +752,6 @@ h2{border-left:4px solid #2563eb}
 <button class="modal-btn primary" onclick="pasteScheme()">恢复数据</button>
 </div>
 <p style="font-size:12px;color:#64748b;margin:4px 0 0">提示：复制当前网址也能恢复（网址自带数据），但代码方式更通用、更短。</p>
-</div>
-</div>
-<div class="modal-overlay" id="modalImport">
-<div class="modal">
-<button class="modal-close" onclick="closeModal('modalImport')">×</button>
-<h3>导入本地数据</h3>
-<p style="font-size:13px;color:#64748b;margin-bottom:12px">请选择由本系统导出的 .json 文件</p>
-<div class="file-input-wrapper">
-<div class="file-input-btn">选择文件</div>
-<input type="file" id="importFile" accept=".json,application/json" onchange="handleImportFile(this)">
-</div>
-<div id="importPreview" style="margin-top:12px;font-size:13px;color:#334155"></div>
 </div>
 </div>
 <script>
@@ -2953,53 +2940,6 @@ updateBrand();
 window.print();
 if(bs) bs.classList.add("collapsed");
 });
-}
-
-// 导入
-var btnImport = document.getElementById("btnImport");
-if(btnImport){
-btnImport.addEventListener("click", function(){
-var preview = document.getElementById("importPreview");
-var fileInput = document.getElementById("importFile");
-if(preview) preview.innerHTML = "";
-if(fileInput) fileInput.value = "";
-openModal("modalImport");
-});
-}
-
-function handleImportFile(input){
-var file = input.files[0];
-if(!file) return;
-var reader = new FileReader();
-reader.onload = function(e){
-try{
-var data = JSON.parse(e.target.result);
-var preview = [];
-if(data.adr) preview.push("ADR: ¥" + data.adr);
-if(data.mode) preview.push("模式: " + (data.mode==="reverse"?"反向":"正向"));
-var previewEl = document.getElementById("importPreview");
-if(previewEl){
-previewEl.innerHTML =
-'<div style="margin-bottom:8px"><b>检测到数据：</b>' + preview.join(" / ") + '</div>' +
-'<button class="modal-btn primary" onclick="confirmImport()">确认导入并覆盖当前表单</button>' +
-'<button class="modal-btn secondary" onclick="closeModal(&quot;modalImport&quot;)">取消</button>';
-}
-window._pendingImport = data;
-}catch(err){
-var previewEl = document.getElementById("importPreview");
-if(previewEl) previewEl.innerHTML = '<span style="color:#dc2626">文件解析失败，请确认是有效的JSON文件</span>';
-}
-};
-reader.readAsText(file);
-}
-
-function confirmImport(){
-if(!window._pendingImport) return;
-setData(window._pendingImport);
-closeModal("modalImport");
-showToast("导入成功");
-saveDraft();
-window._pendingImport = null;
 }
 
 // 清空数据
