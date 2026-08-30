@@ -2125,15 +2125,7 @@ var html = '';
 
 // ===== 报告抬头（去模板感：品牌 · 业态 · 位置 · 日期） =====
 html += renderReportHead();
-var tierP = getTierParams();
-html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 14px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">';
-html += '<span style="font-weight:700;color:#334155;font-size:13px;">方案档位：</span>';
-['conservative','balanced','aggressive'].forEach(function(k){
-  var tm = TIER_META[k];
-  var active = planTier === k;
-  html += '<button onclick="setPlanTier(\''+k+'\')" style="padding:5px 14px;border-radius:8px;border:1px solid '+(active?'#f59e0b':'#cbd5e1')+';background:'+(active?'#fbbf24':'#fff')+';color:'+(active?'#78350f':'#475569')+';font-weight:'+(active?'700':'500')+';font-size:13px;cursor:pointer;">'+tm.name+'</button>';
-});
-html += '<span style="font-size:12px;color:#64748b;margin-left:4px;">当前：'+tierP.name+'打法 · '+tierP.desc+'</span></div>';
+
 
 // ===== 目标版重构渲染（主场景：点击→进店→下单→入住链路） =====
 var stepDays1 = Math.min(getTierParams().paceDays, period);
