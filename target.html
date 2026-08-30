@@ -382,7 +382,7 @@ h2{border-left:4px solid #2563eb}
 <h2>酒店投流目标测算-智能系统</h2>
 <div class="sub" id="subText">基于目标导向的收益管理模型，输入经营目标与现状数据，智能拆解所需投放预算、流量效率阈值及分阶段执行方案。</div>
 <div class="card" id="baseData">
-<div class="card-head"><div class="card-title">② 酒店基础信息</div><span class="req-badge">5 项必填</span></div>
+<div class="card-head"><div class="card-title">② 酒店基础信息（现状与成本）</div><span class="req-badge">5 项必填</span></div>
 <div class="inline-row">
 <div class="field" id="cityTierField">
 <label>城市 <span style="color:#dc2626">*</span> <span class="unit">必选 · 选城市自动识别层级</span></label>
@@ -586,8 +586,8 @@ h2{border-left:4px solid #2563eb}
 </div>
 
 <div class="card" id="reverseOnly">
-<div class="card-head"><div class="card-title">① 经营目标</div><span class="req-badge">5 项必填</span></div>
-<div class="guide-bar"><b>目标驱动：先定目标，系统自动反推所需预算与投放强度。</b><br>你只需填写 5 项：① 目标场景 → ② 目标数值（按下方提示填具体数字）→ ③ 投放时段 → ④ 投放周期 → ⑤ 投放平台。<span class="auto-tip">灰色斜体字段 = 系统已自动计算/自动填充，一般无需修改。</span></div>
+<div class="card-head"><div class="card-title">① 酒店经营目标</div><span class="req-badge">5 项必填</span></div>
+<div class="guide-bar"><b>目标驱动：先定目标，系统自动反推所需预算与投放强度。</b><br>你只需填写 5 项：① 目标场景 → ② 目标数值（新增新客数 / 目标营收 / 目标入住率 / 复购目标，按下方提示填具体数字）→ ③ 投放时段 → ④ 投放周期 → ⑤ 投放平台。<span class="auto-tip">灰色斜体字段 = 系统已自动计算/自动填充，一般无需修改。</span></div>
 <div class="legend"><span><i class="dot-auto"></i>灰色斜体 = 自动计算（不用填）</span><span><i class="dot-manual"></i>黑色 = 手动填写（必填）</span></div>
 <div class="row">
 <label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
@@ -870,18 +870,7 @@ var SEASON_TALK = {
 };
 var platformCounter = 0;
 
-// ===== 方案档位（稳健/均衡/激进）：同一目标三套策略，一键切换重算 =====
-var planTier = "balanced";
-var TIER_META = {
-  conservative: {name:"稳健", cpcAdj:0.9,  checkPct:0.15, paceDays:10, cpcFloor:0.75, desc:"控成本 · 拉长测试期 · 优先保净利，不过度压价"},
-  balanced:     {name:"均衡", cpcAdj:1.0,  checkPct:0.20, paceDays:7,  cpcFloor:0.5,  desc:"按当前参数标准执行 · 预算节奏居中"},
-  aggressive:   {name:"激进", cpcAdj:1.12, checkPct:0.25, paceDays:5,  cpcFloor:0.3,  desc:"提价抢量 · 愿意压价换量 · 快速放量冲规模"}
-};
-function getTierParams(){ return TIER_META[planTier] || TIER_META.balanced; }
-function setPlanTier(t){
-  planTier = t;
-  if(typeof doReverseCalculate === "function"){ doReverseCalculate(); }
-}
+// ===== 目标驱动：已移除「稳健/均衡/激进」档位机制，统一按目标倒推、按当前真实参数执行 =====
 
 function getVal(id){
 var el = document.getElementById(id);
@@ -1292,9 +1281,8 @@ function buildBudgetPath(o){
   var floor = o.cpcFloor || 0.5;
   var paths = [];
   // 路径B：保转化率，降CPC（实操最快：后台直接调出价）
-  var deep = o.tier === "aggressive" ? 0.85 : 1;
-  var needCpcB = o.needClicks > 0 ? (o.budgetLimit / o.needClicks) * deep : 0;
-  var clicksB = (o.tier === "aggressive" && needCpcB > 0) ? Math.floor(o.budgetLimit / needCpcB) : o.needClicks;
+  var needCpcB = o.needClicks > 0 ? (o.budgetLimit / o.needClicks) : 0;
+  var clicksB = o.needClicks;
   paths.push({id:"B", name:"降低点击成本 CPC", desc:"保持转化率不变，把 CPC 从 ¥"+o.cpc.toFixed(2)+" 压到 ¥"+needCpcB.toFixed(2), feasible: needCpcB >= floor, needCpc: needCpcB, needOr: o.orderRate, clicks: clicksB, cpc: needCpcB, orderRate: o.orderRate});
   // 路径A：保CPC，提转化率（慢功夫：改详情/调价/素材）
   var maxClicksA = o.cpc > 0 ? o.budgetLimit / o.cpc : 0;
@@ -1317,13 +1305,13 @@ function buildBudgetPath(o){
   if(main){
     var effClicks = main.clicks;
     var effOrders = Math.floor(effClicks * (main.needOr/100));
-    var effNights = Math.floor(effOrders * (o.checkinRate/100));
+    var effNights = Math.floor(effOrders * (o.checkinRate/100) * (o.avgNights || 1));
     return {status:"adjusted", main:main, fallbacks:feasible.filter(function(p){ return p.id !== main.id; }), effClicks:effClicks, effOrders:effOrders, effNights:effNights, effBudget:o.budgetLimit, effCpc:main.needCpc, effOrderRate:main.needOr, maxClicks:effClicks, maxOrders:effOrders, maxNights:effNights};
   }
   // 全部不可行：预算内最多
   var maxClicks = o.cpc > 0 ? Math.floor(o.budgetLimit / o.cpc) : 0;
   var maxOrders = Math.floor(maxClicks * (o.orderRate/100));
-  var maxNights = Math.floor(maxOrders * (o.checkinRate/100));
+  var maxNights = Math.floor(maxOrders * (o.checkinRate/100) * (o.avgNights || 1));
   return {status:"impossible", main:null, fallbacks:[], maxClicks:maxClicks, maxOrders:maxOrders, maxNights:maxNights};
 }
 // 平台预算分配：按各平台CPC加权切分总预算（各平台点击量=预算/CPC，总点击≈总预算/加权CPC）
@@ -1773,7 +1761,7 @@ var goal = document.getElementById("revGoal").value;
 var period = getVal("revAdPeriod") || 30;
 var occ = getVal("occ");
 var pData = getPlatformsData();
-var cpc = pData.avgCpc * (getTierParams().cpcAdj || 1);
+var cpc = pData.avgCpc;
 var orderRate = pData.avgOrderRate;
 var checkinRate = pData.avgCheckinRate;
 var commission = pData.avgCommission;
@@ -1786,11 +1774,10 @@ var varCost = getVal("varCost");
 var taxRate = getVal("taxRate");
 var taxOf = function(rev){ return taxRate > 0 ? rev * taxRate / (100 + taxRate) : 0; };
 var marginPerRoom = adr*(1-commission/100) - varCost;
-// ===== 底价线 = 覆盖「变动成本 + 佣金 + 税费」的保本房价（不含固定成本与推广成本） =====
+// ===== 成本底价线 = 覆盖「变动成本 + 佣金 + 税费」的保本房价（不含推广成本；含推广的真实盈亏平衡价在下方按最终预算重算） =====
 var taxFactorD = taxRate > 0 ? taxRate / (100 + taxRate) : 0;
 var floorDenomD = (1 - commission/100) - taxFactorD;
-var floorPriceD = (commission < 100 && floorDenomD > 0.05) ? (varCost / floorDenomD) : 0;
-var adrDropPctD = adr > 0 ? Math.max(0, (adr - floorPriceD) / adr * 100) : 0;
+var floorPriceBaseD = (commission < 100 && floorDenomD > 0.05) ? (varCost / floorDenomD) : 0;
 
 if(cpc <= 0) empty.push("当前CPC");
 if(orderRate <= 0) empty.push("当前下单转化率");
@@ -1912,8 +1899,12 @@ if(totalEmptyCapacity2 < targetNights){
   verdictR = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：当前召回成本下预算内达不到</b> —— 预算内最多召回 <b class="c-num">' + repPath.maxOrders.toLocaleString() + '</b> 位老客、达成 <b class="c-num">' + repPath.maxNights.toLocaleString() + '</b> 间夜。<span class="c-tip">先解决效率：压低单客召回成本 / 提高预算，再按完整链路执行。</span></div>';
 } else if(repEffNights > 0 && repEffCost/repEffNights > marginPerRoom){
   verdictR = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：单客召回成本超毛利</b> —— 每间夜召回成本 <b>¥' + (repEffCost/repEffNights).toFixed(1) + '</b> 已超单房毛利 <b>¥' + marginPerRoom.toFixed(1) + '</b>，卖一间亏一间。<span class="c-tip">先降成本：压低召回成本 / 提高人均间夜 / 优化权益组合，再谈放量。</span></div>';
+} else if(repEffCost > 0 && revRoiEff <= 0){
+  verdictR = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>🛑 <b>目标不可行：投放亏损</b> —— 按当前召回成本与权益测算，净利 <b class="c-num">' + (revProfitEff>=0?'¥':'-¥') + Math.round(Math.abs(revProfitEff)).toLocaleString() + '</b>（ROI ' + revRoiEff.toFixed(2) + '），投得越多亏得越多。<span class="c-tip">先降召回成本 / 优化权益组合，扭亏后再放量。</span></div>';
+} else if(repEffCost > 0 && revRoiEff < 0.3){
+  verdictR = '<div class="conclusion-box" style="border-color:#d97706;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标可达成，但收益偏薄</b> —— 预期 ROI 仅 <b class="c-num">' + revRoiEff.toFixed(2) + '</b>（低于 0.3），投放净利 <b class="c-num">' + (revProfitEff>=0?'¥':'-¥') + Math.round(Math.abs(revProfitEff)).toLocaleString() + '</b>。<span class="c-tip">建议优先压召回成本 / 提高人均复购间夜，改善收益后再放量。</span></div>';
 } else {
-  verdictR = '<div class="conclusion-box" style="border-color:#16a34a;"><div class="c-label">📌 目标结论</div>✅ <b>目标可行</b> —— 容量、成本、效率均留有空间，按下方达成链路与执行方案推进即可。</div>';
+  verdictR = '<div class="conclusion-box" style="border-color:#16a34a;"><div class="c-label">📌 目标结论</div>✅ <b>目标可行</b> —— 容量、成本、收益（ROI ' + revRoiEff.toFixed(2) + '）均留有空间，按下方达成链路与执行方案推进即可。</div>';
 }
 html += verdictR;
 var rConcl = '达成 <b class="c-num">' + targetNights.toLocaleString() + '</b> 间夜目标，需要召回 <b class="c-num">' + newRepurchaseCustomers.toLocaleString() + '</b> 位老客复购';
@@ -2032,10 +2023,10 @@ html += '</div>';
 
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t5 + '</div>';
-if(adr >= floorPriceD && floorPriceD > 0){
-html += '<div class="tip" style="margin-top:6px;"><b>✅ 底价线 ¥' + floorPriceD.toFixed(1) + '</b>（覆盖变动成本+佣金+税费）：当前房价 ¥' + adr + ' 高出 <b>¥' + (adr-floorPriceD).toFixed(1) + '</b>，下行空间约 ' + adrDropPctD.toFixed(1) + '%，投放安全垫充足。</div>';
-} else if(floorPriceD > 0){
-html += '<div class="danger" style="margin-top:6px;padding:12px;border-radius:10px;"><b>🛑 定价低于底价线</b>：当前房价 ¥' + adr + ' 低于底价线 ¥' + floorPriceD.toFixed(1) + '，每卖一间亏 ¥' + (floorPriceD-adr).toFixed(1) + '，投放量越大亏损越大。建议先上调价格至 ¥' + Math.ceil(floorPriceD*1.05) + ' 以上再考虑投放。</div>';
+if(adr >= floorPriceBaseD && floorPriceBaseD > 0){
+html += '<div class="tip" style="margin-top:6px;"><b>✅ 成本底价线 ¥' + floorPriceBaseD.toFixed(1) + '</b>（覆盖变动成本+佣金+税费）：当前房价 ¥' + adr + ' 高出 <b>¥' + (adr-floorPriceBaseD).toFixed(1) + '</b>，下行空间约 ' + (adr>0?Math.max(0,(adr-floorPriceBaseD)/adr*100).toFixed(1):'0') + '%，投放安全垫充足。</div>';
+} else if(floorPriceBaseD > 0){
+html += '<div class="danger" style="margin-top:6px;padding:12px;border-radius:10px;"><b>🛑 定价低于成本底价线</b>：当前房价 ¥' + adr + ' 低于底价线 ¥' + floorPriceBaseD.toFixed(1) + '，每卖一间亏 ¥' + (floorPriceBaseD-adr).toFixed(1) + '，投放量越大亏损越大。建议先上调价格至 ¥' + Math.ceil(floorPriceBaseD*1.05) + ' 以上再考虑投放。</div>';
 } else {
 html += '<div class="tip" style="margin-top:6px;">底价线暂无法计算（佣金率异常或成本参数缺失），请核对佣金率与变动成本。</div>';
 }
@@ -2067,7 +2058,7 @@ var sTax = taxOf(sGross);
 var sProfit = sRev - sVar - sCost - otherFee - sTax;
 var sRoi = sCost>0 ? (sProfit/sCost) : 0;
 var sCostPerRoom = sNights>0 ? sCost/sNights : 0;
-var status = sRoi>0 && sCostPerRoom<marginPerRoom ? "🟢 安全" : sRoi>0 ? "🟡 警戒" : "🔴 亏损";
+var status = sRoi>=0.3 && sCostPerRoom<marginPerRoom ? "🟢 安全" : sRoi>0 ? "🟡 警戒" : "🔴 亏损";
 html += '<tr><td>' + s.name + '</td><td>¥' + sCost.toLocaleString() + '</td><td>' + sCust.toLocaleString() + '</td><td>' + sNights.toLocaleString() + '</td><td>' + sRoi.toFixed(2) + '</td><td>' + status + '</td></tr>';
 });
 html += '</table>';
@@ -2114,7 +2105,9 @@ return true;
 
 if(empty.length > 0){ alert("请先填写以下必填项：" + empty.join("、")); return false; }
 
-var needOrders = checkinRate>0 ? Math.ceil(targetNights / (checkinRate/100)) : 0;
+// 目标驱动倒推漏斗：目标间夜 → 订单（每单间夜数：拉新=人均间夜，其余=1间夜/单）→ 点击 → 预算
+var avgNightsPerOrder = (goal === "newGuest") ? (avgNewNights || 1.2) : 1;
+var needOrders = checkinRate>0 ? Math.ceil(targetNights / ((checkinRate/100) * avgNightsPerOrder)) : 0;
 var needClicks = orderRate>0 ? Math.ceil(needOrders / (orderRate/100)) : 0;
 var needBudget = needClicks * cpc;
 var dailyBudget = period > 0 ? (needBudget / period) : 0;
@@ -2124,7 +2117,7 @@ var totalEmptyCapacity = Math.floor(dailyEmptyRooms * period);
 var capacityEnough = totalEmptyCapacity >= targetNights;
 var vClicks = cpc>0 ? Math.floor(needBudget/cpc) : 0;
 var vOrders = Math.floor(vClicks * (orderRate/100));
-var vNights = Math.floor(vOrders * (checkinRate/100));
+var vNights = Math.floor(vOrders * (checkinRate/100) * avgNightsPerOrder);
 var vRevenue = vNights * adr;
 var vComm = vRevenue * (commission/100);
 var vVar = vNights * varCost;
@@ -2161,7 +2154,7 @@ html += renderReportHead();
 
 
 // ===== 目标版重构渲染（主场景：点击→进店→下单→入住链路） =====
-var stepDays1 = Math.min(getTierParams().paceDays, period);
+var stepDays1 = Math.min(7, period);
 var stepDays2 = Math.max(0, Math.min(7, period - 7));
 var stepDays3 = Math.max(0, period - 14);
 var hasStep2 = stepDays2 > 0;
@@ -2170,7 +2163,7 @@ var stepNights1 = Math.round(targetNights * 0.2);
 var stepNights2 = Math.round(targetNights * 0.3);
 var stepNights3 = targetNights - stepNights1 - stepNights2;
 // ===== 预算路径决策（主方案唯一，备选折叠给服务商自用） =====
-var pathPlan = buildBudgetPath({budgetLimit: budgetLimit, needBudget: needBudget, needClicks: needClicks, needOrders: needOrders, cpc: cpc, orderRate: orderRate, checkinRate: checkinRate, cpcFloor: getTierParams().cpcFloor, tier: planTier});
+var pathPlan = buildBudgetPath({budgetLimit: budgetLimit, needBudget: needBudget, needClicks: needClicks, needOrders: needOrders, cpc: cpc, orderRate: orderRate, checkinRate: checkinRate, cpcFloor: 0.5, avgNights: avgNightsPerOrder});
 var mainPath = pathPlan.status === "adjusted" ? pathPlan.main : null;
 // 生效口径：预算不足且路径可行时，全链路按路径重算；其余情形与原始口径一致
 var effCpc = mainPath ? mainPath.needCpc : cpc;
@@ -2193,6 +2186,9 @@ var effVTax = taxOf(effVRevenue);
 var effVProfit = effNights * marginPerRoom - effBudget - otherFee - effVTax;
 var effVRoi = effBudget>0 ? (effVProfit/effBudget) : 0;
 var perRoomCostEff = effNights>0 ? (effBudget/effNights) : 0;
+// ===== 真实盈亏平衡价（覆盖变动成本+佣金+税费+每间夜推广成本）：低于此价卖一间亏一间 =====
+var floorPriceD = floorDenomD > 0.05 ? (varCost + perRoomCostEff) / floorDenomD : 0;
+var adrDropPctD = adr > 0 ? Math.max(0, (adr - floorPriceD) / adr * 100) : 0;
 // 平台预算分配（按各平台CPC加权）
 var platNameMap0 = PLATFORM_LABELS;
 var platDispArr0 = [];
@@ -2216,8 +2212,12 @@ if(!capacityEnough){
   verdictHtml = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：当前成本与效率下预算内达不到</b> —— 预算内最多达成 <b class="c-num">' + pathPlan.maxNights.toLocaleString() + '</b> 间夜。<span class="c-tip">先解决效率：压低 CPC / 提升转化率 / 上调预算，再按完整链路执行。</span></div>';
 } else if(effNights > 0 && perRoomCostEff > marginPerRoom){
   verdictHtml = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标偏难：推广成本超毛利</b> —— 每间夜推广成本 <b>¥' + perRoomCostEff.toFixed(1) + '</b> 已超单房毛利 <b>¥' + marginPerRoom.toFixed(1) + '</b>，卖一间亏一间。<span class="c-tip">先降成本：压低 CPC / 提升转化率 / 优化素材，再谈放量。</span></div>';
+} else if(effBudget > 0 && effVRoi <= 0){
+  verdictHtml = '<div class="conclusion-box" style="border-color:#dc2626;"><div class="c-label">📌 目标结论</div>🛑 <b>目标不可行：投放亏损</b> —— 按当前成本与效率投放，净利 <b class="c-num">' + (effVProfit>=0?'¥':'-¥') + Math.round(Math.abs(effVProfit)).toLocaleString() + '</b>（ROI ' + effVRoi.toFixed(2) + '），投得越多亏得越多。<span class="c-tip">先降成本 / 提客单价 / 提转化率，扭亏后再放量。</span></div>';
+} else if(effBudget > 0 && effVRoi < 0.3){
+  verdictHtml = '<div class="conclusion-box" style="border-color:#d97706;"><div class="c-label">📌 目标结论</div>⚠️ <b>目标可达成，但收益偏薄</b> —— 预期 ROI 仅 <b class="c-num">' + effVRoi.toFixed(2) + '</b>（低于 0.3），投放净利 <b class="c-num">' + (effVProfit>=0?'¥':'-¥') + Math.round(Math.abs(effVProfit)).toLocaleString() + '</b>。<span class="c-tip">建议优先压 CPC / 提升转化率 / 提高客单价，改善收益后再放量。</span></div>';
 } else {
-  verdictHtml = '<div class="conclusion-box" style="border-color:#16a34a;"><div class="c-label">📌 目标结论</div>✅ <b>目标可行</b> —— 容量、成本、效率均留有空间，按下方达成链路与执行方案推进即可。</div>';
+  verdictHtml = '<div class="conclusion-box" style="border-color:#16a34a;"><div class="c-label">📌 目标结论</div>✅ <b>目标可行</b> —— 容量、成本、收益（ROI ' + effVRoi.toFixed(2) + '）均留有空间，按下方达成链路与执行方案推进即可。</div>';
 }
 html += verdictHtml;
 var conclStr = '达成 <b class="c-num">' + targetNights.toLocaleString() + '</b> 间夜目标，需要 <b class="c-num">' + needOrders.toLocaleString() + '</b> 单订单、<b class="c-num">' + needClicks.toLocaleString() + '</b> 次点击';
@@ -2258,7 +2258,7 @@ if(blockList.length > 0){
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t2 + '</div>';
 html += '<div class="step-total">📌 总览：目标 ' + targetNights.toLocaleString() + ' 间夜 · ' + (mainPath?'调整后预算 ¥'+effBudget.toLocaleString():(pathPlan.status === "impossible"?'预算上限内 ¥'+effBudget.toLocaleString():'总预算 ¥'+needBudget.toLocaleString())) + ' · 日均约 ¥' + Math.round(effBudget/period).toLocaleString() + '</div>';
-html += renderEnvCard({no:1, name:'点击环节 · 把流量买进来', tag:'目标 ' + effClicks.toLocaleString() + ' 次点击', row:'预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，' + (goal==='newGuest'?'定向新客人群（平台新客包，排除近90天已入住老客），素材' + (SEG_CREATIVE[segVal] || '主打新客首单礼/新客专享价') + '，' + seasonTalk.focus + '，盯新客点击占比≥70%':(goal==='revenue'?'高价房型优先投放，素材' + (SEG_CREATIVE[segVal] || '主打品质/含早/套房') + '，' + seasonTalk.focus + '，盯高房价房型点击占比':(goal==='occupancy'?'低峰时段（' + seasonTalk.low + '）加投，素材' + (SEG_CREATIVE[segVal] || '主打当日特价/闪购') + '，盯' + seasonTalk.low + '点击量':'按' + (SEG_CREATIVE[segVal] || '主推房型') + '投放，' + seasonTalk.focus))) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') , chk:'前 3 天点击量累计 ≥ 目标 ' + Math.round(getTierParams().checkPct*100) + '%（约 ' + Math.ceil(effClicks*getTierParams().checkPct).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，' + seasonTalk.low + '点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。'});
+html += renderEnvCard({no:1, name:'点击环节 · 把流量买进来', tag:'目标 ' + effClicks.toLocaleString() + ' 次点击', row:'预算分配：' + platAllocStr + '。出价按 CPC ¥' + effCpc.toFixed(2) + ' 起，' + (goal==='newGuest'?'定向新客人群（平台新客包，排除近90天已入住老客），素材' + (SEG_CREATIVE[segVal] || '主打新客首单礼/新客专享价') + '，' + seasonTalk.focus + '，盯新客点击占比≥70%':(goal==='revenue'?'高价房型优先投放，素材' + (SEG_CREATIVE[segVal] || '主打品质/含早/套房') + '，' + seasonTalk.focus + '，盯高房价房型点击占比':(goal==='occupancy'?'低峰时段（' + seasonTalk.low + '）加投，素材' + (SEG_CREATIVE[segVal] || '主打当日特价/闪购') + '，盯' + seasonTalk.low + '点击量':'按' + (SEG_CREATIVE[segVal] || '主推房型') + '投放，' + seasonTalk.focus))) + '。' + (mainPath && mainPath.id==="B"?'<b>本方案已把 CPC 压到 ¥' + effCpc.toFixed(2) + '</b>，注意观察点击量是否跟得上，跟不上需在素材与时段上补量。':'') , chk:'前 3 天点击量累计 ≥ 目标 20%（约 ' + Math.ceil(effClicks*0.2).toLocaleString() + ' 次）' + (goal==='newGuest'?'且新客点击占比≥70%':(goal==='revenue'?'，高房价房型点击占比低→调素材与时段':(goal==='occupancy'?'，' + seasonTalk.low + '点击不足→小幅提价或加预算':''))) + '；不足 → 加预算或小幅提价，仍不足 → 查素材与时段。'});
 html += renderEnvCard({no:2, name:'进店环节 · 点进来要接得住', tag:'目标转化率 ' + effOrderRate.toFixed(1) + '%', row:(goal==='newGuest'?'首图标"新客专享"、详情页放首单券领取入口，新客转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查首单券力度':(goal==='revenue'?'首图实景+高房价房型优先展示，盯平均订单金额，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 查详情页与价格竞争力':(goal==='occupancy'?'当日特价/闪购入口放首屏、优化"附近酒店"搜索词，转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查特价力度':'首图用实景图、标题带地理/场景关键词、价格展示有竞争力'))) + '。' + (mainPath && mainPath.id!=="B"?'<b>本方案要求转化率提到 ' + effOrderRate.toFixed(1) + '%</b>，这是全链路成败关键，需同步优化详情页、价格展示与取消政策。':'') , fix:'转化率低于目标 80%（' + (effOrderRate*0.8).toFixed(1) + '%）→ 换素材、查详情页与价格竞争力。'});
 html += renderEnvCard({no:3, name:'下单环节 · 把转化变成订单', tag:'目标 ' + effOrders.toLocaleString() + ' 单', row:(goal==='newGuest'?'新客首单用平台补贴/新客券降低决策门槛，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='revenue'?'套餐/连住/含早抬客单价，目标客单价 ¥' + Math.round(targetRevenue/effNights).toLocaleString() + '（目标营收÷目标间夜），让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':(goal==='occupancy'?'限时特惠+免取消费促' + seasonTalk.low + '下单，让利受底价线约束（¥' + (floorPriceD>0?floorPriceD.toFixed(1):'待核算') + '），不裸降价':'用套餐/连住优惠抬客单价而非裸降价'))) + '；' + (goal==='occupancy'?seasonTalk.low + '订单占比不足 → 查特惠曝光与取消政策':'订单跟不上 → 优先查转化率，其次加预算') + '。', chk:(hasStep2?'第 '+(stepDays1+stepDays2)+' 天累计达成 '+(stepNights1+stepNights2).toLocaleString()+' 间夜 → 进稳定期；':'第 '+stepDays1+' 天累计达成 '+targetNights.toLocaleString()+' 间夜。') + ' 订单跟不上 → 优先查转化率，其次加预算。'});
 html += renderEnvCard({no:4, name:'入住环节 · 把订单变成间夜', tag:'目标 ' + effNights.toLocaleString() + ' 间夜', row:(goal==='newGuest'?'履约率 ' + checkinRate + '%，首住体验到位（欢迎礼+加微信进私域为复购铺垫），履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='revenue'?'履约率 ' + checkinRate + '%，保间夜的同时推延住/加床/增值服务抬收入，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':(goal==='occupancy'?'履约率 ' + checkinRate + '%，' + seasonTalk.low + '空房核销+连住优惠提升间夜产出，履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 查取消原因':'履约率 ' + checkinRate + '%，控制 No-show 与取消：确认入住提醒、灵活改期政策减少损失'))) + '。', fix:'履约率低于 ' + (checkinRate*0.8).toFixed(1) + '% → 核查订单取消原因与到店确认流程。'});
@@ -2345,11 +2345,11 @@ html += '</div>';
 html += '<div class="sec">';
 html += '<div class="sec-title">' + SEC.t5 + '</div>';
 if(adr >= floorPriceD && floorPriceD > 0){
-html += '<div class="tip" style="margin-top:6px;"><b>✅ 底价线 ¥' + floorPriceD.toFixed(1) + '</b>（覆盖变动成本+佣金+税费）：当前房价 ¥' + adr + ' 高出 <b>¥' + (adr-floorPriceD).toFixed(1) + '</b>，下行空间约 ' + adrDropPctD.toFixed(1) + '%，投放安全垫充足。</div>';
+html += '<div class="tip" style="margin-top:6px;"><b>✅ 真实盈亏平衡价 ¥' + floorPriceD.toFixed(1) + '</b>（覆盖变动成本+佣金+税费+每间夜推广成本）：当前房价 ¥' + adr + ' 高出 <b>¥' + (adr-floorPriceD).toFixed(1) + '</b>，下行空间约 ' + adrDropPctD.toFixed(1) + '%，投放安全垫充足。</div>';
 } else if(floorPriceD > 0){
-html += '<div class="danger" style="margin-top:6px;padding:12px;border-radius:10px;"><b>🛑 定价低于底价线</b>：当前房价 ¥' + adr + ' 低于底价线 ¥' + floorPriceD.toFixed(1) + '，每卖一间亏 ¥' + (floorPriceD-adr).toFixed(1) + '，投放量越大亏损越大。建议先上调价格至 ¥' + Math.ceil(floorPriceD*1.05) + ' 以上再考虑投放。</div>';
+html += '<div class="danger" style="margin-top:6px;padding:12px;border-radius:10px;"><b>🛑 定价低于真实盈亏平衡价</b>：当前房价 ¥' + adr + ' 低于 ¥' + floorPriceD.toFixed(1) + '，每卖一间亏 ¥' + (floorPriceD-adr).toFixed(1) + '，投放量越大亏损越大。建议先上调价格至 ¥' + Math.ceil(floorPriceD*1.05) + ' 以上再考虑投放。</div>';
 } else {
-html += '<div class="tip" style="margin-top:6px;">底价线暂无法计算（佣金率异常或成本参数缺失），请核对佣金率与变动成本。</div>';
+html += '<div class="tip" style="margin-top:6px;">盈亏平衡价暂无法计算（佣金率异常或成本参数缺失），请核对佣金率与变动成本。</div>';
 }
 html += '<div class="sec-sub">红线清单（任一触发即执行对应动作）</div>';
 html += '<div class="stop-list">';
@@ -2379,7 +2379,7 @@ var sTax = taxOf(sGross);
 var sProfit = sRev - sVar - sCost - otherFee - sTax;
 var sRoi = sCost>0 ? (sProfit/sCost) : 0;
 var sCostPerRoom = targetNights>0 ? sCost/targetNights : 0;
-var status = sRoi>0 && sCostPerRoom<marginPerRoom ? "🟢 安全" : sRoi>0 ? "🟡 警戒" : "🔴 亏损";
+var status = sRoi>=0.3 && sCostPerRoom<marginPerRoom ? "🟢 安全" : sRoi>0 ? "🟡 警戒" : "🔴 亏损";
 html += '<tr><td>' + s.name + '</td><td>¥' + sCost.toLocaleString() + '</td><td>' + Math.ceil(sClicks).toLocaleString() + '</td><td>¥' + sGross.toLocaleString() + '</td><td>' + sRoi.toFixed(2) + '</td><td>' + status + '</td></tr>';
 });
 html += '</table>';
