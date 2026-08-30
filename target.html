@@ -476,17 +476,6 @@ h2{border-left:4px solid #2563eb}
 当前总预算上限：未设置
 </div>
 
-</div><div class="card" id="importDataCard">
-<div class="card-head"><div class="card-title">📥 一键导入经营数据</div><span class="req-badge" style="color:#059669;background:#ecfdf5;border-color:#a7f3d0">可选 · 推荐</span></div>
-<div class="guide-bar" style="background:linear-gradient(135deg,#ecfdf5 0%,#f8fafc 100%);border-color:#a7f3d0;color:#065f46"><b>不用填表、不用算数：</b>从携程 / 美团商家后台直接导出「订单明细」和「推广数据」两个报表，拖进来系统自动识别、自动算出真实房价 / 履约率 / 转化率 / CPC，并一键填入下方表单。</div>
-<div class="import-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-<button type="button" id="btnDlTemplate" onclick="downloadImportTemplate()" style="padding:10px 16px;border:1px solid #059669;background:#fff;color:#059669;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">⬇️ 下载模板示例</button>
-<label id="importDropZone" for="dataFileInput" style="padding:10px 16px;border:1px dashed #2563eb;background:#eff6ff;color:#2563eb;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-block;transition:all .2s">📂 一键导入（xlsx / xls / csv / html）
-<input type="file" id="dataFileInput" accept=".xlsx,.xls,.csv,.html,.htm" onchange="handleDataFile(this)" style="display:none">
-</label>
-<button type="button" id="btnFillImport" onclick="fillFromImport()" style="display:none;padding:10px 16px;border:1px solid #059669;background:#059669;color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">⚡ 一键填入表单</button>
-</div>
-<div id="importResult" style="font-size:13px;line-height:1.8"></div>
 </div>
 
 <div class="card" id="baseData">
@@ -701,6 +690,7 @@ h2{border-left:4px solid #2563eb}
 <button id="btnCopy">📋 一键复制</button>
 <button id="btnHistory">📜 历史</button>
 <button id="btnPrint">🖨️ 导出报表</button>
+<button id="btnImport">📥 导入</button>
 <button id="btnClearStorage" class="danger">🗑️ 清空数据</button>
 </div>
 <div class="brand-setting collapsed">
@@ -754,6 +744,19 @@ h2{border-left:4px solid #2563eb}
 <p style="font-size:12px;color:#64748b;margin:4px 0 0">提示：复制当前网址也能恢复（网址自带数据），但代码方式更通用、更短。</p>
 </div>
 </div>
+<div class="modal-overlay" id="modalImport">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalImport')">×</button>
+<h3>导入本地数据</h3>
+<p style="font-size:13px;color:#64748b;margin-bottom:12px">请选择由本系统导出的 .json 文件</p>
+<div class="file-input-wrapper">
+<div class="file-input-btn">选择文件</div>
+<input type="file" id="importFile" accept=".json,application/json" onchange="handleImportFile(this)">
+</div>
+<div id="importPreview" style="margin-top:12px;font-size:13px;color:#334155"></div>
+</div>
+</div>
+
 <script>
 
 // ===== 平台统一配置表（唯一数据源；以后新增平台只改这里，下拉/名称/佣金全部自动生效） =====
@@ -2957,6 +2960,54 @@ showToast("本地数据已清空，表单已重置");
 });
 }
 
+
+// 导入
+var btnImport = document.getElementById("btnImport");
+if(btnImport){
+  btnImport.addEventListener("click", function(){
+    var preview = document.getElementById("importPreview");
+    var fileInput = document.getElementById("importFile");
+    if(preview) preview.innerHTML = "";
+    if(fileInput) fileInput.value = "";
+    openModal("modalImport");
+  });
+}
+
+function handleImportFile(input){
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      var preview = [];
+      if(data.adr) preview.push("ADR: ¥" + data.adr);
+      if(data.mode) preview.push("模式: " + (data.mode==="reverse"?"反向":"正向"));
+      var previewEl = document.getElementById("importPreview");
+      if(previewEl){
+        previewEl.innerHTML =
+          '<div style="margin-bottom:8px"><b>检测到数据：</b>' + preview.join(" / ") + '</div>' +
+          '<button class="modal-btn primary" onclick="confirmImport()">确认导入并覆盖当前表单</button>' +
+          '<button class="modal-btn secondary" onclick="closeModal(&quot;modalImport&quot;)">取消</button>';
+      }
+      window._pendingImport = data;
+    }catch(err){
+      var previewEl = document.getElementById("importPreview");
+      if(previewEl) previewEl.innerHTML = '<span style="color:#dc2626">文件解析失败，请确认是有效的JSON文件</span>';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function confirmImport(){
+  if(!window._pendingImport) return;
+  setData(window._pendingImport);
+  closeModal("modalImport");
+  showToast("导入成功");
+  saveDraft();
+  window._pendingImport = null;
+}
+
 // 页面加载
 var hasDraft = loadDraft();
 initDefaultValues();
@@ -2969,693 +3020,7 @@ updateBrand();
 updateBtnState();
 </script>
 
-<script>
-/* ===== 一键导入经营数据模块（独立新增，不依赖/不修改既有逻辑） ===== */
-var __importData = null;
 
-function _normH(h){ return String(h == null ? "" : h).toLowerCase().replace(/[\s（）()\/\\_\-]/g, ""); }
-function _findCol(headers, kws){
-  for(var i=0;i<headers.length;i++){
-    var h = _normH(headers[i]);
-    for(var j=0;j<kws.length;j++){
-      if(h && h.indexOf(kws[j]) >= 0) return i;
-    }
-  }
-  return -1;
-}
-function _num(v){
-  if(v == null) return NaN;
-  if(typeof v === "number") return v;
-  var t = String(v).replace(/[¥￥,，\s元]/g, "");
-  if(t.indexOf("%") >= 0) t = t.replace("%", "");
-  var n = parseFloat(t);
-  return n;
-}
-function _isStayed(st){
-  var t = String(st == null ? "" : st).trim().toLowerCase();
-  if(!t) return false;
-  if(t.indexOf("取消") >= 0 || t.indexOf("退款") >= 0 || t.indexOf("noshow") >= 0 || t.indexOf("未入住") >= 0 || t.indexOf("违约") >= 0 || t.indexOf("待入住") >= 0 || t.indexOf("未到") >= 0 || t.indexOf("未住") >= 0) return false;
-  if(t.indexOf("入住") >= 0 || t.indexOf("完成") >= 0 || t.indexOf("成交") >= 0 || t.indexOf("履约") >= 0 || t.indexOf("离店") >= 0 || t.indexOf("已住") >= 0) return true;
-  return false;
-}
-function _isCancel(st){
-  var t = String(st == null ? "" : st).trim().toLowerCase();
-  return t.indexOf("取消") >= 0 || t.indexOf("退款") >= 0 || t.indexOf("noshow") >= 0 || t.indexOf("未入住") >= 0;
-}
-
-function downloadImportTemplate(){
-  if(typeof XLSX === "undefined"){ alert("表格库加载失败，请检查网络后重试（需要联网加载一次）。"); return; }
-  var headers = ["订单号","下单日期","入住日期","离店日期","房型","间夜数","订单金额(实付)","订单状态","是否新客"];
-  var rows = [
-    ["H20260801001","2026-08-01","2026-08-05","2026-08-06","大床房",1,268,"已入住","新客"],
-    ["H20260801002","2026-08-01","2026-08-06","2026-08-08","双床房",2,536,"已入住","老客"],
-    ["H20260801003","2026-08-02","2026-08-07","2026-08-08","大床房",1,268,"已取消","新客"],
-    ["H20260801004","2026-08-03","2026-08-08","2026-08-10","家庭房",2,636,"待入住","新客"],
-    ["H20260801005","2026-08-04","2026-08-09","2026-08-10","大床房",1,268,"已入住","老客"]
-  ];
-  var sheet1 = XLSX.utils.aoa_to_sheet([headers].concat(rows));
-  var h2 = ["日期","曝光量","点击量","花费(元)","订单数","成交金额(元)"];
-  var rows2 = [
-    ["2026-08-01",12000,560,2403,18,4824],
-    ["2026-08-02",13500,620,2659,22,5896],
-    ["2026-08-03",9800,450,1930,15,4020],
-    ["2026-08-04",11000,510,2188,17,4556],
-    ["2026-08-05",14200,680,2917,25,6700]
-  ];
-  var sheet2 = XLSX.utils.aoa_to_sheet([h2].concat(rows2));
-  var tip = [
-    ["一键导入经营数据 - 使用说明"],
-    [""],
-    ["1. 订单明细：从携程（eBooking/生意通）或美团酒店商家后台导出「订单明细/订单报表」，把【表头+数据】贴到『订单明细』表即可；列名稍有差异也能自动识别。"],
-    ["2. 推广数据（可选）：从携程推广通 / 美团推广后台导出「推广报表/消耗报表」，贴到『推广数据』表。有了它才能自动算出真实 CPC 和转化率；不贴则用表单默认值。"],
-    ["3. 导入后点『一键填入表单』，系统自动填好房价、业态、履约率、转化率、CPC、人均间夜；若表格中含酒店概况（客房总数/城市/位置/业态/平均房价）也会自动识别填入，佣金率、变动成本、经营目标仍需手动填写（平台数据里通常没有）。"],
-    ["4. 订单状态列常见取值：已入住 / 待入住 / 已取消（系统按此统计履约率）。"]
-  ];
-  var sheet3 = XLSX.utils.aoa_to_sheet(tip);
-  sheet3["!cols"] = [{wch:110}];
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, sheet1, "订单明细");
-  XLSX.utils.book_append_sheet(wb, sheet2, "推广数据");
-  XLSX.utils.book_append_sheet(wb, sheet3, "使用说明");
-  XLSX.writeFile(wb, "酒店投流-数据导入模板.xlsx");
-}
-
-function parseImportFile(file){
-  if(typeof XLSX === "undefined"){ alert("表格库加载失败，请检查网络后重试（需要联网加载一次）。"); return; }
-  var name = String(file && file.name ? file.name : "").toLowerCase();
-  var isHtml = /\.(html?|mhtml)$/.test(name);
-  var reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      if(isHtml){
-        // 旧版页面保存的 HTML：重点是读表单控件（下拉框/输入框）里的值
-        __importData = parseLegacyHtml(String(e.target.result || ""));
-      } else {
-        var wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
-        __importData = parseWorkbook(wb);
-      }
-      renderImportResult();
-    }catch(err){
-      __importData = null;
-      var r = document.getElementById("importResult");
-      if(r) r.innerHTML = '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;">解析失败：' + escapeHtml(String(err && err.message ? err.message : err)) + '</div>';
-      var b = document.getElementById("btnFillImport");
-      if(b) b.style.display = "none";
-    }
-  };
-  if(isHtml){ reader.readAsText(file, "utf-8"); }
-  else { reader.readAsArrayBuffer(file); }
-}
-
-function parseLegacyHtml(htmlText){
-  var res = {orderSheet: null, promoSheet: null, orders: null, promo: null, warnings: [], rawSelects: {}};
-  if(!htmlText || !htmlText.trim()){ res.warnings.push("文件内容为空。"); return res; }
-  var doc = null;
-  try{
-    doc = new DOMParser().parseFromString(htmlText, "text/html");
-  }catch(e){}
-  if(!doc || !doc.body){ res.warnings.push("不是有效的 HTML 文件。"); return res; }
-
-  // 1) 收集所有表单控件：id/name + 值 + 关联label文本
-  var controls = [];
-  function labelFor(id){
-    if(!id) return "";
-    try{
-      var lb = doc.querySelector('label[for="' + id.replace(/"/g, '\\"') + '"]');
-      if(lb) return _normH(lb.textContent);
-    }catch(e){}
-    return "";
-  }
-  function getLabelText(ctrl){
-    var t = "";
-    try{
-      if(ctrl.previousElementSibling && ctrl.previousElementSibling.tagName === "LABEL"){
-        t = _normH(ctrl.previousElementSibling.textContent);
-        if(t) return t;
-      }
-    }catch(e){}
-    try{
-      var parent = ctrl.parentElement;
-      if(parent){
-        var labs = parent.querySelectorAll("label");
-        if(labs.length === 1){ t = _normH(labs[0].textContent); if(t) return t; }
-      }
-    }catch(e){}
-    try{
-      var p = ctrl.closest("td, .form-item, .form-group, .field, .row");
-      if(p){
-        t = _normH(p.textContent);
-        if(t && t.length <= 80) return t;
-        var labs2 = p.querySelectorAll("label");
-        if(labs2.length === 1){ t = _normH(labs2[0].textContent); if(t) return t; }
-      }
-    }catch(e){}
-    return "";
-  }
-  try{
-    var sels = doc.querySelectorAll("select");
-    for(var i=0;i<sels.length;i++){
-      var s = sels[i], idx = s.selectedIndex;
-      var opt = idx >= 0 && s.options && s.options[idx] ? s.options[idx] : null;
-      var val = opt ? String(opt.value != null ? opt.value : "") : "";
-      var txt = opt ? _normH(opt.text) : "";
-      // 跳过"请选择"等占位项：未真正选择的下拉不算数据
-      if(opt && (val === "" || txt === "")) continue;
-      if(txt && (txt.indexOf("请选择") >= 0 || txt.indexOf("请选") >= 0 || txt.indexOf("请填写") >= 0)) continue;
-      if(/^[-—–·\s]{0,4}$/.test(txt)) continue;
-      controls.push({tag:"select", id:s.id || "", name:s.name || "", value:val, text:txt, label:labelFor(s.id) || labelFor(s.name) || getLabelText(s)});
-    }
-    var ins = doc.querySelectorAll("input, textarea");
-    for(var j=0;j<ins.length;j++){
-      var el = ins[j];
-      var tp = (el.type || "").toLowerCase();
-      if(tp === "file" || tp === "hidden" || tp === "submit" || tp === "button" || tp === "reset" || tp === "checkbox" || tp === "radio") continue;
-      var v = String(el.value != null ? el.value : "").trim();
-      if(!v) continue;
-      controls.push({tag:"input", id:el.id || "", name:el.name || "", value:v, text:_normH(v), label:labelFor(el.id) || labelFor(el.name) || getLabelText(el)});
-    }
-  }catch(e){}
-
-  // 2) 按 id/name 精确匹配新版字段（覆盖目标版全部业务字段）
-  var NUMERIC_FIELDS = {rooms:1, adr:1, varCost:1, commission_0:1, taxRate:1, otherFee_0:1, revTargetNights:1, revTargetRevenue:1, revTargetOccInput:1, revTargetRepurchase:1, revCustomerPool:1, revAdPeriod:1, budgetLimit_0:1, occ:1, revCheckinRate_0:1, revCpc_0:1, revOrderRate_0:1, revAvgNewNights:1, revAvgRepurchaseNights:1, revCurrentRevenue:1, revCurrentRepurchase:1, revRecallCost:1, actualClicks:1, actualCost:1, actualOrders:1, actualNights:1, actualRecallCost:1, actualRecallCustomers:1, actualRepurchaseNights:1, actualRevenue:1};
-  var SELECT_FIELDS = {cityTier:1, location:1, type:1, revGoal:1, revPlatform:1, seasonHoliday:1, taxType:1, guestSegment:1};
-  var idMap = {rooms:"rooms", roomcount:"rooms", room_total:"rooms", totalrooms:"rooms", roomnum:"rooms", roomquantity:"rooms",
-               adr:"adr", avgprice:"adr", avg_price:"adr", price:"adr", roomprice:"adr",
-               citytier:"cityTier", city:"cityTier", citylevel:"cityTier", citytier:"cityTier",
-               location:"location", locationtier:"location", locationlevel:"location",
-               type:"type", businesstype:"type", hoteltype:"type", format:"type",
-               varcost:"varCost", variablecost:"varCost", variable_cost:"varCost",
-               commission:"commission_0", commission0:"commission_0", commissionrate:"commission_0", commission_rate:"commission_0",
-               taxrate:"taxRate", tax:"taxRate", taxrate0:"taxRate",
-               otherfee:"otherFee_0", otherfee0:"otherFee_0",
-               revgoal:"revGoal", goal:"revGoal", targettype:"revGoal", goaltype:"revGoal",
-               revtargetnights:"revTargetNights", targetnights:"revTargetNights", goalnights:"revTargetNights", newnights:"revTargetNights",
-               revtargetrevenue:"revTargetRevenue", targetrevenue:"revTargetRevenue", goalrevenue:"revTargetRevenue",
-               revtargetoccinput:"revTargetOccInput", targetocc:"revTargetOccInput", targetoccrate:"revTargetOccInput",
-               revtargetrepurchase:"revTargetRepurchase", targetrepurchase:"revTargetRepurchase", repurchasenights:"revTargetRepurchase",
-               revcustomerpool:"revCustomerPool", customerpool:"revCustomerPool",
-               revadperiod:"revAdPeriod", adperiod:"revAdPeriod", adperioddays:"revAdPeriod",
-               budgetlimit:"budgetLimit_0", budget:"budgetLimit_0", budgetlimit0:"budgetLimit_0",
-               revplatform:"revPlatform", platform:"revPlatform",
-               occ:"occ", occupancy:"occ", occupancyrate:"occ",
-               brandname:"brandName", hotelname:"brandName", storename:"brandName",
-               revcheckinrate:"revCheckinRate_0", checkinrate:"revCheckinRate_0", revcheckinrate0:"revCheckinRate_0",
-               revcpc:"revCpc_0", cpc:"revCpc_0", revcpc0:"revCpc_0",
-               revorderrate:"revOrderRate_0", orderrate:"revOrderRate_0", conversion:"revOrderRate_0", revorderrate0:"revOrderRate_0",
-               revavgnewnights:"revAvgNewNights", avgnewnights:"revAvgNewNights", avgnew:"revAvgNewNights",
-               revavgrepurchasenights:"revAvgRepurchaseNights", avgrepeatnights:"revAvgRepurchaseNights",
-               revcurrentrevenue:"revCurrentRevenue", currentrevenue:"revCurrentRevenue",
-               revcurrentrepurchase:"revCurrentRepurchase", currentrepurchase:"revCurrentRepurchase",
-               revrecallcost:"revRecallCost", recallcost:"revRecallCost",
-               actualclicks:"actualClicks", actualcost:"actualCost", actualorders:"actualOrders", actualnights:"actualNights",
-               actualrecallcost:"actualRecallCost", actualrecallcustomers:"actualRecallCustomers", actualrepurchasenights:"actualRepurchaseNights", actualrevenue:"actualRevenue",
-               seasonholiday:"seasonHoliday", taxtype:"taxType", taxcategory:"taxType",
-               guestsegment:"guestSegment", segment:"guestSegment", guests:"guestSegment"};
-  for(var ci=0; ci<controls.length; ci++){
-    var c = controls[ci];
-    var key = (c.id || c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    var target = idMap[key];
-    if(!target) continue;
-    if(NUMERIC_FIELDS[target]){
-      var nv = _num(c.value);
-      if(!isNaN(nv) && nv > 0 && nv < 100000000){ res[target] = nv; }
-    } else if(c.tag === "select"){
-      if(res.rawSelects[target]) continue;
-      res.rawSelects[target] = {value: c.value, text: c.text || c.label || ""};
-      var selText = c.text || c.label || c.value || "";
-      if(target === "cityTier"){ if(!res.city) res.city = selText; }
-      else if(SELECT_FIELDS[target] && res[target] === undefined){ res[target] = selText; }
-    } else {
-      if(res[target] === undefined && String(c.value).trim() !== ""){ res[target] = String(c.value).trim(); }
-    }
-  }
-
-  // 3) 其余控件按 label/上下文文本关键词匹配（兼容旧版字段命名不同）
-  var EXTRA_RULES = [
-    {key:"rooms", kws:["客房总数","房间数","房间数量","总房量","总房数","客房数量"], numeric:true},
-    {key:"adr", kws:["平均房价","门市价","均价"], numeric:true},
-    {key:"city", kws:["城市","所在城市","所属城市","市区","城市等级","城市层级"]},
-    {key:"location", kws:["位置","地理位置","区位","景区","商圈"]},
-    {key:"type", kws:["业态","酒店类型","酒店业态"]},
-    {key:"varCost", kws:["变动成本","可变成本","单房变动成本"], numeric:true},
-    {key:"commission_0", kws:["佣金率","佣金比例","佣金"], numeric:true},
-    {key:"taxRate", kws:["税率","增值税率"], numeric:true},
-    {key:"revTargetNights", kws:["目标新增间夜","目标间夜","新增间夜目标","间夜目标数"], numeric:true},
-    {key:"revTargetRevenue", kws:["目标营收","目标收入","营收目标"], numeric:true},
-    {key:"revCustomerPool", kws:["客户池","客户基数","潜客池"], numeric:true},
-    {key:"revAdPeriod", kws:["投放周期","投放天数","推广周期"], numeric:true},
-    {key:"budgetLimit_0", kws:["预算上限","预算","投放预算"], numeric:true},
-    {key:"occ", kws:["入住率","出租率"], numeric:true},
-    {key:"brandName", kws:["酒店名称","门店名称","品牌名称"]}
-  ];
-  for(var e2=0; e2<EXTRA_RULES.length; e2++){
-    var rule = EXTRA_RULES[e2];
-    if(res[rule.key] !== undefined) continue;
-    for(var k2=0; k2<controls.length; k2++){
-      var c2 = controls[k2];
-      var hay = _normH((c2.label || "") + " " + (c2.tag === "select" ? c2.text : c2.value));
-      if(!hay) continue;
-      var hit = false;
-      for(var k3=0; k3<rule.kws.length; k3++){
-        if(hay.indexOf(rule.kws[k3]) >= 0){ hit = true; break; }
-      }
-      if(!hit) continue;
-      var raw = c2.tag === "select" ? (c2.text || c2.value) : c2.value;
-      if(c2.tag === "select"){
-        var rk = (c2.id || c2.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        var rtarget = idMap[rk];
-        if(rtarget && (rtarget === "cityTier" || rtarget === "location" || rtarget === "type")){
-          res.rawSelects[rtarget] = {value: c2.value, text: c2.text || c2.label || ""};
-        } else if(rule.key === "city" && !res.rawSelects.cityTier){ res.rawSelects.cityTier = {value:c2.value, text:c2.text || c2.label || ""}; }
-        else if(rule.key === "location" && !res.rawSelects.location){ res.rawSelects.location = {value:c2.value, text:c2.text || c2.label || ""}; }
-        else if(rule.key === "type" && !res.rawSelects.type){ res.rawSelects.type = {value:c2.value, text:c2.text || c2.label || ""}; }
-      }
-      if(rule.numeric){
-        var nv2 = _num(raw);
-        if(!isNaN(nv2) && nv2 > 0 && nv2 < 100000){ res[rule.key] = nv2; }
-      } else {
-        if(String(raw).trim() !== ""){ res[rule.key] = String(raw).trim(); }
-      }
-      if(res[rule.key] !== undefined) break;
-    }
-  }
-
-  // 4) 顺带用 XLSX 解析页面里的表格（旧版页面若内嵌报表表格也能识别订单/推广数据）
-  try{
-    var wb2 = XLSX.read(htmlText, {type:"string"});
-    if(wb2 && wb2.SheetNames && wb2.SheetNames.length){
-      var extra = parseWorkbook(wb2);
-      if(extra.orders) res.orders = extra.orders;
-      if(extra.promo) res.promo = extra.promo;
-      if(extra.orderSheet) res.orderSheet = extra.orderSheet;
-      if(extra.promoSheet) res.promoSheet = extra.promoSheet;
-      if(extra.warnings) res.warnings = res.warnings.concat(extra.warnings);
-      // 合并表格键值对识别出的业务字段（客房总数/平均房价/佣金率/目标等）
-      var kvKeys = ["rooms","adr","city","location","type","varCost","commission_0","taxRate","revTargetNights","revTargetRevenue","revCustomerPool","revAdPeriod","budgetLimit_0","occ","brandName"];
-      for(var kvi=0; kvi<kvKeys.length; kvi++){
-        var kk = kvKeys[kvi];
-        if(res[kk] === undefined && extra[kk] !== undefined && String(extra[kk]).trim() !== ""){ res[kk] = extra[kk]; }
-      }
-    }
-  }catch(e){}
-
-  if(res.rooms === undefined && res.adr === undefined && !res.city && !res.location && !res.type && !res.orders && !res.promo){
-    res.warnings.push("未从该 HTML 中识别到表单字段（城市/客房总数等）。请确认这是旧版测算页保存的完整页面文件。");
-  }
-  return res;
-}
-
-function handleDataFile(input){
-  var file = input.files && input.files[0];
-  if(!file) return;
-  parseImportFile(file);
-}
-
-(function(){
-  var zone = document.getElementById("importDropZone");
-  if(!zone) return;
-  function hl(on){ zone.style.borderColor = on ? "#059669" : "#2563eb"; zone.style.background = on ? "#ecfdf5" : "#eff6ff"; }
-  zone.addEventListener("dragenter", function(e){ e.preventDefault(); e.stopPropagation(); hl(true); });
-  zone.addEventListener("dragover", function(e){ e.preventDefault(); e.stopPropagation(); });
-  zone.addEventListener("dragleave", function(e){ e.preventDefault(); e.stopPropagation(); hl(false); });
-  zone.addEventListener("drop", function(e){
-    e.preventDefault(); e.stopPropagation(); hl(false);
-    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if(f) parseImportFile(f);
-  });
-})();
-
-function parseWorkbook(wb){
-  var orderSheet = null, promoSheet = null;
-  wb.SheetNames.forEach(function(nm){
-    var n = String(nm).toLowerCase();
-    if(n.indexOf("订单") >= 0 || n.indexOf("明细") >= 0 || n.indexOf("订单明细") >= 0 || n.indexOf("报表") >= 0){ if(!orderSheet) orderSheet = nm; }
-    else if(n.indexOf("推广") >= 0 || n.indexOf("点击") >= 0 || n.indexOf("消耗") >= 0 || n.indexOf("投放") >= 0 || n.indexOf("广告") >= 0){ if(!promoSheet) promoSheet = nm; }
-  });
-  if(!orderSheet && wb.SheetNames.length >= 1) orderSheet = wb.SheetNames[0];
-  if(!promoSheet && wb.SheetNames.length >= 2) promoSheet = wb.SheetNames[1];
-
-  var res = {orderSheet: orderSheet, promoSheet: promoSheet, orders: null, promo: null, warnings: []};
-
-  if(orderSheet){
-    var rows = XLSX.utils.sheet_to_json(wb.Sheets[orderSheet], {header:1, defval:""});
-    if(rows && rows.length > 1){
-      var headers = rows[0].map(function(h){ return String(h == null ? "" : h).trim(); });
-      var cOrder = _findCol(headers, ["订单号","订单编号","订单id"]);
-      var cBook = _findCol(headers, ["下单日期","下单时间","预订日期","预订时间","创建时间","订单日期"]);
-      var cIn = _findCol(headers, ["入住日期","到店日期","入住时间","到店时间"]);
-      var cOut = _findCol(headers, ["离店日期","退房日期","离店时间","退房时间"]);
-      var cNights = _findCol(headers, ["间夜","房晚"]);
-      var cAmount = _findCol(headers, ["订单金额","实付金额","支付金额","成交金额","总金额","订单总额","房费","金额"]);
-      var cStatus = _findCol(headers, ["订单状态","状态","订单类型","订单进度"]);
-      var cNew = _findCol(headers, ["新客"]);
-      // 键值对/概况表格（如"客房总数 88"）不当作订单明细，避免生成假订单数据
-      var orderLikeCols = [cOrder, cBook, cIn, cOut, cNights, cAmount, cStatus].filter(function(c){ return c >= 0; });
-      if(orderLikeCols.length === 0){
-        res.warnings.push("『" + orderSheet + "』未识别到订单列（订单号/日期/间夜/金额等），按酒店概况处理。");
-      } else {
-      var miss = [];
-      if(cNights < 0) miss.push("间夜数");
-      if(cAmount < 0) miss.push("订单金额");
-      if(cStatus < 0) miss.push("订单状态");
-      if(cIn < 0 && cBook < 0) miss.push("日期列（下单/入住日期）");
-      if(miss.length) res.warnings.push("订单明细未识别到列：" + miss.join("、") + "（仍可继续，但这几项无法自动算出）");
-
-      var totalOrders = 0, stayedOrders = 0, cancelOrders = 0, stayedNights = 0, stayedAmount = 0, newOrders = 0, newStayed = 0;
-      var monthCnt = {};
-      for(var i=1;i<rows.length;i++){
-        var r = rows[i];
-        var joined = r.join(" ").trim();
-        if(!joined) continue;
-        var status = cStatus >= 0 ? String(r[cStatus] == null ? "" : r[cStatus]).trim() : "";
-        var isStayed = _isStayed(status);
-        var isCancel = _isCancel(status);
-        if(!status){ isStayed = true; }
-        var nights = cNights >= 0 ? Math.abs(parseInt(_num(r[cNights]))) : 1;
-        if(!nights) nights = 1;
-        var amount = cAmount >= 0 ? _num(r[cAmount]) : NaN;
-        if(isNaN(amount)) amount = nights * 200;
-        totalOrders++;
-        if(isStayed){ stayedOrders++; stayedNights += nights; if(!isNaN(amount)) stayedAmount += amount; }
-        if(isCancel) cancelOrders++;
-        var d = cIn >= 0 ? r[cIn] : (cBook >= 0 ? r[cBook] : "");
-        if(d){
-          var ds = String(d).trim();
-          var m = ds.match(/(\d{4})[-/年](\d{1,2})[-/月]/);
-          if(!m) m = ds.match(/(\d{1,2})[-/月]/);
-          if(m){ var mm = m[2] ? m[2].replace(/^0/, "") : m[1].replace(/^0/, ""); if(mm) monthCnt[mm] = (monthCnt[mm] || 0) + 1; }
-        }
-        if(cNew >= 0){ var nv = String(r[cNew]).trim().toLowerCase(); if(nv === "是" || nv === "1" || nv === "y" || nv === "true" || nv.indexOf("新") >= 0){ newOrders++; if(isStayed) newStayed++; } }
-      }
-      res.orders = {
-        totalOrders: totalOrders, stayedOrders: stayedOrders, cancelOrders: cancelOrders,
-        stayedNights: stayedNights, stayedAmount: stayedAmount,
-        newOrders: newOrders, newStayed: newStayed,
-        adr: stayedNights > 0 ? stayedAmount / stayedNights : 0,
-        checkinRate: totalOrders > 0 ? stayedOrders / totalOrders * 100 : 0,
-        avgNights: stayedOrders > 0 ? stayedNights / stayedOrders : 0,
-        monthCnt: monthCnt
-      };
-      }
-    } else {
-      res.warnings.push("『订单明细』表没有数据行，请检查报表内容。");
-    }
-  }
-
-  if(promoSheet){
-    var rows2 = XLSX.utils.sheet_to_json(wb.Sheets[promoSheet], {header:1, defval:""});
-    if(rows2 && rows2.length > 1){
-      var headers2 = rows2[0].map(function(h){ return String(h == null ? "" : h).trim(); });
-      var cDate = _findCol(headers2, ["日期","时间","统计日期"]);
-      var cImp = _findCol(headers2, ["曝光","展现"]);
-      var cClick = _findCol(headers2, ["点击"]);
-      var cCost = _findCol(headers2, ["花费","消费","消耗","总花费","推广花费"]);
-      var cOrd = _findCol(headers2, ["订单数","成交订单","订单量","下单数","订单"]);
-      var cAmt = _findCol(headers2, ["成交金额","销售额","交易额","订单金额","金额"]);
-      var miss2 = [];
-      if(cClick < 0) miss2.push("点击量");
-      if(cCost < 0) miss2.push("花费");
-      if(cOrd < 0) miss2.push("订单数");
-      if(miss2.length) res.warnings.push("推广数据未识别到列：" + miss2.join("、") + "（CPC/转化率无法自动算出）");
-      var tClick = 0, tCost = 0, tOrd = 0, tImp = 0, tAmt = 0;
-      for(var j=1;j<rows2.length;j++){
-        var r2 = rows2[j];
-        if(!r2.join(" ").trim()) continue;
-        if(cClick >= 0) tClick += Math.abs(_num(r2[cClick]) || 0);
-        if(cCost >= 0) tCost += Math.abs(_num(r2[cCost]) || 0);
-        if(cOrd >= 0) tOrd += Math.abs(Math.round(_num(r2[cOrd]) || 0));
-        if(cImp >= 0) tImp += Math.abs(_num(r2[cImp]) || 0);
-        if(cAmt >= 0) tAmt += Math.abs(_num(r2[cAmt]) || 0);
-      }
-      res.promo = {
-        clicks: tClick, cost: tCost, orders: tOrd, imps: tImp, amount: tAmt,
-        cpc: tClick > 0 ? tCost / tClick : 0,
-        orderRate: tClick > 0 ? tOrd / tClick * 100 : 0
-      };
-    }
-  }
-
-  // 额外字段：酒店概况/键值对布局（识别到就填入，识别不到手动填）
-  var EXTRA_RULES = [
-    {key:"rooms", kws:["客房总数","房间数","房间数量","总房量","总房数"], numeric:true},
-    {key:"adr", kws:["平均房价","门市价"], numeric:true},
-    {key:"city", kws:["城市","所在城市","所属城市","市区"]},
-    {key:"location", kws:["位置","地理位置","区位","景区","商圈"]},
-    {key:"type", kws:["业态","酒店类型","酒店业态"]},
-    {key:"varCost", kws:["变动成本","可变成本","单房变动成本"], numeric:true},
-    {key:"commission_0", kws:["佣金率","佣金比例","佣金"], numeric:true},
-    {key:"taxRate", kws:["税率","增值税率"], numeric:true},
-    {key:"revTargetNights", kws:["目标新增间夜","目标间夜","新增间夜目标","间夜目标数"], numeric:true},
-    {key:"revTargetRevenue", kws:["目标营收","目标收入","营收目标"], numeric:true},
-    {key:"revCustomerPool", kws:["客户池","客户基数","潜客池"], numeric:true},
-    {key:"revAdPeriod", kws:["投放周期","投放天数","推广周期"], numeric:true},
-    {key:"budgetLimit_0", kws:["预算上限","预算","投放预算"], numeric:true},
-    {key:"occ", kws:["入住率","出租率"], numeric:true},
-    {key:"brandName", kws:["酒店名称","门店名称","品牌名称"]}
-  ];
-  for(var ei=0; ei<EXTRA_RULES.length; ei++){
-    var rule = EXTRA_RULES[ei];
-    if(res[rule.key] !== undefined) continue;
-    for(var si=0; si<wb.SheetNames.length && res[rule.key] === undefined; si++){
-      var rowsX = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[si]], {header:1, defval:""});
-      for(var ri=0; ri<rowsX.length && res[rule.key] === undefined; ri++){
-        var rowX = rowsX[ri];
-        for(var ci=0; ci<rowX.length; ci++){
-          var cellText = _normH(rowX[ci]);
-          if(!cellText) continue;
-          var matched = false;
-          for(var ki=0; ki<rule.kws.length; ki++){
-            if(cellText.indexOf(rule.kws[ki]) >= 0){ matched = true; break; }
-          }
-          if(!matched) continue;
-          var v1 = (rowX[ci+1] != null) ? rowX[ci+1] : "";
-          var v2 = (rowsX[ri+1] != null) ? rowsX[ri+1][ci] : "";
-          var raw;
-          if(String(v1).trim() !== ""){ raw = v1; }
-          else if(String(v2).trim() !== ""){ raw = v2; }
-          else { continue; }
-          if(String(raw).trim() === "") continue;
-          if(rule.numeric){
-            var nv = _num(raw);
-            if(!isNaN(nv) && nv > 0 && nv < 100000){ res[rule.key] = nv; }
-          } else {
-            res[rule.key] = String(raw).trim();
-          }
-          if(res[rule.key] !== undefined) break;
-        }
-      }
-    }
-  }
-
-  return res;
-}
-
-function clearImportState(restoreFilled){
-  __importData = null;
-  if(restoreFilled && window.__importFilled){
-    window.__importFilled.forEach(function(id){
-      var el = document.getElementById(id);
-      if(el){ el.value = ""; el.classList.remove("auto"); }
-    });
-  }
-  window.__importFilled = null;
-  var b = document.getElementById("btnFillImport");
-  if(b) b.style.display = "none";
-  var r = document.getElementById("importResult");
-  if(r) r.innerHTML = "";
-  var inp = document.getElementById("dataFileInput");
-  if(inp) inp.value = "";
-}
-
-function renderImportResult(){
-  var r = document.getElementById("importResult");
-  var b = document.getElementById("btnFillImport");
-  if(!r) return;
-  if(!__importData){ return; }
-  var d = __importData;
-  var h = "";
-  if(d.warnings.length){ h += '<div style="color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:8px;">⚠️ ' + d.warnings.map(escapeHtml).join('<br>⚠️ ') + '</div>'; }
-  var extraTips = [];
-  if(d.rooms) extraTips.push("客房总数 " + d.rooms + " 间");
-  if(d.city) extraTips.push("城市 " + d.city);
-  if(d.location) extraTips.push("位置 " + d.location);
-  if(d.type) extraTips.push("业态 " + d.type);
-  if(extraTips.length){
-    h += '<div style="background:#fefce8;border:1px solid #fde047;border-radius:10px;padding:10px 14px;margin-bottom:8px;"><b>🏨 酒店概况</b>：' + extraTips.map(escapeHtml).join(" · ") + '（已识别，将自动填入表单）</div>';
-  }
-  if(d.orders){
-    var o = d.orders;
-    h += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:8px;">';
-    h += '<b>📋 订单明细（' + escapeHtml(d.orderSheet || "Sheet1") + '）</b>：共 ' + o.totalOrders + ' 单，已入住 ' + o.stayedOrders + ' 单（取消 ' + o.cancelOrders + '）<br>';
-    h += '真实平均房价 <b>¥' + o.adr.toFixed(2) + '</b> · 履约率 <b>' + o.checkinRate.toFixed(1) + '%</b> · 人均间夜 <b>' + o.avgNights.toFixed(2) + '</b>';
-    if(o.newOrders > 0) h += ' · 新客占比 ' + (o.newOrders/o.totalOrders*100).toFixed(0) + '%';
-    h += '</div>';
-  }
-  if(d.promo){
-    var p = d.promo;
-    h += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:8px;">';
-    h += '<b>📊 推广数据（' + escapeHtml(d.promoSheet || "Sheet2") + '）</b>：点击 ' + p.clicks + ' · 花费 ¥' + p.cost.toLocaleString() + ' · 订单 ' + p.orders + '<br>';
-    h += '真实 CPC <b>¥' + p.cpc.toFixed(2) + '</b> · 点击转化率 <b>' + p.orderRate.toFixed(2) + '%</b>';
-    h += '</div>';
-  }
-  if(!d.orders && !d.promo && !d.rooms && !d.adr && !d.city && !d.location && !d.type){
-    h += '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;">未识别到可用数据：请确认文件是携程/美团后台导出的订单或推广报表（xlsx/xls/csv），或旧版测算页保存的完整页面文件（html）。</div>';
-  }
-  var manualTip = "佣金率、变动成本、经营目标仍需手动填写（表格里通常没有）";
-  h += '<div style="font-size:12px;color:#64748b;margin-top:6px;">识别无误后点「⚡ 一键填入表单」，系统自动填好房价、业态、城市、位置、履约率、CPC、人均间夜等可识别字段；' + manualTip + '。</div>';
-  h += '<div style="margin-top:8px"><button type="button" onclick="clearImportState()" style="padding:6px 12px;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer">✕ 取消导入（清掉识别结果）</button></div>';
-  r.innerHTML = h;
-  if(b){
-    b.style.display = (d.orders || d.promo || d.rooms || d.adr || d.city || d.location || d.type) ? "inline-block" : "none";
-  }
-}
-
-function fillSelectByText(selId, text){
-  var sel = document.getElementById(selId);
-  if(!sel || !text) return null;
-  var t = _normH(text);
-  // 经营目标语义映射：旧版"间夜目标/营收目标/入住率目标/复购目标" ↔ 新版"拉新/冲营收/提入住率/提复购"
-  if(selId === "revGoal"){
-    var goalMap = [["营收","revenue"],["销售额","revenue"],["间夜","newGuest"],["新客","newGuest"],["拉新","newGuest"],["入住率","occupancy"],["复购","repurchase"]];
-    for(var gi=0;gi<goalMap.length;gi++){
-      if(t.indexOf(goalMap[gi][0]) >= 0){
-        for(var oi=0;oi<sel.options.length;oi++){
-          if(sel.options[oi].value === goalMap[gi][1]){
-            sel.selectedIndex = oi;
-            sel.classList.remove("auto");
-            return sel.options[oi].value;
-          }
-        }
-      }
-    }
-  }
-  for(var i=0;i<sel.options.length;i++){
-    var ot = _normH(sel.options[i].text);
-    if(!ot) continue;
-    if(ot.indexOf(t) >= 0 || t.indexOf(ot) >= 0){
-      sel.selectedIndex = i;
-      sel.classList.remove("auto");
-      return sel.options[i].value;
-    }
-  }
-  // 关键词兜底：旧版写法与新版本说法不一致时（如"间夜目标" ↔ "拉新 — 冲间夜量"），按双字词交集匹配
-  var tWords = [];
-  for(var k=0;k+2<=t.length;k++){
-    var w2 = t.substring(k, k+2);
-    if(/[\u4e00-\u9fa5]/.test(w2)) tWords.push(w2);
-  }
-  for(var j=0;j<sel.options.length;j++){
-    var ot2 = _normH(sel.options[j].text);
-    if(!ot2) continue;
-    for(var m=0;m<tWords.length;m++){
-      if(ot2.indexOf(tWords[m]) >= 0){
-        sel.selectedIndex = j;
-        sel.classList.remove("auto");
-        return sel.options[j].value;
-      }
-    }
-  }
-  return null;
-}
-
-function fillSelectDirect(selId, raw){
-  if(!raw) return null;
-  var sel = document.getElementById(selId);
-  if(!sel) return null;
-  if(raw.value !== "" && raw.value != null){
-    for(var i=0;i<sel.options.length;i++){
-      if(String(sel.options[i].value) === String(raw.value)){
-        sel.selectedIndex = i;
-        sel.classList.remove("auto");
-        return sel.options[i].value;
-      }
-    }
-  }
-  var text = raw.text || raw.label || "";
-  if(text){ return fillSelectByText(selId, text); }
-  return null;
-}
-
-function fillFromImport(){
-  if(!__importData) return;
-  var filled = [];
-  var filledIds = [];
-  var D = __importData;
-
-  // 1) 全量填充：基础信息 / 经营目标 / 成本 / 投放参数，文件里有值就全填
-  var FIELD_DEFS = [
-    {id:"rooms", key:"rooms", label:"客房总数", suffix:" 间", num:true},
-    {id:"cityTier", key:"cityTier", label:"城市", select:true, textKey:"city"},
-    {id:"location", key:"location", label:"位置", select:true, textKey:"location"},
-    {id:"type", key:"type", label:"业态", select:true, textKey:"type", after:function(v){ if(typeof applyTypeAuto === "function") applyTypeAuto(v); }},
-    {id:"varCost", key:"varCost", label:"变动成本", prefix:"¥", num:true},
-    {id:"commission_0", key:"commission_0", label:"佣金率", suffix:"%", num:true},
-    {id:"taxRate", key:"taxRate", label:"税率", suffix:"%", num:true},
-    {id:"otherFee_0", key:"otherFee_0", label:"其他费用", prefix:"¥", num:true},
-    {id:"revGoal", key:"revGoal", label:"经营目标", select:true, textKey:"revGoal"},
-    {id:"revTargetNights", key:"revTargetNights", label:"目标新增间夜", suffix:" 间夜", num:true},
-    {id:"revTargetRevenue", key:"revTargetRevenue", label:"目标营收", prefix:"¥", num:true},
-    {id:"revTargetRepurchase", key:"revTargetRepurchase", label:"复购间夜目标", suffix:" 间夜", num:true},
-    {id:"revTargetOccInput", key:"revTargetOccInput", label:"目标入住率", suffix:"%", num:true},
-    {id:"revCustomerPool", key:"revCustomerPool", label:"客户池", num:true},
-    {id:"revAdPeriod", key:"revAdPeriod", label:"投放周期", suffix:" 天", num:true},
-    {id:"budgetLimit_0", key:"budgetLimit_0", label:"预算上限", prefix:"¥", num:true},
-    {id:"occ", key:"occ", label:"入住率", suffix:"%", num:true},
-    {id:"brandName", key:"brandName", label:"酒店名称", text:true}
-  ];
-  for(var i=0;i<FIELD_DEFS.length;i++){
-    var def = FIELD_DEFS[i];
-    var val = D[def.key];
-    var raw = D.rawSelects && D.rawSelects[def.key];
-    if(def.select){
-      if(!val && !raw) continue;
-      var picked = fillSelectDirect(def.id, raw || {value:"", text:val});
-      if(picked){ filledIds.push(def.id); filled.push(def.label + " " + (val || picked)); if(def.after) def.after(picked); }
-    } else {
-      if(val === undefined || val === null || String(val).trim() === "") continue;
-      var nv = _num(val);
-      if(def.num && (isNaN(nv) || nv <= 0)) continue;
-      var disp = def.num ? (def.prefix||"") + nv + (def.suffix||"") : String(val);
-      setVal(def.id, def.num ? nv : String(val));
-      filledIds.push(def.id); filled.push(def.label + " " + disp);
-    }
-  }
-
-  // 2) 表格计算字段：订单表 / 推广表计算值优先，控件值兜底
-  var adrVal = 0;
-  if(D.orders){
-    var o = D.orders;
-    if(o.adr > 0) adrVal = o.adr;
-    if(o.checkinRate > 0){ setVal("revCheckinRate_0", o.checkinRate.toFixed(1)); filledIds.push("revCheckinRate_0"); filled.push("履约率 " + o.checkinRate.toFixed(1) + "%"); }
-    if(o.avgNights > 0){ setVal("revAvgNewNights", o.avgNights.toFixed(1)); filledIds.push("revAvgNewNights"); filled.push("人均间夜 " + o.avgNights.toFixed(1)); }
-  }
-  if(adrVal <= 0 && D.adr > 0){ adrVal = D.adr; }
-  if(adrVal > 0){
-    setVal("adr", adrVal.toFixed(2)); filledIds.push("adr"); filled.push("平均房价 ¥" + adrVal.toFixed(2));
-    if(!D.type && typeof autoMapByAdr === "function"){ autoMapByAdr(); }
-  }
-  if(D.promo){
-    var p = D.promo;
-    if(p.cpc > 0){ setVal("revCpc_0", p.cpc.toFixed(2)); filledIds.push("revCpc_0"); filled.push("CPC ¥" + p.cpc.toFixed(2)); }
-    if(p.orderRate > 0){ setVal("revOrderRate_0", p.orderRate.toFixed(2)); filledIds.push("revOrderRate_0"); filled.push("转化率 " + p.orderRate.toFixed(2) + "%"); }
-  }
-  // 表格没算出来时，用文件里控件读到的值兜底
-  if(D.revCpc_0 > 0 && filledIds.indexOf("revCpc_0") < 0){ setVal("revCpc_0", D.revCpc_0.toFixed(2)); filledIds.push("revCpc_0"); filled.push("CPC ¥" + D.revCpc_0.toFixed(2)); }
-  if(D.revOrderRate_0 > 0 && filledIds.indexOf("revOrderRate_0") < 0){ setVal("revOrderRate_0", D.revOrderRate_0.toFixed(2)); filledIds.push("revOrderRate_0"); filled.push("转化率 " + D.revOrderRate_0.toFixed(2) + "%"); }
-  if(D.revCheckinRate_0 > 0 && filledIds.indexOf("revCheckinRate_0") < 0){ setVal("revCheckinRate_0", D.revCheckinRate_0.toFixed(1)); filledIds.push("revCheckinRate_0"); filled.push("履约率 " + D.revCheckinRate_0.toFixed(1) + "%"); }
-  if(D.revAvgNewNights > 0 && filledIds.indexOf("revAvgNewNights") < 0){ setVal("revAvgNewNights", D.revAvgNewNights.toFixed(1)); filledIds.push("revAvgNewNights"); filled.push("人均间夜 " + D.revAvgNewNights.toFixed(1)); }
-
-  window.__importFilled = filledIds;
-  var r = document.getElementById("importResult");
-  if(r && filled.length){
-    r.innerHTML = '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 14px;"><b>✅ 已自动填入：</b>' + filled.join(" · ") + '<br><span style="color:#64748b;font-size:12px;">文件里能识别的都填进去了，自动计算保持原样，可微调后点「生成决策报告」。</span><br><button type="button" onclick="clearImportState(true)" style="margin-top:8px;padding:6px 12px;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer">✕ 取消导入并还原表单</button></div>';
-  }
-  var b = document.getElementById("btnFillImport");
-  if(b) b.style.display = "none";
-  var inp = document.getElementById("dataFileInput");
-  if(inp) inp.value = "";
-}
-</script>
 
 </body>
 </html>
