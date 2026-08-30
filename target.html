@@ -3042,11 +3042,18 @@ function downloadImportTemplate(){
 
 function parseImportFile(file){
   if(typeof XLSX === "undefined"){ alert("表格库加载失败，请检查网络后重试（需要联网加载一次）。"); return; }
+  var name = String(file && file.name ? file.name : "").toLowerCase();
+  var isHtml = /\.(html?|mhtml)$/.test(name);
   var reader = new FileReader();
   reader.onload = function(e){
     try{
-      var wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
-      __importData = parseWorkbook(wb);
+      if(isHtml){
+        // 旧版页面保存的 HTML：重点是读表单控件（下拉框/输入框）里的值
+        __importData = parseLegacyHtml(String(e.target.result || ""));
+      } else {
+        var wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
+        __importData = parseWorkbook(wb);
+      }
       renderImportResult();
     }catch(err){
       __importData = null;
@@ -3056,7 +3063,156 @@ function parseImportFile(file){
       if(b) b.style.display = "none";
     }
   };
-  reader.readAsArrayBuffer(file);
+  if(isHtml){ reader.readAsText(file, "utf-8"); }
+  else { reader.readAsArrayBuffer(file); }
+}
+
+function parseLegacyHtml(htmlText){
+  var res = {orderSheet: null, promoSheet: null, orders: null, promo: null, warnings: [], rawSelects: {}};
+  if(!htmlText || !htmlText.trim()){ res.warnings.push("文件内容为空。"); return res; }
+  var doc = null;
+  try{
+    doc = new DOMParser().parseFromString(htmlText, "text/html");
+  }catch(e){}
+  if(!doc || !doc.body){ res.warnings.push("不是有效的 HTML 文件。"); return res; }
+
+  // 1) 收集所有表单控件：id/name + 值 + 关联label文本
+  var controls = [];
+  function labelFor(id){
+    if(!id) return "";
+    try{
+      var lb = doc.querySelector('label[for="' + id.replace(/"/g, '\\"') + '"]');
+      if(lb) return _normH(lb.textContent);
+    }catch(e){}
+    return "";
+  }
+  function getLabelText(ctrl){
+    var t = "";
+    try{
+      if(ctrl.previousElementSibling && ctrl.previousElementSibling.tagName === "LABEL"){
+        t = _normH(ctrl.previousElementSibling.textContent);
+        if(t) return t;
+      }
+    }catch(e){}
+    try{
+      var parent = ctrl.parentElement;
+      if(parent){
+        var labs = parent.querySelectorAll("label");
+        if(labs.length === 1){ t = _normH(labs[0].textContent); if(t) return t; }
+      }
+    }catch(e){}
+    try{
+      var p = ctrl.closest("td, .form-item, .form-group, .field, .row");
+      if(p){
+        t = _normH(p.textContent);
+        if(t && t.length <= 80) return t;
+        var labs2 = p.querySelectorAll("label");
+        if(labs2.length === 1){ t = _normH(labs2[0].textContent); if(t) return t; }
+      }
+    }catch(e){}
+    return "";
+  }
+  try{
+    var sels = doc.querySelectorAll("select");
+    for(var i=0;i<sels.length;i++){
+      var s = sels[i], idx = s.selectedIndex;
+      var opt = idx >= 0 && s.options && s.options[idx] ? s.options[idx] : null;
+      var val = opt ? String(opt.value != null ? opt.value : "") : "";
+      var txt = opt ? _normH(opt.text) : "";
+      controls.push({tag:"select", id:s.id || "", name:s.name || "", value:val, text:txt, label:labelFor(s.id) || labelFor(s.name) || getLabelText(s)});
+    }
+    var ins = doc.querySelectorAll("input, textarea");
+    for(var j=0;j<ins.length;j++){
+      var el = ins[j];
+      var tp = (el.type || "").toLowerCase();
+      if(tp === "file" || tp === "hidden" || tp === "submit" || tp === "button" || tp === "reset" || tp === "checkbox" || tp === "radio") continue;
+      var v = String(el.value != null ? el.value : "").trim();
+      if(!v) continue;
+      controls.push({tag:"input", id:el.id || "", name:el.name || "", value:v, text:_normH(v), label:labelFor(el.id) || labelFor(el.name) || getLabelText(el)});
+    }
+  }catch(e){}
+
+  // 2) 按 id/name 精确匹配新版字段
+  var idMap = {rooms:"rooms", roomcount:"rooms", room_total:"rooms", totalrooms:"rooms",
+               adr:"adr", avgprice:"adr", avg_price:"adr", price:"adr", roomprice:"adr",
+               citytier:"cityTier", city:"cityTier", citylevel:"cityTier",
+               location:"location", locationtier:"location", locationlevel:"location",
+               type:"type", businesstype:"type", hoteltype:"type", format:"type"};
+  for(var ci=0; ci<controls.length; ci++){
+    var c = controls[ci];
+    var key = (c.id || c.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    var target = idMap[key];
+    if(!target) continue;
+    if(target === "rooms" || target === "adr"){
+      var nv = _num(c.value);
+      if(!isNaN(nv) && nv > 0 && nv < 100000){ res[target] = nv; }
+    } else if(c.tag === "select"){
+      res.rawSelects[target] = {value: c.value, text: c.text || c.label || ""};
+      if(target === "cityTier" && !res.city){ res.city = c.text || c.label || c.value || ""; }
+      if(target === "location" && !res.location){ res.location = c.text || c.label || c.value || ""; }
+      if(target === "type" && !res.type){ res.type = c.text || c.label || c.value || ""; }
+    } else {
+      res[target] = c.value;
+    }
+  }
+
+  // 3) 其余控件按 label/上下文文本关键词匹配（兼容旧版字段命名不同）
+  var EXTRA_RULES = [
+    {key:"rooms", kws:["客房总数","房间数","房间数量","总房量","总房数","客房数量"], numeric:true},
+    {key:"adr", kws:["平均房价","门市价","均价"], numeric:true},
+    {key:"city", kws:["城市","所在城市","所属城市","市区","城市等级","城市层级"]},
+    {key:"location", kws:["位置","地理位置","区位","景区","商圈"]},
+    {key:"type", kws:["业态","酒店类型","酒店业态"]}
+  ];
+  for(var e2=0; e2<EXTRA_RULES.length; e2++){
+    var rule = EXTRA_RULES[e2];
+    if(res[rule.key] !== undefined) continue;
+    for(var k2=0; k2<controls.length; k2++){
+      var c2 = controls[k2];
+      var hay = _normH((c2.label || "") + " " + (c2.tag === "select" ? c2.text : c2.value));
+      if(!hay) continue;
+      var hit = false;
+      for(var k3=0; k3<rule.kws.length; k3++){
+        if(hay.indexOf(rule.kws[k3]) >= 0){ hit = true; break; }
+      }
+      if(!hit) continue;
+      var raw = c2.tag === "select" ? (c2.text || c2.value) : c2.value;
+      if(c2.tag === "select"){
+        var rk = (c2.id || c2.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        var rtarget = idMap[rk];
+        if(rtarget && (rtarget === "cityTier" || rtarget === "location" || rtarget === "type")){
+          res.rawSelects[rtarget] = {value: c2.value, text: c2.text || c2.label || ""};
+        } else if(rule.key === "city" && !res.rawSelects.cityTier){ res.rawSelects.cityTier = {value:c2.value, text:c2.text || c2.label || ""}; }
+        else if(rule.key === "location" && !res.rawSelects.location){ res.rawSelects.location = {value:c2.value, text:c2.text || c2.label || ""}; }
+        else if(rule.key === "type" && !res.rawSelects.type){ res.rawSelects.type = {value:c2.value, text:c2.text || c2.label || ""}; }
+      }
+      if(rule.numeric){
+        var nv2 = _num(raw);
+        if(!isNaN(nv2) && nv2 > 0 && nv2 < 100000){ res[rule.key] = nv2; }
+      } else {
+        if(String(raw).trim() !== ""){ res[rule.key] = String(raw).trim(); }
+      }
+      if(res[rule.key] !== undefined) break;
+    }
+  }
+
+  // 4) 顺带用 XLSX 解析页面里的表格（旧版页面若内嵌报表表格也能识别订单/推广数据）
+  try{
+    var wb2 = XLSX.read(htmlText, {type:"string"});
+    if(wb2 && wb2.SheetNames && wb2.SheetNames.length){
+      var extra = parseWorkbook(wb2);
+      if(extra.orders) res.orders = extra.orders;
+      if(extra.promo) res.promo = extra.promo;
+      if(extra.orderSheet) res.orderSheet = extra.orderSheet;
+      if(extra.promoSheet) res.promoSheet = extra.promoSheet;
+      if(extra.warnings) res.warnings = res.warnings.concat(extra.warnings);
+    }
+  }catch(e){}
+
+  if(res.rooms === undefined && res.adr === undefined && !res.city && !res.location && !res.type && !res.orders && !res.promo){
+    res.warnings.push("未从该 HTML 中识别到表单字段（城市/客房总数等）。请确认这是旧版测算页保存的完整页面文件。");
+  }
+  return res;
 }
 
 function handleDataFile(input){
@@ -3276,15 +3432,15 @@ function renderImportResult(){
     h += '真实 CPC <b>¥' + p.cpc.toFixed(2) + '</b> · 点击转化率 <b>' + p.orderRate.toFixed(2) + '%</b>';
     h += '</div>';
   }
-  if(!d.orders && !d.promo){
-    h += '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;">未识别到可用数据：请确认文件是携程/美团后台导出的订单或推广报表（xlsx/xls/csv）。</div>';
+  if(!d.orders && !d.promo && !d.rooms && !d.adr && !d.city && !d.location && !d.type){
+    h += '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;">未识别到可用数据：请确认文件是携程/美团后台导出的订单或推广报表（xlsx/xls/csv），或旧版测算页保存的完整页面文件（html）。</div>';
   }
   var manualTip = "佣金率、变动成本、经营目标仍需手动填写（表格里通常没有）";
   h += '<div style="font-size:12px;color:#64748b;margin-top:6px;">识别无误后点「⚡ 一键填入表单」，系统自动填好房价、业态、城市、位置、履约率、CPC、人均间夜等可识别字段；' + manualTip + '。</div>';
   h += '<div style="margin-top:8px"><button type="button" onclick="clearImportState()" style="padding:6px 12px;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer">✕ 取消导入（清掉识别结果）</button></div>';
   r.innerHTML = h;
   if(b){
-    b.style.display = (d.orders || d.promo) ? "inline-block" : "none";
+    b.style.display = (d.orders || d.promo || d.rooms || d.adr || d.city || d.location || d.type) ? "inline-block" : "none";
   }
 }
 
@@ -3304,16 +3460,40 @@ function fillSelectByText(selId, text){
   return null;
 }
 
+function fillSelectDirect(selId, raw){
+  if(!raw) return null;
+  var sel = document.getElementById(selId);
+  if(!sel) return null;
+  if(raw.value !== "" && raw.value != null){
+    for(var i=0;i<sel.options.length;i++){
+      if(String(sel.options[i].value) === String(raw.value)){
+        sel.value = sel.options[i].value;
+        sel.classList.remove("auto");
+        return sel.options[i].value;
+      }
+    }
+  }
+  var text = raw.text || raw.label || "";
+  if(text){ return fillSelectByText(selId, text); }
+  return null;
+}
+
 function fillFromImport(){
   if(!__importData) return;
   var filled = [];
   var filledIds = [];
   if(__importData.rooms > 0){ setVal("rooms", __importData.rooms); filledIds.push("rooms"); filled.push("客房总数 " + __importData.rooms + " 间"); }
-  if(__importData.city){ if(fillSelectByText("cityTier", __importData.city)){ filledIds.push("cityTier"); filled.push("城市 " + __importData.city); } }
-  if(__importData.location){ if(fillSelectByText("location", __importData.location)){ filledIds.push("location"); filled.push("位置 " + __importData.location); } }
-  if(__importData.type){
-    var t1 = fillSelectByText("type", __importData.type);
-    if(t1){ filledIds.push("type"); filled.push("业态 " + __importData.type); if(typeof applyTypeAuto === "function") applyTypeAuto(t1); }
+  if(__importData.city || __importData.rawSelects.cityTier){
+    var ct = fillSelectDirect("cityTier", __importData.rawSelects.cityTier || {value:"", text:__importData.city});
+    if(ct){ filledIds.push("cityTier"); filled.push("城市 " + (__importData.city || ct)); }
+  }
+  if(__importData.location || __importData.rawSelects.location){
+    var lo = fillSelectDirect("location", __importData.rawSelects.location || {value:"", text:__importData.location});
+    if(lo){ filledIds.push("location"); filled.push("位置 " + (__importData.location || lo)); }
+  }
+  if(__importData.type || __importData.rawSelects.type){
+    var t1 = fillSelectDirect("type", __importData.rawSelects.type || {value:"", text:__importData.type});
+    if(t1){ filledIds.push("type"); filled.push("业态 " + (__importData.type || t1)); if(typeof applyTypeAuto === "function") applyTypeAuto(t1); }
   }
   var adrVal = 0;
   if(__importData.orders){
