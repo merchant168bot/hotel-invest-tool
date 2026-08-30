@@ -3028,7 +3028,7 @@ function downloadImportTemplate(){
     [""],
     ["1. 订单明细：从携程（eBooking/生意通）或美团酒店商家后台导出「订单明细/订单报表」，把【表头+数据】贴到『订单明细』表即可；列名稍有差异也能自动识别。"],
     ["2. 推广数据（可选）：从携程推广通 / 美团推广后台导出「推广报表/消耗报表」，贴到『推广数据』表。有了它才能自动算出真实 CPC 和转化率；不贴则用表单默认值。"],
-    ["3. 导入后点『一键填入表单』，系统自动填好房价、履约率、转化率、CPC、人均间夜；房间数、佣金率、变动成本、经营目标仍需手动填写（这些平台数据里没有）。"],
+    ["3. 导入后点『一键填入表单』，系统自动填好房价、履约率、转化率、CPC、人均间夜；若报表中含「客房总数/房间数」也会自动识别填入，佣金率、变动成本、经营目标仍需手动填写（平台数据里通常没有）。"],
     ["4. 订单状态列常见取值：已入住 / 待入住 / 已取消（系统按此统计履约率）。"]
   ];
   var sheet3 = XLSX.utils.aoa_to_sheet(tip);
@@ -3182,6 +3182,26 @@ function parseWorkbook(wb){
       };
     }
   }
+
+  // 额外字段：客房总数（常见于酒店概况/键值对布局；识别到就填入，识别不到手动填）
+  var roomsVal = null;
+  for(var si=0; si<wb.SheetNames.length && !roomsVal; si++){
+    var rowsX = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[si]], {header:1, defval:""});
+    for(var ri=0; ri<rowsX.length && !roomsVal; ri++){
+      var rowX = rowsX[ri];
+      for(var ci=0; ci<rowX.length; ci++){
+        var cellText = _normH(rowX[ci]);
+        if(cellText && (cellText.indexOf("客房总数") >= 0 || cellText.indexOf("房间数") >= 0 || cellText.indexOf("房间数量") >= 0 || cellText.indexOf("总房量") >= 0 || cellText.indexOf("总房数") >= 0)){
+          var v1 = (rowX[ci+1] != null) ? _num(rowX[ci+1]) : NaN;
+          var v2 = (rowsX[ri+1] != null) ? _num(rowsX[ri+1][ci]) : NaN;
+          var v = (v1 > 0 && v1 < 100000) ? v1 : v2;
+          if(!isNaN(v) && v > 0 && v < 100000){ roomsVal = v; break; }
+        }
+      }
+    }
+  }
+  if(roomsVal) res.rooms = roomsVal;
+
   return res;
 }
 
@@ -3210,6 +3230,9 @@ function renderImportResult(){
   var d = __importData;
   var h = "";
   if(d.warnings.length){ h += '<div style="color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:8px;">⚠️ ' + d.warnings.map(escapeHtml).join('<br>⚠️ ') + '</div>'; }
+  if(d.rooms){
+    h += '<div style="background:#fefce8;border:1px solid #fde047;border-radius:10px;padding:10px 14px;margin-bottom:8px;"><b>🏨 客房总数</b>：' + d.rooms + ' 间（已识别，将自动填入表单）</div>';
+  }
   if(d.orders){
     var o = d.orders;
     h += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:8px;">';
@@ -3228,7 +3251,8 @@ function renderImportResult(){
   if(!d.orders && !d.promo){
     h += '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;">未识别到可用数据：请确认文件是携程/美团后台导出的订单或推广报表（xlsx/xls/csv）。</div>';
   }
-  h += '<div style="font-size:12px;color:#64748b;margin-top:6px;">识别无误后点「⚡ 一键填入表单」，系统自动填好可计算的字段；房间数、佣金率、变动成本、经营目标仍需手动填写。</div>';
+  var manualTip = d.rooms ? "佣金率、变动成本、经营目标仍需手动填写" : "房间数、佣金率、变动成本、经营目标仍需手动填写";
+  h += '<div style="font-size:12px;color:#64748b;margin-top:6px;">识别无误后点「⚡ 一键填入表单」，系统自动填好可计算的字段；' + manualTip + '。</div>';
   h += '<div style="margin-top:8px"><button type="button" onclick="clearImportState()" style="padding:6px 12px;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer">✕ 取消导入（清掉识别结果）</button></div>';
   r.innerHTML = h;
   if(b){
@@ -3240,6 +3264,7 @@ function fillFromImport(){
   if(!__importData) return;
   var filled = [];
   var filledIds = [];
+  if(__importData.rooms > 0){ setVal("rooms", __importData.rooms); filledIds.push("rooms"); filled.push("客房总数 " + __importData.rooms + " 间"); }
   if(__importData.orders){
     var o = __importData.orders;
     if(o.adr > 0){ setVal("adr", o.adr.toFixed(2)); filledIds.push("adr"); filled.push("平均房价 ¥" + o.adr.toFixed(2)); }
@@ -3254,7 +3279,7 @@ function fillFromImport(){
   window.__importFilled = filledIds;
   var r = document.getElementById("importResult");
   if(r && filled.length){
-    r.innerHTML = '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 14px;"><b>✅ 已自动填入：</b>' + filled.join(" · ") + '<br><span style="color:#64748b;font-size:12px;">请检查下方表单（灰色斜体为自动值，可微调），然后填写房间数 / 佣金率 / 变动成本 / 经营目标，点「生成决策报告」。</span><br><button type="button" onclick="clearImportState(true)" style="margin-top:8px;padding:6px 12px;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer">✕ 取消导入并还原表单</button></div>';
+    r.innerHTML = '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 14px;"><b>✅ 已自动填入：</b>' + filled.join(" · ") + '<br><span style="color:#64748b;font-size:12px;">请检查下方表单（灰色斜体为自动值，可微调），然后填写' + (__importData.rooms ? "佣金率 / 变动成本 / 经营目标" : "房间数 / 佣金率 / 变动成本 / 经营目标") + '，点「生成决策报告」。</span><br><button type="button" onclick="clearImportState(true)" style="margin-top:8px;padding:6px 12px;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer">✕ 取消导入并还原表单</button></div>';
   }
   var b = document.getElementById("btnFillImport");
   if(b) b.style.display = "none";
