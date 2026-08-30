@@ -2261,7 +2261,7 @@ var chainSteps = [
   {name:'① 点击', val: effClicks.toLocaleString() + ' 次', note:'CPC ¥' + effCpc.toFixed(2), hot:true},
   {name:'② 进店', val: effOrderRate.toFixed(1) + '%', note:'详情页转化'},
   {name:'③ 下单', val: effOrders.toLocaleString() + ' 单', note:'下单转化'},
-  {name:'④ 入住', val: effNights.toLocaleString() + ' 间夜', note:'履约率 ' + checkinRate + '%'}
+  {name:'④ 入住', val: effNights.toLocaleString() + ' 间夜', note:'履约率 ' + checkinRate + '%' + (goal === 'newGuest' ? ' × 人均 ' + (avgNewNights || 1.2) + ' 间夜' : '')}
 ];
 html += renderChain(chainSteps);
 html += '</div>';
