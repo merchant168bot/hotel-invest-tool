@@ -6,6 +6,7 @@
 <meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <title>酒店投流目标测算-智能系统</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -381,6 +382,113 @@ h2{border-left:4px solid #2563eb}
 <div class="print-brand" id="printBrand"></div>
 <h2>酒店投流目标测算-智能系统</h2>
 <div class="sub" id="subText">基于目标导向的收益管理模型，输入经营目标与现状数据，智能拆解所需投放预算、流量效率阈值及分阶段执行方案。</div>
+<div class="card" id="reverseOnly">
+<div class="card-head"><div class="card-title">① 酒店经营目标</div><span class="req-badge">5 项必填</span></div>
+<div class="guide-bar"><b>目标驱动：先定目标，系统自动反推所需预算与投放强度。</b><br>你只需填写 5 项：① 目标场景 → ② 目标数值（新增新客数 / 目标营收 / 目标入住率 / 复购目标，按下方提示填具体数字）→ ③ 投放时段 → ④ 投放周期 → ⑤ 投放平台。<span class="auto-tip">灰色斜体字段 = 系统已自动计算/自动填充，一般无需修改。</span></div>
+<div class="legend"><span><i class="dot-auto"></i>灰色斜体 = 自动计算（不用填）</span><span><i class="dot-manual"></i>黑色 = 手动填写（必填）</span></div>
+<div class="row">
+<label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
+<select id="revGoal" onchange="onRevGoalChange()">
+<option value="newGuest">拉新 — 新增新客</option>
+<option value="revenue">冲营收</option>
+<option value="occupancy">提入住率</option>
+<option value="repurchase">提复购</option>
+</select>
+<div class="hint">选择你要达成的经营目标，系统将反向推导所需预算</div>
+</div>
+<div class="goal-inputs" id="revGoalInputs"></div>
+<div class="inline-row">
+<div class="field">
+<label>投放时段类型 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
+<select id="seasonHoliday">
+<option value="">— 请选择 —</option>
+<option value="normal">平日</option>
+<option value="weekend">周末</option>
+<option value="small">小长假（中秋/清明/端午）</option>
+<option value="big">大长假（春节/国庆）</option>
+<option value="yearEnd">年末跨年</option>
+</select>
+<div class="hint">影响CPC与转化率基准，与收益测算口径一致</div>
+</div>
+<div class="field">
+<label>投放周期 <span style="color:red;">*</span> <span class="unit">天 · 必填</span></label>
+<input type="number" id="revAdPeriod" class="auto" value="30" placeholder="30">
+<div class="hint">本次预算计划投放的天数，用于空房容量校验与日均消耗统计（默认30天）</div>
+<span class="field-error" id="errRevAdPeriod" style="display:none"></span>
+</div>
+</div>
+<div id="platformsContainer">
+<div class="platform-block" data-index="0">
+<div class="del-platform" onclick="removePlatform(0)" style="display:none">删除</div>
+<div class="compact-row">
+<div class="field">
+<label>平台选择 <span style="color:red;">*</span> <span class="unit">必选</span></label>
+<select id="revPlatform" onchange="onPlatformChange(0)"></select>
+<div class="hint">以酒店实际签约佣金为准</div>
+<span class="field-error" id="errRevPlatform" style="display:none"></span>
+</div>
+<div class="field">
+<label>预算上限（选填）<span class="unit">元</span></label>
+<input type="number" id="budgetLimit_0" placeholder="例如：5000" oninput="updateTotalBudget()">
+<div class="hint">该平台投放预算上限</div>
+</div>
+</div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advPlatform_0')"><span>高级参数（CPC / 佣金 / 转化率 / 履约率 / 其他扣费 — 已按平台自动填充，一般无需修改，展开可微调）</span><span class="arrow">▼</span></div>
+<div class="adv-panel" id="advPlatform_0">
+<div class="compact-row">
+<div class="field">
+<label>当前CPC（元/点击）</label>
+<input type="number" id="revCpc_0" class="auto" value="3" step="0.1">
+<div class="hint">推广通后台当前平均点击成本</div>
+</div>
+<div class="field">
+<label>佣金率（%）</label>
+<input type="number" id="commission_0" class="auto" value="15" placeholder="例如：15" step="0.1">
+<div class="hint">已按平台自动匹配，可按合同修改</div>
+</div>
+</div>
+<div class="compact-row">
+<div class="field">
+<label>当前下单转化率（%）</label>
+<input type="number" id="revOrderRate_0" class="auto" value="3" step="0.1">
+<div class="hint">酒店行业通常2%-5%，默认3%</div>
+</div>
+<div class="field">
+<label>当前下单入住率（%）</label>
+<input type="number" id="revCheckinRate_0" class="auto" value="85" step="0.1">
+<div class="hint">订单确认入住率，扣除No-show和取消</div>
+</div>
+</div>
+<div class="row">
+<label>平台其他扣费（元）</label>
+<input type="number" id="otherFee_0" class="auto" value="0" placeholder="例如：0">
+<div class="hint">无则填0，有则按实际填写</div>
+</div>
+</div>
+</div>
+<div id="extraPlatforms"></div>
+</div>
+<button type="button" id="addPlatformBtn" onclick="addPlatform()">+ 添加平台</button>
+<div id="totalBudgetDisplay" style="font-size:14px;font-weight:600;color:#1e293b;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;display:none">
+当前总预算上限：<span id="totalBudgetValue" style="color:#2563eb;font-size:16px">¥0</span>，系统将反推CPC和转化率需优化到什么程度才能达成目标
+</div>
+<div id="totalBudgetEmpty" style="font-size:14px;color:#64748b;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+当前总预算上限：未设置
+</div>
+
+</div><div class="card" id="importDataCard">
+<div class="card-head"><div class="card-title">📥 一键导入经营数据</div><span class="req-badge" style="color:#059669;background:#ecfdf5;border-color:#a7f3d0">可选 · 推荐</span></div>
+<div class="guide-bar" style="background:linear-gradient(135deg,#ecfdf5 0%,#f8fafc 100%);border-color:#a7f3d0;color:#065f46"><b>不用填表、不用算数：</b>从携程 / 美团商家后台直接导出「订单明细」和「推广数据」两个报表，拖进来系统自动识别、自动算出真实房价 / 履约率 / 转化率 / CPC，并一键填入下方表单。</div>
+<div class="import-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+<button type="button" id="btnDlTemplate" onclick="downloadImportTemplate()" style="padding:10px 16px;border:1px solid #059669;background:#fff;color:#059669;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">⬇️ 下载模板示例</button>
+<label style="padding:10px 16px;border:1px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">📂 选择报表文件（xlsx / xls / csv）
+<input type="file" id="dataFileInput" accept=".xlsx,.xls,.csv" onchange="handleDataFile(this)" style="display:none">
+</label>
+<button type="button" id="btnFillImport" onclick="fillFromImport()" style="display:none;padding:10px 16px;border:1px solid #059669;background:#059669;color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">⚡ 一键填入表单</button>
+</div>
+<div id="importResult" style="font-size:13px;line-height:1.8"></div>
+</div>
+
 <div class="card" id="baseData">
 <div class="card-head"><div class="card-title">② 酒店基础信息（现状与成本）</div><span class="req-badge">5 项必填</span></div>
 <div class="inline-row">
@@ -585,101 +693,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 </div>
 
-<div class="card" id="reverseOnly">
-<div class="card-head"><div class="card-title">① 酒店经营目标</div><span class="req-badge">5 项必填</span></div>
-<div class="guide-bar"><b>目标驱动：先定目标，系统自动反推所需预算与投放强度。</b><br>你只需填写 5 项：① 目标场景 → ② 目标数值（新增新客数 / 目标营收 / 目标入住率 / 复购目标，按下方提示填具体数字）→ ③ 投放时段 → ④ 投放周期 → ⑤ 投放平台。<span class="auto-tip">灰色斜体字段 = 系统已自动计算/自动填充，一般无需修改。</span></div>
-<div class="legend"><span><i class="dot-auto"></i>灰色斜体 = 自动计算（不用填）</span><span><i class="dot-manual"></i>黑色 = 手动填写（必填）</span></div>
-<div class="row">
-<label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
-<select id="revGoal" onchange="onRevGoalChange()">
-<option value="newGuest">拉新 — 新增新客</option>
-<option value="revenue">冲营收</option>
-<option value="occupancy">提入住率</option>
-<option value="repurchase">提复购</option>
-</select>
-<div class="hint">选择你要达成的经营目标，系统将反向推导所需预算</div>
-</div>
-<div class="goal-inputs" id="revGoalInputs"></div>
-<div class="inline-row">
-<div class="field">
-<label>投放时段类型 <span style="color:#dc2626">*</span> <span class="unit">必选</span></label>
-<select id="seasonHoliday">
-<option value="">— 请选择 —</option>
-<option value="normal">平日</option>
-<option value="weekend">周末</option>
-<option value="small">小长假（中秋/清明/端午）</option>
-<option value="big">大长假（春节/国庆）</option>
-<option value="yearEnd">年末跨年</option>
-</select>
-<div class="hint">影响CPC与转化率基准，与收益测算口径一致</div>
-</div>
-<div class="field">
-<label>投放周期 <span style="color:red;">*</span> <span class="unit">天 · 必填</span></label>
-<input type="number" id="revAdPeriod" class="auto" value="30" placeholder="30">
-<div class="hint">本次预算计划投放的天数，用于空房容量校验与日均消耗统计（默认30天）</div>
-<span class="field-error" id="errRevAdPeriod" style="display:none"></span>
-</div>
-</div>
-<div id="platformsContainer">
-<div class="platform-block" data-index="0">
-<div class="del-platform" onclick="removePlatform(0)" style="display:none">删除</div>
-<div class="compact-row">
-<div class="field">
-<label>平台选择 <span style="color:red;">*</span> <span class="unit">必选</span></label>
-<select id="revPlatform" onchange="onPlatformChange(0)"></select>
-<div class="hint">以酒店实际签约佣金为准</div>
-<span class="field-error" id="errRevPlatform" style="display:none"></span>
-</div>
-<div class="field">
-<label>预算上限（选填）<span class="unit">元</span></label>
-<input type="number" id="budgetLimit_0" placeholder="例如：5000" oninput="updateTotalBudget()">
-<div class="hint">该平台投放预算上限</div>
-</div>
-</div>
-<div class="adv-toggle" onclick="toggleAdv(this,'advPlatform_0')"><span>高级参数（CPC / 佣金 / 转化率 / 履约率 / 其他扣费 — 已按平台自动填充，一般无需修改，展开可微调）</span><span class="arrow">▼</span></div>
-<div class="adv-panel" id="advPlatform_0">
-<div class="compact-row">
-<div class="field">
-<label>当前CPC（元/点击）</label>
-<input type="number" id="revCpc_0" class="auto" value="3" step="0.1">
-<div class="hint">推广通后台当前平均点击成本</div>
-</div>
-<div class="field">
-<label>佣金率（%）</label>
-<input type="number" id="commission_0" class="auto" value="15" placeholder="例如：15" step="0.1">
-<div class="hint">已按平台自动匹配，可按合同修改</div>
-</div>
-</div>
-<div class="compact-row">
-<div class="field">
-<label>当前下单转化率（%）</label>
-<input type="number" id="revOrderRate_0" class="auto" value="3" step="0.1">
-<div class="hint">酒店行业通常2%-5%，默认3%</div>
-</div>
-<div class="field">
-<label>当前下单入住率（%）</label>
-<input type="number" id="revCheckinRate_0" class="auto" value="85" step="0.1">
-<div class="hint">订单确认入住率，扣除No-show和取消</div>
-</div>
-</div>
-<div class="row">
-<label>平台其他扣费（元）</label>
-<input type="number" id="otherFee_0" class="auto" value="0" placeholder="例如：0">
-<div class="hint">无则填0，有则按实际填写</div>
-</div>
-</div>
-</div>
-<div id="extraPlatforms"></div>
-</div>
-<button type="button" id="addPlatformBtn" onclick="addPlatform()">+ 添加平台</button>
-<div id="totalBudgetDisplay" style="font-size:14px;font-weight:600;color:#1e293b;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;display:none">
-当前总预算上限：<span id="totalBudgetValue" style="color:#2563eb;font-size:16px">¥0</span>，系统将反推CPC和转化率需优化到什么程度才能达成目标
-</div>
-<div id="totalBudgetEmpty" style="font-size:14px;color:#64748b;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
-当前总预算上限：未设置
-</div>
 
-</div>
 <button id="btn">生成决策报告</button>
 <div class="btn-group">
 <button id="btnClear">🔄 重置表单</button>
@@ -3013,15 +3027,262 @@ updateTotalBudget();
 updateBrand();
 updateBtnState();
 </script>
+
 <script>
-// 目标驱动版面：经营目标卡片置顶（纯布局调整，不动任何数据与计算逻辑）
-(function(){
-  var b = document.getElementById("baseData");
-  var r = document.getElementById("reverseOnly");
-  if (b && r && r.parentNode === b.parentNode) {
-    b.parentNode.insertBefore(r, b);
+/* ===== 一键导入经营数据模块（独立新增，不依赖/不修改既有逻辑） ===== */
+var __importData = null;
+
+function _normH(h){ return String(h == null ? "" : h).toLowerCase().replace(/[\s（）()\/\\_\-]/g, ""); }
+function _findCol(headers, kws){
+  for(var i=0;i<headers.length;i++){
+    var h = _normH(headers[i]);
+    for(var j=0;j<kws.length;j++){
+      if(h && h.indexOf(kws[j]) >= 0) return i;
+    }
   }
-})();
+  return -1;
+}
+function _num(v){
+  if(v == null) return NaN;
+  if(typeof v === "number") return v;
+  var t = String(v).replace(/[¥￥,，\s元]/g, "");
+  if(t.indexOf("%") >= 0) t = t.replace("%", "");
+  var n = parseFloat(t);
+  return n;
+}
+function _isStayed(st){
+  var t = String(st == null ? "" : st).trim().toLowerCase();
+  if(!t) return false;
+  if(t.indexOf("取消") >= 0 || t.indexOf("退款") >= 0 || t.indexOf("noshow") >= 0 || t.indexOf("未入住") >= 0 || t.indexOf("违约") >= 0 || t.indexOf("待入住") >= 0 || t.indexOf("未到") >= 0 || t.indexOf("未住") >= 0) return false;
+  if(t.indexOf("入住") >= 0 || t.indexOf("完成") >= 0 || t.indexOf("成交") >= 0 || t.indexOf("履约") >= 0 || t.indexOf("离店") >= 0 || t.indexOf("已住") >= 0) return true;
+  return false;
+}
+function _isCancel(st){
+  var t = String(st == null ? "" : st).trim().toLowerCase();
+  return t.indexOf("取消") >= 0 || t.indexOf("退款") >= 0 || t.indexOf("noshow") >= 0 || t.indexOf("未入住") >= 0;
+}
+
+function downloadImportTemplate(){
+  if(typeof XLSX === "undefined"){ alert("表格库加载失败，请检查网络后重试（需要联网加载一次）。"); return; }
+  var headers = ["订单号","下单日期","入住日期","离店日期","房型","间夜数","订单金额(实付)","订单状态","是否新客"];
+  var rows = [
+    ["H20260801001","2026-08-01","2026-08-05","2026-08-06","大床房",1,268,"已入住","新客"],
+    ["H20260801002","2026-08-01","2026-08-06","2026-08-08","双床房",2,536,"已入住","老客"],
+    ["H20260801003","2026-08-02","2026-08-07","2026-08-08","大床房",1,268,"已取消","新客"],
+    ["H20260801004","2026-08-03","2026-08-08","2026-08-10","家庭房",2,636,"待入住","新客"],
+    ["H20260801005","2026-08-04","2026-08-09","2026-08-10","大床房",1,268,"已入住","老客"]
+  ];
+  var sheet1 = XLSX.utils.aoa_to_sheet([headers].concat(rows));
+  var h2 = ["日期","曝光量","点击量","花费(元)","订单数","成交金额(元)"];
+  var rows2 = [
+    ["2026-08-01",12000,560,2403,18,4824],
+    ["2026-08-02",13500,620,2659,22,5896],
+    ["2026-08-03",9800,450,1930,15,4020],
+    ["2026-08-04",11000,510,2188,17,4556],
+    ["2026-08-05",14200,680,2917,25,6700]
+  ];
+  var sheet2 = XLSX.utils.aoa_to_sheet([h2].concat(rows2));
+  var tip = [
+    ["一键导入经营数据 - 使用说明"],
+    [""],
+    ["1. 订单明细：从携程（eBooking/生意通）或美团酒店商家后台导出「订单明细/订单报表」，把【表头+数据】贴到『订单明细』表即可；列名稍有差异也能自动识别。"],
+    ["2. 推广数据（可选）：从携程推广通 / 美团推广后台导出「推广报表/消耗报表」，贴到『推广数据』表。有了它才能自动算出真实 CPC 和转化率；不贴则用表单默认值。"],
+    ["3. 导入后点『一键填入表单』，系统自动填好房价、履约率、转化率、CPC、人均间夜；房间数、佣金率、变动成本、经营目标仍需手动填写（这些平台数据里没有）。"],
+    ["4. 订单状态列常见取值：已入住 / 待入住 / 已取消（系统按此统计履约率）。"]
+  ];
+  var sheet3 = XLSX.utils.aoa_to_sheet(tip);
+  sheet3["!cols"] = [{wch:110}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, sheet1, "订单明细");
+  XLSX.utils.book_append_sheet(wb, sheet2, "推广数据");
+  XLSX.utils.book_append_sheet(wb, sheet3, "使用说明");
+  XLSX.writeFile(wb, "酒店投流-数据导入模板.xlsx");
+}
+
+function handleDataFile(input){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  if(typeof XLSX === "undefined"){ alert("表格库加载失败，请检查网络后重试（需要联网加载一次）。"); return; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
+      __importData = parseWorkbook(wb);
+      renderImportResult();
+    }catch(err){
+      __importData = null;
+      var r = document.getElementById("importResult");
+      if(r) r.innerHTML = '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;">解析失败：' + escapeHtml(String(err && err.message ? err.message : err)) + '</div>';
+      var b = document.getElementById("btnFillImport");
+      if(b) b.style.display = "none";
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseWorkbook(wb){
+  var orderSheet = null, promoSheet = null;
+  wb.SheetNames.forEach(function(nm){
+    var n = String(nm).toLowerCase();
+    if(n.indexOf("订单") >= 0 || n.indexOf("明细") >= 0 || n.indexOf("订单明细") >= 0 || n.indexOf("报表") >= 0){ if(!orderSheet) orderSheet = nm; }
+    else if(n.indexOf("推广") >= 0 || n.indexOf("点击") >= 0 || n.indexOf("消耗") >= 0 || n.indexOf("投放") >= 0 || n.indexOf("广告") >= 0){ if(!promoSheet) promoSheet = nm; }
+  });
+  if(!orderSheet && wb.SheetNames.length >= 1) orderSheet = wb.SheetNames[0];
+  if(!promoSheet && wb.SheetNames.length >= 2) promoSheet = wb.SheetNames[1];
+
+  var res = {orderSheet: orderSheet, promoSheet: promoSheet, orders: null, promo: null, warnings: []};
+
+  if(orderSheet){
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[orderSheet], {header:1, defval:""});
+    if(rows && rows.length > 1){
+      var headers = rows[0].map(function(h){ return String(h == null ? "" : h).trim(); });
+      var cOrder = _findCol(headers, ["订单号","订单编号","订单id"]);
+      var cBook = _findCol(headers, ["下单日期","下单时间","预订日期","预订时间","创建时间","订单日期"]);
+      var cIn = _findCol(headers, ["入住日期","到店日期","入住时间","到店时间"]);
+      var cOut = _findCol(headers, ["离店日期","退房日期","离店时间","退房时间"]);
+      var cNights = _findCol(headers, ["间夜","房晚"]);
+      var cAmount = _findCol(headers, ["订单金额","实付金额","支付金额","成交金额","总金额","订单总额","房费","金额"]);
+      var cStatus = _findCol(headers, ["订单状态","状态","订单类型","订单进度"]);
+      var cNew = _findCol(headers, ["新客"]);
+      var miss = [];
+      if(cNights < 0) miss.push("间夜数");
+      if(cAmount < 0) miss.push("订单金额");
+      if(cStatus < 0) miss.push("订单状态");
+      if(cIn < 0 && cBook < 0) miss.push("日期列（下单/入住日期）");
+      if(miss.length) res.warnings.push("订单明细未识别到列：" + miss.join("、") + "（仍可继续，但这几项无法自动算出）");
+
+      var totalOrders = 0, stayedOrders = 0, cancelOrders = 0, stayedNights = 0, stayedAmount = 0, newOrders = 0, newStayed = 0;
+      var monthCnt = {};
+      for(var i=1;i<rows.length;i++){
+        var r = rows[i];
+        var joined = r.join(" ").trim();
+        if(!joined) continue;
+        var status = cStatus >= 0 ? String(r[cStatus] == null ? "" : r[cStatus]).trim() : "";
+        var isStayed = _isStayed(status);
+        var isCancel = _isCancel(status);
+        if(!status){ isStayed = true; }
+        var nights = cNights >= 0 ? Math.abs(parseInt(_num(r[cNights]))) : 1;
+        if(!nights) nights = 1;
+        var amount = cAmount >= 0 ? _num(r[cAmount]) : NaN;
+        if(isNaN(amount)) amount = nights * 200;
+        totalOrders++;
+        if(isStayed){ stayedOrders++; stayedNights += nights; if(!isNaN(amount)) stayedAmount += amount; }
+        if(isCancel) cancelOrders++;
+        var d = cIn >= 0 ? r[cIn] : (cBook >= 0 ? r[cBook] : "");
+        if(d){
+          var ds = String(d).trim();
+          var m = ds.match(/(\d{4})[-/年](\d{1,2})[-/月]/);
+          if(!m) m = ds.match(/(\d{1,2})[-/月]/);
+          if(m){ var mm = m[2] ? m[2].replace(/^0/, "") : m[1].replace(/^0/, ""); if(mm) monthCnt[mm] = (monthCnt[mm] || 0) + 1; }
+        }
+        if(cNew >= 0){ var nv = String(r[cNew]).trim().toLowerCase(); if(nv === "是" || nv === "1" || nv === "y" || nv === "true" || nv.indexOf("新") >= 0){ newOrders++; if(isStayed) newStayed++; } }
+      }
+      res.orders = {
+        totalOrders: totalOrders, stayedOrders: stayedOrders, cancelOrders: cancelOrders,
+        stayedNights: stayedNights, stayedAmount: stayedAmount,
+        newOrders: newOrders, newStayed: newStayed,
+        adr: stayedNights > 0 ? stayedAmount / stayedNights : 0,
+        checkinRate: totalOrders > 0 ? stayedOrders / totalOrders * 100 : 0,
+        avgNights: stayedOrders > 0 ? stayedNights / stayedOrders : 0,
+        monthCnt: monthCnt
+      };
+    } else {
+      res.warnings.push("『订单明细』表没有数据行，请检查报表内容。");
+    }
+  }
+
+  if(promoSheet){
+    var rows2 = XLSX.utils.sheet_to_json(wb.Sheets[promoSheet], {header:1, defval:""});
+    if(rows2 && rows2.length > 1){
+      var headers2 = rows2[0].map(function(h){ return String(h == null ? "" : h).trim(); });
+      var cDate = _findCol(headers2, ["日期","时间","统计日期"]);
+      var cImp = _findCol(headers2, ["曝光","展现"]);
+      var cClick = _findCol(headers2, ["点击"]);
+      var cCost = _findCol(headers2, ["花费","消费","消耗","总花费","推广花费"]);
+      var cOrd = _findCol(headers2, ["订单数","成交订单","订单量","下单数","订单"]);
+      var cAmt = _findCol(headers2, ["成交金额","销售额","交易额","订单金额","金额"]);
+      var miss2 = [];
+      if(cClick < 0) miss2.push("点击量");
+      if(cCost < 0) miss2.push("花费");
+      if(cOrd < 0) miss2.push("订单数");
+      if(miss2.length) res.warnings.push("推广数据未识别到列：" + miss2.join("、") + "（CPC/转化率无法自动算出）");
+      var tClick = 0, tCost = 0, tOrd = 0, tImp = 0, tAmt = 0;
+      for(var j=1;j<rows2.length;j++){
+        var r2 = rows2[j];
+        if(!r2.join(" ").trim()) continue;
+        if(cClick >= 0) tClick += Math.abs(_num(r2[cClick]) || 0);
+        if(cCost >= 0) tCost += Math.abs(_num(r2[cCost]) || 0);
+        if(cOrd >= 0) tOrd += Math.abs(Math.round(_num(r2[cOrd]) || 0));
+        if(cImp >= 0) tImp += Math.abs(_num(r2[cImp]) || 0);
+        if(cAmt >= 0) tAmt += Math.abs(_num(r2[cAmt]) || 0);
+      }
+      res.promo = {
+        clicks: tClick, cost: tCost, orders: tOrd, imps: tImp, amount: tAmt,
+        cpc: tClick > 0 ? tCost / tClick : 0,
+        orderRate: tClick > 0 ? tOrd / tClick * 100 : 0
+      };
+    }
+  }
+  return res;
+}
+
+function renderImportResult(){
+  var r = document.getElementById("importResult");
+  var b = document.getElementById("btnFillImport");
+  if(!r) return;
+  if(!__importData){ return; }
+  var d = __importData;
+  var h = "";
+  if(d.warnings.length){ h += '<div style="color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:8px;">⚠️ ' + d.warnings.map(escapeHtml).join('<br>⚠️ ') + '</div>'; }
+  if(d.orders){
+    var o = d.orders;
+    h += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:8px;">';
+    h += '<b>📋 订单明细（' + escapeHtml(d.orderSheet || "Sheet1") + '）</b>：共 ' + o.totalOrders + ' 单，已入住 ' + o.stayedOrders + ' 单（取消 ' + o.cancelOrders + '）<br>';
+    h += '真实平均房价 <b>¥' + o.adr.toFixed(2) + '</b> · 履约率 <b>' + o.checkinRate.toFixed(1) + '%</b> · 人均间夜 <b>' + o.avgNights.toFixed(2) + '</b>';
+    if(o.newOrders > 0) h += ' · 新客占比 ' + (o.newOrders/o.totalOrders*100).toFixed(0) + '%';
+    h += '</div>';
+  }
+  if(d.promo){
+    var p = d.promo;
+    h += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:8px;">';
+    h += '<b>📊 推广数据（' + escapeHtml(d.promoSheet || "Sheet2") + '）</b>：点击 ' + p.clicks + ' · 花费 ¥' + p.cost.toLocaleString() + ' · 订单 ' + p.orders + '<br>';
+    h += '真实 CPC <b>¥' + p.cpc.toFixed(2) + '</b> · 点击转化率 <b>' + p.orderRate.toFixed(2) + '%</b>';
+    h += '</div>';
+  }
+  if(!d.orders && !d.promo){
+    h += '<div style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;">未识别到可用数据：请确认文件是携程/美团后台导出的订单或推广报表（xlsx/xls/csv）。</div>';
+  }
+  h += '<div style="font-size:12px;color:#64748b;margin-top:6px;">识别无误后点「⚡ 一键填入表单」，系统自动填好可计算的字段；房间数、佣金率、变动成本、经营目标仍需手动填写。</div>';
+  r.innerHTML = h;
+  if(b){
+    b.style.display = (d.orders || d.promo) ? "inline-block" : "none";
+  }
+}
+
+function fillFromImport(){
+  if(!__importData) return;
+  var filled = [];
+  if(__importData.orders){
+    var o = __importData.orders;
+    if(o.adr > 0){ setVal("adr", o.adr.toFixed(2)); filled.push("平均房价 ¥" + o.adr.toFixed(2)); }
+    if(o.checkinRate > 0){ setVal("revCheckinRate_0", o.checkinRate.toFixed(1)); filled.push("履约率 " + o.checkinRate.toFixed(1) + "%"); }
+    if(o.avgNights > 0){ setVal("revAvgNewNights", o.avgNights.toFixed(1)); filled.push("人均间夜 " + o.avgNights.toFixed(1)); }
+  }
+  if(__importData.promo){
+    var p = __importData.promo;
+    if(p.cpc > 0){ setVal("revCpc_0", p.cpc.toFixed(2)); filled.push("CPC ¥" + p.cpc.toFixed(2)); }
+    if(p.orderRate > 0){ setVal("revOrderRate_0", p.orderRate.toFixed(2)); filled.push("转化率 " + p.orderRate.toFixed(2) + "%"); }
+  }
+  var r = document.getElementById("importResult");
+  if(r && filled.length){
+    r.innerHTML = '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 14px;"><b>✅ 已自动填入：</b>' + filled.join(" · ") + '<br><span style="color:#64748b;font-size:12px;">请检查下方表单（灰色斜体为自动值，可微调），然后填写房间数 / 佣金率 / 变动成本 / 经营目标，点「生成决策报告」。</span></div>';
+  }
+  var b = document.getElementById("btnFillImport");
+  if(b) b.style.display = "none";
+  var inp = document.getElementById("dataFileInput");
+  if(inp) inp.value = "";
+}
 </script>
+
 </body>
 </html>
