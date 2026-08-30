@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>复购方案库 · 酒店投流目标测算</title>
+<style>
+:root{
+  --bg:#f5f7fa; --card:#fff; --line:#e5e7eb; --text:#1f2937; --sub:#6b7280;
+  --brand:#1e40af; --brand2:#2563eb; --green:#166534; --red:#b91c1c; --amber:#b45309;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;padding-bottom:60px}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+header{background:linear-gradient(135deg,#581c87,#9333ea);color:#fff;padding:20px 0;margin-bottom:20px}
+header .wrap{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{font-size:20px}
+header .sub{font-size:12px;opacity:.85}
+.btn{display:inline-block;background:var(--brand2);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer;text-decoration:none}
+.btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+.btn.sm{padding:4px 10px;font-size:12px}
+.btn.danger{background:var(--red)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h2 .tag{font-size:11px;background:#f5f3ff;color:#6d28d9;padding:2px 8px;border-radius:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.field{margin-bottom:8px}
+.field label{display:block;font-size:12px;color:var(--sub);margin-bottom:2px}
+.field input,.field select{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:14px;background:#fff}
+.field .auto{background:#f0fdf4}
+.field .hint{font-size:11px;color:#9ca3af}
+.plan{border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden;background:var(--card)}
+.plan-head{padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff}
+.plan-head:hover{background:#f8fafc}
+.plan-no{background:#9333ea;color:#fff;border-radius:8px;min-width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.plan-title{flex:1;min-width:180px}
+.plan-title b{font-size:15px}
+.plan-title .p-desc{font-size:12px;color:var(--sub)}
+.badge{font-size:11px;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.badge.plat{background:#eef2ff;color:#3730a3}
+.badge.fit{background:#ecfdf5;color:#047857}
+.badge.hot{background:#fef3c7;color:#92400e}
+.badge.reco{background:#fee2e2;color:#991b1b}
+.plan-body{display:none;border-top:1px solid var(--line);padding:14px 16px;background:#fafbfc}
+.plan.open .plan-body{display:block}
+.plan-body h3{font-size:13px;color:var(--sub);margin:12px 0 6px;border-left:3px solid #9333ea;padding-left:8px}
+.plan-body ul{margin:0 0 4px 18px}
+.plan-body li{font-size:13px;margin-bottom:4px}
+.kv{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.kv .k{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px}
+.kv .k b{display:block;font-size:14px;color:var(--brand)}
+#report{margin-top:16px}
+.rep-block{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff}
+.rep-block h3{font-size:14px;margin-bottom:8px;color:#6d28d9}
+.rep-block table{width:100%;border-collapse:collapse;font-size:13px}
+.rep-block td,.rep-block th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+.rep-block th{background:#f8fafc}
+.tip{font-size:12px;color:var(--sub);margin-top:6px}
+.warn{background:#fef2f2;border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:10px 12px;font-size:13px;margin:8px 0}
+.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:var(--green);border-radius:8px;padding:10px 12px;font-size:13px;margin:8px 0}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:999;display:none}
+@media(max-width:600px){header h1{font-size:17px}.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div>
+      <h1>🔁 复购方案库</h1>
+      <div class="sub">目标：老客召回与复购 · 私域+平台会员双线 · 基础信息与其他目标页共享</div>
+    </div>
+    <div>
+      <a class="btn ghost sm" href="index.html">← 总入口</a>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+
+<!-- ① 酒店基础信息（localStorage 共享） -->
+<div class="card" id="card-base">
+  <h2>① 酒店基础信息 <span class="tag">自动保存 · 全目标共享</span></h2>
+  <div class="grid">
+    <div class="field"><label>城市层级</label>
+      <select id="cityTier"><option value="tier1">一线城市</option><option value="tier2">新一线</option><option value="tier3">二线</option><option value="tier4">三四线</option><option value="county">县城/乡镇</option></select></div>
+    <div class="field"><label>位置类型</label>
+      <select id="location"><option value="downtown">市中心</option><option value="biz_district">商务区</option><option value="scenic">景区周边</option><option value="station">车站/机场</option><option value="suburb">郊区</option></select></div>
+    <div class="field"><label>业态</label>
+      <select id="type"><option value="eco">经济型</option><option value="mid">中端</option><option value="biz">商务</option><option value="boutique">精品/设计</option><option value="resort">度假</option><option value="hostel">民宿/客栈</option></select></div>
+    <div class="field"><label>客房总数</label><input type="number" id="rooms" placeholder="如 80"></div>
+    <div class="field"><label>平均房价（ADR）</label><input type="number" id="adr" placeholder="如 300"></div>
+    <div class="field"><label>单房变动成本</label><input type="number" id="varCost" placeholder="如 60"></div>
+    <div class="field"><label>当前入住率 %</label><input type="number" id="occ" value="60"></div>
+    <div class="field"><label>综合税费率 %</label><input type="number" id="taxRate" value="6" step="0.1"></div>
+    <div class="field"><label>投放周期（天）</label><input type="number" id="period" value="30"></div>
+  </div>
+  <div class="tip">这些信息存本地，切到拉新/冲营收/提入住率页面自动带过来，不用重填。</div>
+</div>
+
+<!-- ② 平台配置（共享） -->
+<div class="card" id="card-platform">
+  <h2>② 平台配置 <span class="tag">共享</span></h2>
+  <div class="tip" style="margin-bottom:10px">复购以私域与平台会员为主，CPC 仅用于少量补充触达。</div>
+  <div id="platformList"></div>
+</div>
+
+<!-- ③ 复购目标 -->
+<div class="card">
+  <h2>③ 复购目标</h2>
+  <div class="grid">
+    <div class="field"><label>历史客户池（人） <span style="color:red">*</span></label><input type="number" id="pool" placeholder="如 3000"></div>
+    <div class="field"><label>当前复购率 %</label><input type="number" id="repurchaseRate" value="15"></div>
+    <div class="field"><label>目标复购率 %</label><input type="number" id="targetRepurchase" placeholder="如 25"></div>
+    <div class="field"><label>人均召回成本（元）</label><input type="number" id="costPerRecall" value="5" step="0.5"></div>
+  </div>
+  <div class="tip">召回成本含短信/券/私域运营分摊；平台会员体系的复购主要通过标签与券触达。</div>
+</div>
+
+<!-- ④ 方案库 -->
+<div class="card">
+  <h2>④ 复购方案库 <span class="tag">共 <span id="planCount">0</span> 套 · 点击展开</span></h2>
+  <div id="planList"></div>
+</div>
+
+<!-- ⑤ 报告 -->
+<div id="report"></div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 共享存储 ============ */
+var PROFILE_KEY = "otaHotelProfile_v1";
+var PLATFORM_KEY = "otaPlatforms_v1";
+var PLATFORM_DEF = [
+  {id:"xiecheng", name:"携程", comm:15, or:3.0, cpc:3.0},
+  {id:"meituan",  name:"美团", comm:10, or:3.5, cpc:2.0},
+  {id:"tongcheng",name:"同程", comm:12, or:3.0, cpc:2.5},
+  {id:"qunaer",   name:"去哪儿", comm:12, or:3.0, cpc:2.2},
+  {id:"feizhu",   name:"飞猪", comm:10, or:3.0, cpc:2.6},
+  {id:"douyin",   name:"抖音本地", comm:8, or:4.0, cpc:0.8}
+];
+function lsGet(k, d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+/* ============ 基础信息 ============ */
+var PROFILE_FIELDS = ["cityTier","location","type","rooms","adr","varCost","occ","taxRate","period"];
+function loadProfile(){
+  var p = lsGet(PROFILE_KEY, {});
+  PROFILE_FIELDS.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && p[id] !== undefined && p[id] !== null) el.value = p[id];
+  });
+}
+function saveProfile(){
+  var p = {};
+  PROFILE_FIELDS.forEach(function(id){ var el = document.getElementById(id); if(el) p[id] = el.value; });
+  lsSet(PROFILE_KEY, p);
+}
+PROFILE_FIELDS.forEach(function(id){
+  var el = document.getElementById(id);
+  if(el) el.addEventListener("change", saveProfile);
+});
+
+/* ============ 平台配置 ============ */
+function getPlatforms(){
+  var saved = lsGet(PLATFORM_KEY, null);
+  return PLATFORM_DEF.map(function(p){
+    var o = saved ? (saved[p.id] || {}) : {};
+    return {id:p.id, name:p.name, comm:o.comm!==undefined?o.comm:p.comm, or:o.or!==undefined?o.or:p.or, cpc:o.cpc!==undefined?o.cpc:p.cpc, checked:o.checked!==undefined?o.checked:true};
+  });
+}
+function savePlatforms(list){
+  var list = list || getPlatforms();
+  var obj = {};
+  list.forEach(function(p){ obj[p.id] = {comm:p.comm, or:p.or, cpc:p.cpc, checked:p.checked}; });
+  lsSet(PLATFORM_KEY, obj);
+}
+function renderPlatforms(){
+  var list = getPlatforms();
+  var box = document.getElementById("platformList");
+  box.innerHTML = "";
+  list.forEach(function(p){
+    var d = document.createElement("div");
+    d.style.cssText = "border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;align-items:end";
+    d.innerHTML =
+      '<div class="field" style="margin:0"><label><input type="checkbox" id="ck_'+p.id+'" '+(p.checked?'checked':'')+'> '+p.name+'</label></div>'+
+      '<div class="field" style="margin:0"><label>佣金率 %</label><input type="number" id="cm_'+p.id+'" class="auto" value="'+p.comm+'" step="0.1"></div>'+
+      '<div class="field" style="margin:0"><label>下单转化率 %</label><input type="number" id="or_'+p.id+'" class="auto" value="'+p.or+'" step="0.1"></div>'+
+      '<div class="field" style="margin:0"><label>CPC 默认 ¥</label><input type="number" id="cp_'+p.id+'" class="auto" value="'+p.cpc+'" step="0.1"></div>';
+    box.appendChild(d);
+    var ck = d.querySelector("#ck_"+p.id), cm = d.querySelector("#cm_"+p.id), or = d.querySelector("#or_"+p.id), cp = d.querySelector("#cp_"+p.id);
+    function sync(){
+      var pl = getPlatforms();
+      var i = pl.findIndex(function(x){return x.id===p.id;});
+      pl[i].checked = ck.checked; pl[i].comm = parseFloat(cm.value)||0; pl[i].or = parseFloat(or.value)||0; pl[i].cpc = parseFloat(cp.value)||0;
+      savePlatforms(pl);
+      renderPlanCards();
+    }
+    ck.addEventListener("change", sync); cm.addEventListener("change", sync); or.addEventListener("change", sync); cp.addEventListener("change", sync);
+  });
+}
+
+/* ============ 复购方案库 ============ */
+var PLANS = [
+{
+  id:"rep-private", name:"私域·企微+群运营锁复购", platforms:[], hot:true,
+  fit:{type:["eco","mid","biz","boutique","resort","hostel"], newHotel:false},
+  desc:"把到店客户沉淀到企业微信/群，用内容与券持续触发复购",
+  actions:["入住/离店时引导加企微（送离店礼/下次券）","分群运营：商务客、亲子客、本地客分别发对应内容","每月1次会员日（群内专属价/秒杀），养成固定消费节奏","朋友圈日常发房态、活动、周边攻略，保持存在感"],
+  budget:"企微工具+券成本，人均约¥1-3；无广告费",
+  stop:"加微率<40% → 换引导话术与利益点；群月活<10% → 停推改内容",
+  note:"行业常规私域实践"
+},
+{
+  id:"rep-sms", name:"短信/微信·沉睡客召回", platforms:[], hot:true,
+  fit:{type:["eco","mid","biz"], newHotel:false},
+  desc:"对90天未入住的沉睡客定向发券召回",
+  actions:["拉取90天未入住历史客名单（可从PMS/平台导出）","发「回归礼」：限时专属价或立减券（有效期7-14天）","分3批触达：短信→微信→电话（高价值客）","召回后第2次入住再送券，养成复购惯性"],
+  budget:"短信0.03-0.05元/条；券让利另计，人均召回成本控制在¥5-15",
+  stop:"召回响应率<2% → 换利益点/时间；连续2轮无响应 → 停止短信触达",
+  note:"行业常规私域实践"
+},
+{
+  id:"rep-xc-member", name:"携程·优享会/会员体系复购", platforms:["xiecheng"], hot:false,
+  fit:{type:["mid","biz","boutique"], newHotel:false},
+  desc:"借携程优享会标签+会员权益，锁定老客复购",
+  actions:["报名优享会，拿「优享会」标签提高老客转化","参与积分联盟（原底价95折），老客积分当钱花","对历史成交客户发复购券（平台工具支持老客定向券）","优享会会员到店提供额外礼遇，强化忠诚度"],
+  budget:"积分让利约5%+券让利；无广告费",
+  stop:"优享会订单占比<10% → 检查标签露出与礼遇",
+  note:"资料：携程EBK/仕顿酒店资讯网"
+},
+{
+  id:"rep-mt-member", name:"美团·优美会+复购券", platforms:["meituan"], hot:false,
+  fit:{type:["eco","mid"], city:["tier2","tier3","tier4","county"], newHotel:false},
+  desc:"美团会员体系（优美会）绑定老客，复购券精准触达",
+  actions:["报名优美会，会员享专享价/券","对历史订单客户投放复购券（美团商家后台老客营销）","连住/早订优惠推给老客，拉长单客价值","到店扫码收藏门店，进平台粉丝池"],
+  budget:"券让利为主，无广告费",
+  stop:"复购券核销率<5% → 查券面与触达人群",
+  note:"资料：OTA术语/识干家"
+},
+{
+  id:"rep-dy-fans", name:"抖音·粉丝群+周秒杀", platforms:["douyin"], hot:true,
+  fit:{type:["boutique","resort","hostel"], city:["tier2","tier3","tier4"], newHotel:false},
+  desc:"到店核销客户沉淀抖音粉丝群，周秒杀持续复购",
+  actions:["核销后引导关注门店抖音+进粉丝群","每周固定秒杀（2场，限量20-50份）","定期更新实拍视频，群内预告新活动","粉丝专属套餐价略低于公开价，形成特权感"],
+  budget:"无广告费；秒杀让利按核销间夜计",
+  stop:"粉丝群周活跃<10% → 调整内容与秒杀频率",
+  note:"资料：顺企网/家居图"
+},
+{
+  id:"rep-feizhu-vip", name:"飞猪·菲住会员/88VIP承接", platforms:["feizhu"], hot:false,
+  fit:{type:["boutique","resort","mid"], city:["tier1","tier2"], newHotel:false},
+  desc:"借飞猪菲住/88VIP体系承接高价值老客，权益绑定复购",
+  actions:["参与菲住会员合作，会员专享价/礼遇","88VIP客群提供专属权益（延迟退房/升级）","大促期对历史客发定向券（淘宝/支付宝触达）"],
+  budget:"权益让利为主",
+  stop:"会员订单占比<8% → 检查权益吸引力",
+  note:"资料：今日头条/亿邦动力"
+},
+{
+  id:"rep-onarrival", name:"组合·到店承接转私域闭环", platforms:[], hot:false,
+  fit:{type:["eco","mid","biz","boutique"], newHotel:false},
+  desc:"把每个到店客户变成复购资产：前台承接+离店邀评+离店券",
+  actions:["入住登记时加企微领「下次立减券」","离店时邀请好评（好评率冲4.5+）","离店即发「7天内复购专享价」，趁热打铁","生日/纪念日自动触发关怀券"],
+  budget:"券成本人均¥2-5，无广告费",
+  stop:"离店券核销率<8% → 调券面与有效期",
+  note:"行业常规私域实践"
+}
+];
+
+/* ============ 推荐度打分 ============ */
+function fitScore(plan, ctx){
+  var s = 0;
+  if(plan.fit.newHotel && ctx.newHotel) s += 2;
+  if(plan.fit.city && plan.fit.city.indexOf(ctx.cityTier) >= 0) s += 2;
+  if(plan.fit.loc && plan.fit.loc.indexOf(ctx.location) >= 0) s += 2;
+  if(plan.fit.type && plan.fit.type.indexOf(ctx.type) >= 0) s += 1;
+  if(plan.hot) s += 1;
+  return s;
+}
+function getCtx(){
+  var sel = function(id){ var el=document.getElementById(id); return el?el.value:""; };
+  return {cityTier:sel("cityTier"), location:sel("location"), type:sel("type"),
+          newHotel: false, adr:parseFloat(sel("adr"))||0, rooms:parseFloat(sel("rooms"))||0};
+}
+function renderPlanCards(){
+  var ctx = getCtx();
+  var list = getPlatforms().filter(function(p){return p.checked;}).map(function(p){return p.id;});
+  var box = document.getElementById("planList");
+  box.innerHTML = "";
+  var plans = PLANS.filter(function(pl){ return pl.platforms.length===0 || pl.platforms.some(function(pid){return list.indexOf(pid)>=0;}); })
+    .map(function(pl){ pl._score = fitScore(pl, ctx); return pl; })
+    .sort(function(a,b){ return b._score - a._score; });
+  document.getElementById("planCount").textContent = plans.length;
+  plans.forEach(function(pl, i){
+    var d = document.createElement("div");
+    d.className = "plan";
+    var platNames = pl.platforms.length ? pl.platforms.map(function(pid){
+      var p = PLATFORM_DEF.filter(function(x){return x.id===pid;})[0];
+      return p?p.name:pid;
+    }).join("/") : "私域/全渠道";
+    var reco = pl._score >= 4 ? '<span class="badge reco">强推荐</span>' : (pl._score >= 2 ? '<span class="badge hot">推荐</span>' : '');
+    d.innerHTML =
+      '<div class="plan-head">'+
+        '<div class="plan-no">'+(i+1)+'</div>'+
+        '<div class="plan-title"><b>'+pl.name+'</b> <span class="badge plat">'+platNames+'</span> '+reco+
+          '<div class="p-desc">'+pl.desc+'</div></div>'+
+        '<div class="badge fit">匹配度 '+pl._score+'</div>'+
+      '</div>'+
+      '<div class="plan-body">'+
+        '<h3>适用条件</h3><ul><li>'+fitText(pl)+'</li></ul>'+
+        '<h3>关键动作</h3><ul>'+pl.actions.map(function(a){return '<li>'+a+'</li>';}).join('')+'</ul>'+
+        '<h3>预算与成本</h3><div class="tip">'+pl.budget+'</div>'+
+        '<h3>止损红线</h3><div class="tip">'+pl.stop+'</div>'+
+        (pl.note?'<h3>资料来源</h3><div class="tip">'+pl.note+'</div>':'')+
+        '<div style="margin-top:12px"><button class="btn sm" onclick="calcPlan(\''+pl.id+'\')">⚡ 按此方案测算报告</button></div>'+
+      '</div>';
+    d.querySelector(".plan-head").addEventListener("click", function(){ d.classList.toggle("open"); });
+    box.appendChild(d);
+  });
+}
+function fitText(pl){
+  var parts = [];
+  if(pl.fit.newHotel) parts.push("适合新店冷启动");
+  if(pl.fit.type) parts.push("业态："+pl.fit.type.join("/"));
+  if(pl.fit.city) parts.push("城市："+pl.fit.city.join("/"));
+  if(pl.fit.loc) parts.push("位置："+pl.fit.loc.join("/"));
+  return parts.join("；") || "通用";
+}
+
+/* ============ 复购测算报告 ============ */
+function getVal(id){ var el=document.getElementById(id); return el ? parseFloat(el.value)||0 : 0; }
+function calcPlan(planId){
+  var plan = PLANS.filter(function(p){return p.id===planId;})[0];
+  if(!plan) return;
+  var rooms = getVal("rooms"), adr = getVal("adr"), varCost = getVal("varCost");
+  var taxRate = getVal("taxRate"), period = getVal("period")||30;
+  var pool = getVal("pool"), repRate = getVal("repurchaseRate")||0, targetRep = getVal("targetRepurchase");
+  var costPerRecall = getVal("costPerRecall")||0;
+  var empty = [];
+  if(!rooms) empty.push("客房总数"); if(!adr) empty.push("平均房价"); if(!varCost) empty.push("单房变动成本");
+  if(!pool) empty.push("历史客户池");
+  if(empty.length){ toast("请先填写："+empty.join("、")); return; }
+  if(targetRep && targetRep <= repRate){ toast("目标复购率需大于当前复购率（"+repRate+"%）"); return; }
+  var needRecall = 0, recallCost = 0, extraNights = 0, revenue = 0;
+  if(targetRep > 0){
+    var needRepurchases = Math.ceil(pool * (targetRep - repRate) / 100);
+    needRecall = Math.ceil(needRepurchases / 0.1); // 假设10%召回转化
+    recallCost = needRecall * costPerRecall;
+    extraNights = Math.ceil(needRepurchases * 1.2);
+  } else {
+    toast("请填写目标复购率（%）"); return;
+  }
+  revenue = extraNights * adr;
+  var tax = revenue * taxRate / (100 + taxRate);
+  var varC = extraNights * varCost;
+  var profit = revenue - recallCost - varC - tax;
+  var roi = recallCost>0 ? profit/recallCost : 0;
+  var totalBudget = recallCost;
+  var html = '<h2 style="font-size:18px;margin-bottom:10px">📋 方案测算报告：'+plan.name+'</h2>';
+  html += '<div class="rep-block"><h3>召回目标与漏斗</h3><table>'+
+    '<tr><td>历史客户池</td><td>'+pool.toLocaleString()+' 人</td></tr>'+
+    '<tr><td>复购率提升</td><td>'+repRate+'% → '+targetRep+'%（+'+ (targetRep-repRate).toFixed(1) +'pp）</td></tr>'+
+    '<tr><td>需新增复购</td><td>'+Math.ceil(pool*(targetRep-repRate)/100).toLocaleString()+' 人</td></tr>'+
+    '<tr><td>需触达召回</td><td>'+needRecall.toLocaleString()+' 人（按10%召回转化率倒推）</td></tr>'+
+    '<tr><td>新增间夜</td><td>'+extraNights+' 间（人均1.2间夜）</td></tr>'+
+    '</table></div>';
+  html += '<div class="rep-block"><h3>预算与收益</h3><table>'+
+    '<tr><td>召回总成本</td><td>¥'+recallCost.toLocaleString()+'（人均 ¥'+costPerRecall+'）</td></tr>'+
+    '<tr><td>预期增量营收</td><td>¥'+revenue.toLocaleString()+'</td></tr>'+
+    '<tr><td>变动成本</td><td>-¥'+Math.round(varC).toLocaleString()+'</td></tr>'+
+    '<tr><td>税费</td><td>-¥'+Math.round(tax).toLocaleString()+'（'+taxRate+'%）</td></tr>'+
+    '<tr><td>投放净利</td><td>'+(profit>=0?'¥':'-$')+Math.round(Math.abs(profit)).toLocaleString()+'</td></tr>'+
+    '<tr><td>ROI</td><td>'+roi.toFixed(2)+(roi<2?'（私域复购ROI通常≥2才划算，需控召回成本）':'（≥2 较优）')+'</td></tr>'+
+    '</table></div>';
+  html += '<div class="rep-block"><h3>执行要点</h3><ul>'+plan.actions.map(function(a){return '<li>'+a+'</li>';}).join('')+'</ul>'+
+    '<div class="tip"><b>预算节奏建议：</b>'+plan.budget+'</div></div>';
+  html += '<div class="rep-block"><h3>可行性</h3>'+
+    (needRecall <= pool ? '<div class="ok">✅ 触达量 '+needRecall.toLocaleString()+' ≤ 客户池 '+pool.toLocaleString()+'，可覆盖</div>'
+                        : '<div class="warn">⚠ 需触达 '+needRecall.toLocaleString()+' 人 超过客户池 '+pool.toLocaleString()+' 人，目标复购率过高请下调</div>')+
+    '<div class="tip"><b>止损红线：</b>'+plan.stop+'</div></div>';
+  document.getElementById("report").innerHTML = html;
+  document.getElementById("report").scrollIntoView({behavior:"smooth"});
+}
+function toast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  setTimeout(function(){ t.style.display = "none"; }, 2500);
+}
+
+/* ============ 初始化 ============ */
+loadProfile();
+saveProfile();
+renderPlatforms();
+savePlatforms();
+renderPlanCards();
+</script>
+</body>
+</html>
