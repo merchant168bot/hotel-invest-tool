@@ -26,6 +26,13 @@ h2{font-size:20px;margin-bottom:12px;color:#1a1a1a;border-left:4px solid #2563eb
 .unit{float:right;color:#999;font-weight:normal}
 .hint{font-size:11px;color:#999;margin-top:4px;font-weight:normal}
 .auto{color:#9aa3b0 !important;font-style:italic}
+.guide-bar{background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);border:1px solid #dbeafe;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#1e40af;line-height:1.7}
+.guide-bar b{color:#1d4ed8}
+.guide-bar .auto-tip{color:#64748b;font-size:12px;margin-top:4px;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:#64748b;margin:-4px 0 14px}
+.legend span{display:inline-flex;align-items:center;gap:4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:3px 10px}
+.legend .dot-auto{width:8px;height:8px;border-radius:50%;background:#cbd5e1;display:inline-block}
+.legend .dot-manual{width:8px;height:8px;border-radius:50%;background:#2563eb;display:inline-block}
 .inline-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .inline-row .field{flex:1;min-width:140px}
 .inline-row label{display:block;margin-bottom:6px;font-size:14px;color:#333;font-weight:600}
@@ -545,7 +552,7 @@ h2{border-left:4px solid #2563eb}
 <div class="hint">按酒店实际主流客群手动选择，报告与执行方案会据此给出素材方向</div>
 </div>
 </div>
-<div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advBase')"><span>高级参数（已自动填充 · 一般无需修改：单房变动成本 / 当前平均入住率 / 税费率，展开可微调）</span><span class="arrow">▼</span></div>
 <div class="adv-panel" id="advBase">
 <div class="inline-row">
 <div class="field">
@@ -579,7 +586,9 @@ h2{border-left:4px solid #2563eb}
 </div>
 
 <div class="card" id="reverseOnly">
-<div class="card-head"><div class="card-title">① 经营目标</div><span class="req-badge">2 项必填</span></div>
+<div class="card-head"><div class="card-title">① 经营目标</div><span class="req-badge">5 项必填</span></div>
+<div class="guide-bar"><b>目标驱动：先定目标，系统自动反推所需预算与投放强度。</b><br>你只需填写 5 项：① 目标场景 → ② 目标数值（按下方提示填具体数字）→ ③ 投放时段 → ④ 投放周期 → ⑤ 投放平台。<span class="auto-tip">灰色斜体字段 = 系统已自动计算/自动填充，一般无需修改。</span></div>
+<div class="legend"><span><i class="dot-auto"></i>灰色斜体 = 自动计算（不用填）</span><span><i class="dot-manual"></i>黑色 = 手动填写（必填）</span></div>
 <div class="row">
 <label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
 <select id="revGoal" onchange="onRevGoalChange()">
@@ -627,7 +636,7 @@ h2{border-left:4px solid #2563eb}
 <div class="hint">该平台投放预算上限</div>
 </div>
 </div>
-<div class="adv-toggle" onclick="toggleAdv(this,'advPlatform_0')"><span>▼ 高级参数（CPC / 转化率 / 佣金率 / 平台其他扣费 / 履约率）</span><span class="arrow">▼</span></div>
+<div class="adv-toggle" onclick="toggleAdv(this,'advPlatform_0')"><span>高级参数（CPC / 佣金 / 转化率 / 履约率 / 其他扣费 — 已按平台自动填充，一般无需修改，展开可微调）</span><span class="arrow">▼</span></div>
 <div class="adv-panel" id="advPlatform_0">
 <div class="compact-row">
 <div class="field">
@@ -668,10 +677,6 @@ h2{border-left:4px solid #2563eb}
 </div>
 <div id="totalBudgetEmpty" style="font-size:14px;color:#64748b;margin:12px 0;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
 当前总预算上限：未设置
-</div>
-<div class="adv-toggle" onclick="toggleAdv(this,'advGlobal')"><span>▼ 全局高级参数（已自动填充行业基准值，展开查看或修改）</span><span class="arrow">▼</span></div>
-<div class="adv-panel" id="advGlobal">
-<div style="font-size:12px;color:#94a3b8;padding:8px 0">全局参数暂未启用，平台级参数已覆盖核心计算需求。</div>
 </div>
 
 </div>
@@ -1239,7 +1244,7 @@ html += PLATFORM_OPTIONS_HTML;
 html += '</select><div class="hint">以酒店实际签约佣金为准</div></div>';
 html += '<div class="field"><label>预算上限（选填）<span class="unit">元</span></label><input type="number" id="budgetLimit_' + idx + '" placeholder="例如：5000" oninput="updateTotalBudget()"><div class="hint">该平台投放预算上限</div></div>';
 html += '</div>';
-html += '<div class="adv-toggle" onclick="toggleAdv(this,\'advPlatform_' + idx + '\')"><span>▼ 高级参数（CPC / 转化率 / 佣金率 / 平台其他扣费 / 履约率）</span><span class="arrow">▼</span></div>';
+html += '<div class="adv-toggle" onclick="toggleAdv(this,\'advPlatform_' + idx + '\')"><span>高级参数（CPC / 佣金 / 转化率 / 履约率 / 其他扣费 — 已按平台自动填充，一般无需修改，展开可微调）</span><span class="arrow">▼</span></div>';
 html += '<div class="adv-panel" id="advPlatform_' + idx + '">';
 html += '<div class="compact-row">';
 html += '<div class="field"><label>当前CPC（元/点击）</label><input type="number" id="revCpc_' + idx + '" class="auto" value="3" step="0.1"><div class="hint">推广通后台当前平均点击成本</div></div>';
