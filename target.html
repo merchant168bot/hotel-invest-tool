@@ -3013,7 +3013,7 @@ updateBtnState();
 (function(){
   var b = document.getElementById("baseData");
   var r = document.getElementById("reverseOnly");
-  if (b && r && r.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) {
+  if (b && r && r.parentNode === b.parentNode) {
     b.parentNode.insertBefore(r, b);
   }
 })();
