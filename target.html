@@ -691,6 +691,7 @@ h2{border-left:4px solid #2563eb}
 <button id="btnHistory">📜 历史</button>
 <button id="btnPrint">🖨️ 导出报表</button>
 <button id="btnImport">📥 导入</button>
+<button id="btnOtaImport">📂 拖拽导入订单表</button>
 <button id="btnClearStorage" class="danger">🗑️ 清空数据</button>
 </div>
 <div class="brand-setting collapsed">
@@ -754,6 +755,30 @@ h2{border-left:4px solid #2563eb}
 <input type="file" id="importFile" accept=".json,application/json" onchange="handleImportFile(this)">
 </div>
 <div id="importPreview" style="margin-top:12px;font-size:13px;color:#334155"></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalOtaImport">
+<div class="modal">
+<button class="modal-close" onclick="closeModal('modalOtaImport')">×</button>
+<h3>拖拽导入 OTA 订单表</h3>
+<p style="font-size:13px;color:#64748b;margin-bottom:12px">支持 xlsx / xls / csv（携程/美团/同程/去哪儿/飞猪/抖音本地导出的订单或推广报表）。只读识别，确认后才填写，认不出就不填。</p>
+<div class="ota-dropzone" id="otaDropZone">
+<div class="ota-dropzone-tip">把文件拖到这里，或 <span style="color:#2563eb;text-decoration:underline">点击选择文件</span></div>
+<input type="file" id="otaFile" accept=".xlsx,.xls,.csv" style="display:none">
+</div>
+<div style="margin-top:10px;font-size:13px;color:#334155">平台（识别不到时手动选）：
+<select id="otaPlatformSel" onchange="otaManualPlatform(this.value)" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px">
+<option value="">自动识别（从文件名/表头）</option>
+<option value="meituan">美团</option>
+<option value="xiecheng">携程</option>
+<option value="tongcheng">同程</option>
+<option value="qunaer">去哪儿</option>
+<option value="feizhu">飞猪</option>
+<option value="douyin">抖音本地</option>
+</select>
+</div>
+<div id="otaPreview" style="margin-top:12px;font-size:13px;color:#334155"></div>
 </div>
 </div>
 
@@ -2972,6 +2997,338 @@ if(btnImport){
     openModal("modalImport");
   });
 }
+
+
+// ================= 拖拽导入 OTA 订单表（新增模块；预览确认+数值校验+酒店档案，不碰其他逻辑） =================
+var OTA_PROFILE_KEY = "otaHotelProfile_v1";
+var OTA_PLATFORM_LABEL = {meituan:"美团", xiecheng:"携程", tongcheng:"同程", qunaer:"去哪儿", feizhu:"飞猪", douyin:"抖音本地"};
+var otaParsed = null;
+
+// 字段关键词表（按优先级；精确匹配优先，包含匹配兜底）
+var OTA_KEYWORDS = {
+  hotel: ["酒店名称","酒店名","门店名称","门店名","门店"],
+  city: ["所在城市","城市名称","城市"],
+  nights: ["间夜数","间夜量","售出间夜","间夜","房晚"],
+  revenue: ["订单金额","成交金额","销售额","营业收入","营收","成交额","总金额","GMV","流水"],
+  adr: ["平均房价","间夜均价","ADR","实际均价"],
+  orders: ["订单数","订单量","成交量","成交单量","订单总数"],
+  status: ["订单状态","订单状态名称","状态"],
+  clicks: ["点击量","点击次数","点击数","点击"],
+  spend: ["推广花费","广告花费","花费","消耗","总花费"],
+  cpc: ["平均点击成本","点击单价","CPC"],
+  conv: ["下单转化率","点击转化率","转化率"],
+  checkin: ["履约率","入住率","确认率","成交率"]
+};
+var OTA_KEY_ORDER = ["adr","nights","revenue","orders","clicks","spend","cpc","conv","checkin","city","hotel","status"];
+
+function otaNorm(h){
+  return String(h||"").replace(/[\s\u3000]/g,"").replace(/[（）()【】\[\]：:（）]/g,"").toLowerCase();
+}
+function otaMatchColumn(headers){
+  var map = {};
+  headers.forEach(function(h, idx){
+    var hn = otaNorm(h);
+    if(!hn) return;
+    OTA_KEY_ORDER.forEach(function(key){
+      if(map[key]) return;
+      var kws = OTA_KEYWORDS[key];
+      for(var i=0;i<kws.length;i++){
+        if(hn === otaNorm(kws[i])){ map[key] = {idx:idx, exact:true, header:h}; return; }
+      }
+    });
+  });
+  headers.forEach(function(h, idx){
+    var hn = otaNorm(h);
+    if(!hn) return;
+    OTA_KEY_ORDER.forEach(function(key){
+      if(map[key]) return;
+      var kws = OTA_KEYWORDS[key];
+      for(var i=0;i<kws.length;i++){
+        var kw = otaNorm(kws[i]);
+        if(kw.length >= 2 && hn.indexOf(kw) >= 0){ map[key] = {idx:idx, exact:false, header:h}; return; }
+      }
+    });
+  });
+  return map;
+}
+function otaParseNum(v){
+  if(v===null || v===undefined || v==="") return NaN;
+  if(typeof v === "number") return v;
+  var s = String(v).replace(/[,，\s¥￥元%％]/g,"");
+  if(s==="") return NaN;
+  var n = parseFloat(s);
+  return isNaN(n) ? NaN : n;
+}
+function otaSum(rows, idx){
+  var s=0, n=0;
+  rows.forEach(function(r){
+    var v = otaParseNum(r[idx]);
+    if(!isNaN(v)){ s+=v; n++; }
+  });
+  return {sum:s, count:n};
+}
+function otaFulfilled(rows, idx){
+  var total=0, ok=0;
+  rows.forEach(function(r){
+    var st = String(r[idx]||"").trim();
+    if(!st) return;
+    total++;
+    if(/已入住|已消费|已完成|已履约|已成交|入住|履约|完成|消费/.test(st)) ok++;
+  });
+  return {total:total, ok:ok};
+}
+function otaDetectPlatform(fileName, headers){
+  var f = (fileName||"").toLowerCase();
+  var h = headers.map(otaNorm).join("|");
+  var rules = [
+    {key:"douyin", kws:["抖音","douyin","来客"]},
+    {key:"feizhu", kws:["飞猪","feizhu","fliggy","淘宝"]},
+    {key:"tongcheng", kws:["同程","tongcheng","艺龙"]},
+    {key:"qunaer", kws:["去哪儿","qunaer"]},
+    {key:"xiecheng", kws:["携程","ctrip","ebk"]},
+    {key:"meituan", kws:["美团","meituan","点评"]}
+  ];
+  for(var i=0;i<rules.length;i++){
+    for(var j=0;j<rules[i].kws.length;j++){
+      var kw = rules[i].kws[j].toLowerCase();
+      if(f.indexOf(kw) >= 0 || h.indexOf(kw) >= 0) return rules[i].key;
+    }
+  }
+  return "";
+}
+function otaMatchCity(name){
+  var sel = document.getElementById("cityTier");
+  if(!sel || !name) return "";
+  var n = String(name).trim();
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].text.trim() === n) return sel.options[i].value;
+  }
+  return "";
+}
+function otaMatchLocation(name){
+  var sel = document.getElementById("location");
+  if(!sel || !name) return "";
+  var n = String(name).trim();
+  var map = {景区:"scenic", 商圈:"biz_district", 枢纽:"traffic", 车站:"traffic", 机场:"traffic", 商务:"biz", 大学:"edu", 社区:"res", 居民:"res"};
+  for(var k in map){
+    if(n.indexOf(k) >= 0){
+      for(var i=0;i<sel.options.length;i++){
+        if(sel.options[i].value === map[k]) return map[k];
+      }
+    }
+  }
+  return "";
+}
+function otaRangeCheck(key, v){
+  var r = {adr:[60,2000], rooms:[5,2000], varCost:[20,2000], cpc:[0.1,80], conv:[0.1,80], checkin:[0,100], commission:[0,40], nights:[1,1000000], revenue:[100,100000000]};
+  var rr = r[key]; if(!rr) return "";
+  if(v < rr[0] || v > rr[1]) return "值 " + v + " 超出常见区间（" + rr[0] + "~" + rr[1] + "），请确认";
+  return "";
+}
+function otaLoadProfile(city, hotel){
+  if(!city || !hotel) return null;
+  try{
+    var raw = localStorage.getItem(OTA_PROFILE_KEY);
+    var obj = raw ? JSON.parse(raw) : {};
+    return obj[city+"|"+hotel] || null;
+  }catch(e){ return null; }
+}
+function otaSaveProfile(city, hotel, data){
+  if(!city || !hotel) return;
+  try{
+    var raw = localStorage.getItem(OTA_PROFILE_KEY);
+    var obj = raw ? JSON.parse(raw) : {};
+    obj[city+"|"+hotel] = data;
+    localStorage.setItem(OTA_PROFILE_KEY, JSON.stringify(obj));
+  }catch(e){}
+}
+function openOtaImport(){
+  otaParsed = null;
+  var pf = document.getElementById("otaFile");
+  if(pf) pf.value = "";
+  var ps = document.getElementById("otaPlatformSel");
+  if(ps) ps.value = "";
+  var prev = document.getElementById("otaPreview");
+  if(prev) prev.innerHTML = '<div style="color:#94a3b8">拖入或选择文件后，这里显示识别结果预览（确认后才填写）</div>';
+  bindOtaDrop();
+  openModal("modalOtaImport");
+}
+function bindOtaDrop(){
+  var dz = document.getElementById("otaDropZone");
+  var fi = document.getElementById("otaFile");
+  if(!dz || !fi) return;
+  dz.ondragover = function(e){ e.preventDefault(); dz.classList.add("drag"); };
+  dz.ondragleave = function(){ dz.classList.remove("drag"); };
+  dz.ondrop = function(e){
+    e.preventDefault();
+    dz.classList.remove("drag");
+    if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+      handleOtaFile(e.dataTransfer.files[0]);
+    }
+  };
+  dz.onclick = function(){ fi.click(); };
+  fi.onchange = function(){ if(fi.files && fi.files.length) handleOtaFile(fi.files[0]); };
+}
+function handleOtaFile(file){
+  if(!file) return;
+  var prev = document.getElementById("otaPreview");
+  if(!/\.(xlsx|xls|csv)$/i.test(file.name)){
+    prev.innerHTML = '<div style="color:#dc2626">不认这个文件类型（' + escapeHtml(file.name) + '）。只支持 xlsx / xls / csv，其他文件一律不解析。</div>';
+    return;
+  }
+  if(typeof XLSX === "undefined"){
+    prev.innerHTML = '<div style="color:#dc2626">表格解析库加载失败，请刷新页面重试。</div>';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+      otaBuildResult(file.name, rows);
+    }catch(err){
+      prev.innerHTML = '<div style="color:#dc2626">解析失败：' + escapeHtml(String((err && err.message) || err)) + '</div>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function otaBuildResult(fileName, rows){
+  var prev = document.getElementById("otaPreview");
+  var headerRowIdx = -1, bestScore = 0, bestMap = null, bestRow = 0;
+  for(var r=0; r<Math.min(20, rows.length); r++){
+    var m = otaMatchColumn(rows[r]);
+    var score = 0;
+    for(var k in m) score++;
+    if(score > bestScore){ bestScore = score; bestRow = r; bestMap = m; }
+  }
+  if(bestScore === 0){
+    prev.innerHTML = '<div style="color:#dc2626">这个表没有识别到任何订单/推广字段，不做任何填写。请确认是不是 OTA 后台导出的报表，或直接手动填。</div>';
+    otaParsed = null;
+    return;
+  }
+  var dataRows = rows.slice(bestRow+1).filter(function(r){
+    return r.some(function(c){ return String(c).trim() !== ""; });
+  });
+  var res = {
+    headers: rows[bestRow], map: bestMap,
+    platformKey: otaDetectPlatform(fileName, rows[bestRow]),
+    cityName: "", hotelName: "", fields: {}, warnings: [], profile: null
+  };
+  var m = res.map;
+  var nights = m.nights ? otaSum(dataRows, m.nights.idx).sum : NaN;
+  var revenue = m.revenue ? otaSum(dataRows, m.revenue.idx).sum : NaN;
+  var clicks = m.clicks ? otaSum(dataRows, m.clicks.idx).sum : NaN;
+  var spend = m.spend ? otaSum(dataRows, m.spend.idx).sum : NaN;
+  var orders = m.orders ? otaSum(dataRows, m.orders.idx).sum : NaN;
+  var adrCol = m.adr ? (otaSum(dataRows, m.adr.idx).count ? otaSum(dataRows, m.adr.idx).sum / otaSum(dataRows, m.adr.idx).count : NaN) : NaN;
+  var adr = !isNaN(adrCol) ? adrCol : (revenue && nights ? revenue / nights : NaN);
+  var cpcCol = m.cpc ? (otaSum(dataRows, m.cpc.idx).count ? otaSum(dataRows, m.cpc.idx).sum / otaSum(dataRows, m.cpc.idx).count : NaN) : NaN;
+  var cpc = !isNaN(cpcCol) ? cpcCol : (spend && clicks ? spend / clicks : NaN);
+  var convCol = m.conv ? (otaSum(dataRows, m.conv.idx).count ? otaSum(dataRows, m.conv.idx).sum / otaSum(dataRows, m.conv.idx).count : NaN) : NaN;
+  var conv = !isNaN(convCol) ? convCol : (orders && clicks ? orders / clicks * 100 : NaN);
+  var chk = NaN;
+  if(m.checkin){
+    var cc = otaSum(dataRows, m.checkin.idx);
+    chk = cc.count ? cc.sum / cc.count : NaN;
+  } else if(m.status){
+    var ff = otaFulfilled(dataRows, m.status.idx);
+    chk = ff.total > 0 ? ff.ok / ff.total * 100 : NaN;
+  }
+  if(m.city && dataRows.length) res.cityName = String(dataRows[0][m.city.idx] || "").trim();
+  if(m.hotel && dataRows.length) res.hotelName = String(dataRows[0][m.hotel.idx] || "").trim();
+  res.fields = {adr:adr, nights:nights, revenue:revenue, orders:orders, clicks:clicks, spend:spend, cpc:cpc, conv:conv, checkin:chk};
+  var checkKeys = {adr:"平均房价", cpc:"CPC", conv:"转化率(%)", checkin:"履约率(%)"};
+  for(var kk in checkKeys){
+    var vv = res.fields[kk];
+    if(!isNaN(vv)){ var w = otaRangeCheck(kk, vv); if(w) res.warnings.push(checkKeys[kk] + "：" + w); }
+  }
+  if(res.cityName && res.hotelName) res.profile = otaLoadProfile(res.cityName, res.hotelName);
+  otaParsed = res;
+  otaRenderPreview();
+}
+function otaManualPlatform(key){
+  if(otaParsed){ otaParsed.platformKey = key; otaRenderPreview(); }
+}
+function otaRenderPreview(){
+  var res = otaParsed;
+  if(!res) return;
+  var el = document.getElementById("otaPreview");
+  var html = [];
+  html.push('<div style="margin-bottom:8px;font-weight:bold">识别结果预览（确认后才填写，不会直接覆盖）</div>');
+  var platName = res.platformKey ? (OTA_PLATFORM_LABEL[res.platformKey] || res.platformKey) : "";
+  html.push('<div>平台：' + (platName ? '<b>' + platName + '</b>（自动识别）' : '<span style="color:#b45309">未识别出平台，请在下方选择</span>') + '</div>');
+  if(res.cityName){
+    html.push('<div>城市：' + escapeHtml(res.cityName) + (otaMatchCity(res.cityName) ? '（已自动匹配下拉）' : ' <span style="color:#b45309">下拉里没有这个城市，请手动选</span>') + '</div>');
+  }
+  if(res.hotelName) html.push('<div>酒店：' + escapeHtml(res.hotelName) + '</div>');
+  var items = [
+    {k:"adr", label:"平均房价", fmt:function(v){return "¥" + v.toFixed(0);}},
+    {k:"nights", label:"间夜数", fmt:function(v){return v.toFixed(0) + " 间夜";}},
+    {k:"revenue", label:"订单金额", fmt:function(v){return "¥" + v.toLocaleString();}},
+    {k:"orders", label:"订单数", fmt:function(v){return v.toFixed(0) + " 单";}},
+    {k:"clicks", label:"点击量", fmt:function(v){return v.toFixed(0);}},
+    {k:"spend", label:"花费", fmt:function(v){return "¥" + v.toLocaleString();}},
+    {k:"cpc", label:"CPC", fmt:function(v){return "¥" + v.toFixed(2);}},
+    {k:"conv", label:"转化率", fmt:function(v){return v.toFixed(2) + "%";}},
+    {k:"checkin", label:"履约率", fmt:function(v){return v.toFixed(1) + "%";}}
+  ];
+  var filledItems = items.filter(function(it){ return !isNaN(res.fields[it.k]); });
+  if(filledItems.length){
+    html.push('<div style="margin-top:6px">');
+    filledItems.forEach(function(it){
+      var src = (res.map[it.k] && res.map[it.k].header) ? ' <span style="color:#64748b">← 来自列"' + escapeHtml(res.map[it.k].header) + '"</span>' : "";
+      html.push('<div>· ' + it.label + '：<b>' + it.fmt(res.fields[it.k]) + '</b>' + src + '</div>');
+    });
+    html.push('</div>');
+  }
+  if(res.profile){
+    html.push('<div style="margin-top:6px;color:#166534">已找到 <b>' + escapeHtml(res.cityName + "|" + res.hotelName) + '</b> 的档案，将自动带出：客房 ' + escapeHtml(res.profile.rooms || "") + ' 间、佣金 ' + escapeHtml(res.profile.commission || "") + '%、变动成本 ¥' + escapeHtml(res.profile.varCost || "") + '、经营目标 ¥' + escapeHtml(res.profile.revGoal || "—") + '</div>');
+  }
+  if(res.warnings.length){
+    html.push('<div style="margin-top:6px;color:#dc2626">⚠ ' + res.warnings.join("<br>⚠ ") + '</div>');
+  }
+  html.push('<div style="margin-top:12px;display:flex;gap:8px">');
+  html.push('<button class="modal-btn primary" onclick="confirmOtaImport()">确认导入并填写</button>');
+  html.push('<button class="modal-btn secondary" onclick="closeModal(\'modalOtaImport\')">取消</button>');
+  html.push('</div>');
+  el.innerHTML = html.join("");
+}
+function confirmOtaImport(){
+  var res = otaParsed;
+  if(!res) return;
+  var notes = [];
+  if(res.platformKey){
+    var sel = document.getElementById("revPlatform");
+    if(sel){ sel.value = res.platformKey; if(typeof onPlatformChange === "function") onPlatformChange(0); notes.push("平台已选 " + (OTA_PLATFORM_LABEL[res.platformKey]||res.platformKey)); }
+  }
+  if(res.cityName){
+    var cv = otaMatchCity(res.cityName);
+    if(cv){ var cs = document.getElementById("cityTier"); if(cs){ cs.value = cv; notes.push("城市已选 " + res.cityName); } }
+  }
+  var f = res.fields;
+  if(!isNaN(f.adr)){ setVal("adr", Math.round(f.adr*10)/10); if(typeof autoMapByAdr === "function") autoMapByAdr(); notes.push("平均房价已填 ¥" + Math.round(f.adr)); }
+  if(res.profile && res.profile.rooms){ setVal("rooms", res.profile.rooms); notes.push("客房总数已带出 " + res.profile.rooms); }
+  if(res.profile && res.profile.varCost){ setVal("varCost", res.profile.varCost); }
+  if(res.profile && res.profile.commission){ setVal("commission_0", res.profile.commission); }
+  if(!isNaN(f.cpc)) setVal("revCpc_0", Math.round(f.cpc*100)/100);
+  if(!isNaN(f.conv)) setVal("revOrderRate_0", Math.round(f.conv*10)/10);
+  if(!isNaN(f.checkin)) setVal("revCheckinRate_0", Math.round(f.checkin*10)/10);
+  if(res.cityName && res.hotelName){
+    var g = function(id){ var el = document.getElementById(id); return el ? el.value : ""; };
+    otaSaveProfile(res.cityName, res.hotelName, {rooms: g("rooms"), varCost: g("varCost"), commission: g("commission_0"), revGoal: g("revGoal"), ts: Date.now()});
+    notes.push("已记住 " + res.cityName + "|" + res.hotelName + " 的基础参数，下次自动带出");
+  }
+  if(typeof saveDraft === "function") saveDraft();
+  if(typeof showToast === "function") showToast("导入完成：" + notes.join("；"));
+  closeModal("modalOtaImport");
+  otaParsed = null;
+}
+// 按钮绑定
+(function(){
+  var b = document.getElementById("btnOtaImport");
+  if(b) b.onclick = openOtaImport;
+})();
 
 function handleImportFile(input){
   var file = input.files[0];
