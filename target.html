@@ -375,7 +375,7 @@ h2{border-left:4px solid #2563eb}
 <h2>酒店投流目标测算-智能系统</h2>
 <div class="sub" id="subText">基于目标导向的收益管理模型，输入经营目标与现状数据，智能拆解所需投放预算、流量效率阈值及分阶段执行方案。</div>
 <div class="card" id="baseData">
-<div class="card-head"><div class="card-title">① 酒店基础信息</div><span class="req-badge">5 项必填</span></div>
+<div class="card-head"><div class="card-title">② 酒店基础信息</div><span class="req-badge">5 项必填</span></div>
 <div class="inline-row">
 <div class="field" id="cityTierField">
 <label>城市 <span style="color:#dc2626">*</span> <span class="unit">必选 · 选城市自动识别层级</span></label>
@@ -579,7 +579,7 @@ h2{border-left:4px solid #2563eb}
 </div>
 
 <div class="card" id="reverseOnly">
-<div class="card-head"><div class="card-title">② 经营目标</div><span class="req-badge">2 项必填</span></div>
+<div class="card-head"><div class="card-title">① 经营目标</div><span class="req-badge">2 项必填</span></div>
 <div class="row">
 <label>目标场景 <span style="color:red;">*</span> <span class="unit">必选</span></label>
 <select id="revGoal" onchange="onRevGoalChange()">
@@ -1074,7 +1074,7 @@ html += '<div class="field"><label>当前营收（选填）<span class="unit">�
 html += '</div>';
 } else if(goal === "occupancy"){
 html += '<div class="row">';
-html += '<label>目标入住率 <span style="color:red;">*</span> <span class="unit">% · 必填</span></label><input type="number" id="revTargetOccInput" placeholder="例如：85" step="0.1"><div class="hint">当前入住率采用「① 酒店基础信息」中的"当前平均入住率"（默认60%）</div>';
+html += '<label>目标入住率 <span style="color:red;">*</span> <span class="unit">% · 必填</span></label><input type="number" id="revTargetOccInput" placeholder="例如：85" step="0.1"><div class="hint">当前入住率采用「② 酒店基础信息」中的"当前平均入住率"（默认60%）</div>';
 html += '<span class="field-error" id="errRevTargetOccInput" style="display:none"></span>';
 html += '</div>';
 } else if(goal === "repurchase"){
@@ -1822,7 +1822,7 @@ var currentOcc = occ;
 if(targetOcc <= 0){
 empty.push("目标入住率");
 } else if(targetOcc <= currentOcc){
-alert("目标入住率必须高于当前入住率（"+currentOcc+"%，可在「① 酒店基础信息 → 高级参数」中修改）");
+alert("目标入住率必须高于当前入住率（"+currentOcc+"%，可在「② 酒店基础信息 → 高级参数」中修改）");
 return false;
 }
 targetNights = Math.ceil(rooms * ((targetOcc - currentOcc)/100) * period);
@@ -3007,6 +3007,16 @@ if (!hasDraft) {
 updateTotalBudget();
 updateBrand();
 updateBtnState();
+</script>
+<script>
+// 目标驱动版面：经营目标卡片置顶（纯布局调整，不动任何数据与计算逻辑）
+(function(){
+  var b = document.getElementById("baseData");
+  var r = document.getElementById("reverseOnly");
+  if (b && r && r.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) {
+    b.parentNode.insertBefore(r, b);
+  }
+})();
 </script>
 </body>
 </html>
