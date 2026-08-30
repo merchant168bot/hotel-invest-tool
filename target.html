@@ -3185,8 +3185,15 @@ function parseWorkbook(wb){
   return res;
 }
 
-function clearImportState(){
+function clearImportState(restoreFilled){
   __importData = null;
+  if(restoreFilled && window.__importFilled){
+    window.__importFilled.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el){ el.value = ""; el.classList.remove("auto"); }
+    });
+  }
+  window.__importFilled = null;
   var b = document.getElementById("btnFillImport");
   if(b) b.style.display = "none";
   var r = document.getElementById("importResult");
@@ -3232,20 +3239,22 @@ function renderImportResult(){
 function fillFromImport(){
   if(!__importData) return;
   var filled = [];
+  var filledIds = [];
   if(__importData.orders){
     var o = __importData.orders;
-    if(o.adr > 0){ setVal("adr", o.adr.toFixed(2)); filled.push("平均房价 ¥" + o.adr.toFixed(2)); }
-    if(o.checkinRate > 0){ setVal("revCheckinRate_0", o.checkinRate.toFixed(1)); filled.push("履约率 " + o.checkinRate.toFixed(1) + "%"); }
-    if(o.avgNights > 0){ setVal("revAvgNewNights", o.avgNights.toFixed(1)); filled.push("人均间夜 " + o.avgNights.toFixed(1)); }
+    if(o.adr > 0){ setVal("adr", o.adr.toFixed(2)); filledIds.push("adr"); filled.push("平均房价 ¥" + o.adr.toFixed(2)); }
+    if(o.checkinRate > 0){ setVal("revCheckinRate_0", o.checkinRate.toFixed(1)); filledIds.push("revCheckinRate_0"); filled.push("履约率 " + o.checkinRate.toFixed(1) + "%"); }
+    if(o.avgNights > 0){ setVal("revAvgNewNights", o.avgNights.toFixed(1)); filledIds.push("revAvgNewNights"); filled.push("人均间夜 " + o.avgNights.toFixed(1)); }
   }
   if(__importData.promo){
     var p = __importData.promo;
-    if(p.cpc > 0){ setVal("revCpc_0", p.cpc.toFixed(2)); filled.push("CPC ¥" + p.cpc.toFixed(2)); }
-    if(p.orderRate > 0){ setVal("revOrderRate_0", p.orderRate.toFixed(2)); filled.push("转化率 " + p.orderRate.toFixed(2) + "%"); }
+    if(p.cpc > 0){ setVal("revCpc_0", p.cpc.toFixed(2)); filledIds.push("revCpc_0"); filled.push("CPC ¥" + p.cpc.toFixed(2)); }
+    if(p.orderRate > 0){ setVal("revOrderRate_0", p.orderRate.toFixed(2)); filledIds.push("revOrderRate_0"); filled.push("转化率 " + p.orderRate.toFixed(2) + "%"); }
   }
+  window.__importFilled = filledIds;
   var r = document.getElementById("importResult");
   if(r && filled.length){
-    r.innerHTML = '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 14px;"><b>✅ 已自动填入：</b>' + filled.join(" · ") + '<br><span style="color:#64748b;font-size:12px;">请检查下方表单（灰色斜体为自动值，可微调），然后填写房间数 / 佣金率 / 变动成本 / 经营目标，点「生成决策报告」。</span></div>';
+    r.innerHTML = '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 14px;"><b>✅ 已自动填入：</b>' + filled.join(" · ") + '<br><span style="color:#64748b;font-size:12px;">请检查下方表单（灰色斜体为自动值，可微调），然后填写房间数 / 佣金率 / 变动成本 / 经营目标，点「生成决策报告」。</span><br><button type="button" onclick="clearImportState(true)" style="margin-top:8px;padding:6px 12px;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer">✕ 取消导入并还原表单</button></div>';
   }
   var b = document.getElementById("btnFillImport");
   if(b) b.style.display = "none";
